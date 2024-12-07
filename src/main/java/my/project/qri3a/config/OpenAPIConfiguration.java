@@ -16,16 +16,16 @@ public class OpenAPIConfiguration {
     public OpenAPI defineOpenApi() {
         Server server = new Server();
         server.setUrl("http://localhost:8081");
-        server.setDescription("Development");
+        server.setDescription("Qri3a Development Server");
 
         Contact myContact = new Contact();
-        myContact.setName("Jane Doe");
-        myContact.setEmail("your.email@gmail.com");
+        myContact.setName("NFISSI Abderrazzak");
+        myContact.setEmail("abderazaknfissi34@gmail.com");
 
         Info information = new Info()
-                .title("Employee Management System API")
+                .title("Qri3a API")
                 .version("1.0")
-                .description("This API exposes endpoints to manage employees.")
+                .description("The Qri3a API provides endpoints for managing and interacting with the Qri3a system.")
                 .contact(myContact);
         return new OpenAPI().info(information).servers(List.of(server));
     }

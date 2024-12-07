@@ -1,5 +1,7 @@
 package my.project.qri3a.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -8,9 +10,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import my.project.qri3a.enums.Role;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -22,7 +28,8 @@ import java.util.UUID;
 public class User {
 
     @Id
-    @GeneratedValue
+    @UuidGenerator
+    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
     @NotBlank(message = "Name is mandatory")
@@ -36,12 +43,22 @@ public class User {
 
     @NotBlank(message = "Password is mandatory")
     @Size(min = 6, message = "Password must be at least 6 characters")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
 
+    @NotBlank(message = "Phone number is mandatory")
+    @Pattern(regexp = "^\\+?[0-9 .()-]{7,25}$", message = "Phone number is invalid")
+    @Column(nullable = false)
     private String phoneNumber;
 
+    @NotBlank(message = "Address is mandatory")
+    @Column(nullable = false)
     private String address;
+
+
+    @Column(nullable = true)
+    private String location;
 
     @NotNull(message = "Role is mandatory")
     @Enumerated(EnumType.STRING)
@@ -51,9 +68,43 @@ public class User {
     @Max(value = 5, message = "Rating must be at most 5")
     private Float rating;
 
+    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<Product> products = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_wishlist",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "product_id")
+    )
+    @JsonIgnore
+    private Set<Product> wishlist = new HashSet<>();
+
     @CreationTimestamp
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime updatedAt;
+
+
+    public void addProduct(Product product) {
+        products.add(product);
+        product.setSeller(this);
+    }
+
+    public void removeProduct(Product product) {
+        products.remove(product);
+        product.setSeller(null);
+    }
+
+    public void addToWishlist(Product product) {
+        wishlist.add(product);
+    }
+
+    public void removeFromWishlist(Product product) {
+        wishlist.remove(product);
+    }
 }
