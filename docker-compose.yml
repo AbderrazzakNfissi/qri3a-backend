@@ -39,6 +39,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/qri3adb
       SPRING_DATASOURCE_USERNAME: qri3a5432
       SPRING_DATASOURCE_PASSWORD: mysecretpassword
+      PRODUCT_IMAGES_DIR: /app/uploads/products
     depends_on:
       - postgres
 volumes:

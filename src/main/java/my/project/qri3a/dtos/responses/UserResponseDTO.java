@@ -15,5 +15,4 @@ public class UserResponseDTO {
     private Role role;
     private Float rating;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

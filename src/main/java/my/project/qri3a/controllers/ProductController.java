@@ -1,4 +1,5 @@
 package my.project.qri3a.controllers;
+
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
@@ -26,7 +28,7 @@ public class ProductController {
 
     /**
      * GET /api/v1/products
-     * Exemple : /api/v1/products?page=0&size=10&sort=price,asc&category=SMARTPHONES_AND_TELEPHONES&location=Rabat&condition=NEW
+     * Example: /api/v1/products?page=0&size=10&sort=price,asc&category=SMARTPHONES_AND_TELEPHONES&location=Rabat&condition=NEW
      */
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ProductResponseDTO>>> getAllProducts(
@@ -34,12 +36,14 @@ public class ProductController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String condition,
-            @RequestParam(required = false) UUID sellerId
+            @RequestParam(required = false) UUID sellerId,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice
     ) throws ResourceNotValidException {
-        log.info("Controller: Fetching all products with pagination: page={}, size={}, sort={}, category={}, location={}, condition={}, sellerId={}",
-                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort(), category, location, condition, sellerId);
+        log.info("Controller: Fetching all products with pagination: page={}, size={}, sort={}, category={}, location={}, condition={}, sellerId={}, minPrice={}, maxPrice={}",
+                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort(), category, location, condition, sellerId, minPrice, maxPrice);
 
-        Page<ProductResponseDTO> productsPage = productService.getAllProducts(pageable, category, location, condition, sellerId);
+        Page<ProductResponseDTO> productsPage = productService.getAllProducts(pageable, category, location, condition, sellerId, minPrice, maxPrice);
         ApiResponse<Page<ProductResponseDTO>> response = new ApiResponse<>(productsPage, "Products fetched successfully.", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }

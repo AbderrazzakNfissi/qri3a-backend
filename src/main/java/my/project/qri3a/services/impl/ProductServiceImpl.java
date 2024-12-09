@@ -21,7 +21,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
-
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -36,14 +35,14 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
 
     @Override
-    public Page<ProductResponseDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId) throws ResourceNotValidException {
-        log.info("Service: Fetching all products with filters - category: {}, location: {}, condition: {}, sellerId: {}", category, location, condition, sellerId);
+    public Page<ProductResponseDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice) throws ResourceNotValidException {
+        log.info("Service: Fetching all products with filters - category: {}, location: {}, condition: {}, sellerId: {}, minPrice: {}, maxPrice: {}",
+                category, location, condition, sellerId, minPrice, maxPrice);
 
         Specification<Product> spec = Specification.where(null);
 
         if (category != null && !category.isEmpty()) {
             try {
-                ProductSpecifications.hasCategory(ProductCategory.valueOf(category.toUpperCase()));
                 spec = spec.and(ProductSpecifications.hasCategory(ProductCategory.valueOf(category.toUpperCase())));
             } catch (IllegalArgumentException ex) {
                 log.error("Invalid category: {}", category);
@@ -68,6 +67,18 @@ public class ProductServiceImpl implements ProductService {
             spec = spec.and(ProductSpecifications.hasSellerId(sellerId));
         }
 
+        if (minPrice != null) {
+            spec = spec.and(ProductSpecifications.hasMinPrice(minPrice));
+        }
+
+        if (maxPrice != null) {
+            spec = spec.and(ProductSpecifications.hasMaxPrice(maxPrice));
+        }
+
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            log.error("minPrice {} is greater than maxPrice {}", minPrice, maxPrice);
+            throw new ResourceNotValidException("minPrice cannot be greater than maxPrice");
+        }
         Page<Product> productsPage = productRepository.findAll(spec, pageable);
         log.info("Service: Found {} products", productsPage.getTotalElements());
 
@@ -101,9 +112,6 @@ public class ProductServiceImpl implements ProductService {
         Product product = productMapper.toEntity(productRequestDTO);
         product.setSeller(seller);
 
-        // Valider les champs de l'entité Product si nécessaire
-        validateProduct(product);
-
         // Enregistrer le produit
         Product savedProduct = productRepository.save(product);
         log.info("Service: Product created with ID: {}", savedProduct.getId());
@@ -134,9 +142,6 @@ public class ProductServiceImpl implements ProductService {
         // Mettre à jour les champs de l'entité à partir du DTO
         productMapper.updateEntityFromDTO(productRequestDTO, existingProduct);
 
-        // Valider les champs de l'entité Product si nécessaire
-        validateProduct(existingProduct);
-
         // Enregistrer le produit mis à jour
         Product updatedProduct = productRepository.save(existingProduct);
         log.info("Service: Product updated with ID: {}", updatedProduct.getId());
@@ -154,40 +159,5 @@ public class ProductServiceImpl implements ProductService {
                 });
         productRepository.delete(product);
         log.info("Service: Product deleted with ID: {}", productId);
-    }
-
-    /**
-     * Méthode de validation des champs du produit.
-     * Vous pouvez ajouter des validations supplémentaires si nécessaire.
-     */
-    private void validateProduct(Product product) throws ResourceNotValidException {
-        if (product.getTitle() == null || product.getTitle().isEmpty()) {
-            log.error("Product title is null or empty");
-            throw new ResourceNotValidException("Product title is mandatory");
-        }
-        if (product.getDescription() == null || product.getDescription().isEmpty()) {
-            log.error("Product description is null or empty");
-            throw new ResourceNotValidException("Product description is mandatory");
-        }
-        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            log.error("Product price is invalid");
-            throw new ResourceNotValidException("Product price must be greater than zero");
-        }
-        if (product.getLocation() == null || product.getLocation().isEmpty()) {
-            log.error("Product location is null or empty");
-            throw new ResourceNotValidException("Product location is mandatory");
-        }
-        if (product.getCategory() == null) {
-            log.error("Product category is null");
-            throw new ResourceNotValidException("Product category is mandatory");
-        }
-        if (product.getCondition() == null) {
-            log.error("Product condition is null");
-            throw new ResourceNotValidException("Product condition is mandatory");
-        }
-        if (product.getSeller() == null) {
-            log.error("Product seller is null");
-            throw new ResourceNotValidException("Product seller is mandatory");
-        }
     }
 }

@@ -17,6 +17,9 @@ public class UserRequestDTO {
     @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
     private String password;
 
+    @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
+    private String newPassword;
+
     @NotBlank(message = "Le numéro de téléphone est obligatoire")
     @Pattern(regexp = "^\\+?[0-9 .()-]{7,25}$", message = "Le numéro de téléphone est invalide")
     private String phoneNumber;

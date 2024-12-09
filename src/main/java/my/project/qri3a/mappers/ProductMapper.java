@@ -1,23 +1,48 @@
 package my.project.qri3a.mappers;
 
+import lombok.RequiredArgsConstructor;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
+import my.project.qri3a.dtos.responses.ImageResponseDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.entities.Product;
+import my.project.qri3a.entities.User;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RequiredArgsConstructor
 @Component
 public class ProductMapper {
+    private final ImageMapper imageMapper;
 
     public ProductResponseDTO toDTO(Product product) {
-        ProductResponseDTO dto = new ProductResponseDTO();
-        BeanUtils.copyProperties(product, dto);
-        if (product.getSeller() != null) {
-            dto.setSellerId(product.getSeller().getId());
-            dto.setSellerName(product.getSeller().getName());
+        if (product == null) {
+            return null;
         }
+
+        ProductResponseDTO dto = new ProductResponseDTO();
+
+        // Copy basic properties
+        BeanUtils.copyProperties(product, dto, "seller", "images");
+
+        // Map seller information
+        User seller = product.getSeller();
+        if (seller != null) {
+            dto.setSellerId(seller.getId());
+            dto.setSellerName(seller.getName()); // Assuming User has a getName() method
+        }
+
+        // Map images
+        List<ImageResponseDTO> imageDTOs = product.getImages().stream()
+                .map(imageMapper::toDTO)
+                .collect(Collectors.toList());
+        dto.setImages(imageDTOs);
+
         return dto;
     }
+
 
     public Product toEntity(ProductRequestDTO productRequestDTO) {
         Product product = new Product();
@@ -26,6 +51,6 @@ public class ProductMapper {
     }
 
     public void updateEntityFromDTO(ProductRequestDTO dto, Product entity) {
-        BeanUtils.copyProperties(dto, entity, "id", "createdAt", "updatedAt", "seller");
+        BeanUtils.copyProperties(dto, entity, "id", "createdAt", "updatedAt", "seller","images");
     }
 }

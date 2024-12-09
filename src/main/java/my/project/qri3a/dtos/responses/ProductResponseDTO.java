@@ -5,6 +5,8 @@ import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductCondition;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -18,6 +20,6 @@ public class ProductResponseDTO {
     private ProductCondition condition;
     private UUID sellerId;
     private String sellerName;
-    private String createdAt;
-    private String updatedAt;
+    private List<ImageResponseDTO> images;
+    private LocalDateTime createdAt;
 }

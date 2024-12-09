@@ -67,9 +67,6 @@ public class UserServiceImpl implements UserService {
             throw new ResourceAlreadyExistsException("User with email " + user.getEmail() + " already exists");
         }
 
-        // Valider les champs de l'utilisateur
-        validateUser(user);
-
         // Encoder le mot de passe
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
@@ -97,23 +94,35 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        // Mettre à jour les champs de l'utilisateur à partir du DTO
+        // Mettre à jour les champs de l'utilisateur à partir du DTO, en excluant 'password' et 'newPassword'
         userMapper.updateEntityFromDTO(userRequestDTO, user);
 
-        // Si le mot de passe est présent, l'encoder
-        if (userRequestDTO.getPassword() != null && !userRequestDTO.getPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(userRequestDTO.getPassword()));
+        // Vérifier et mettre à jour le mot de passe si 'newPassword' est fourni
+        if (userRequestDTO.getNewPassword() != null && !userRequestDTO.getNewPassword().isEmpty()) {
+            // Vérifier que 'password' (ancien mot de passe) est fourni
+            if (userRequestDTO.getPassword() == null || userRequestDTO.getPassword().isEmpty()) {
+                log.error("Service: Current password is required to set a new password for user ID: {}", userID);
+                throw new ResourceNotValidException("Current password is required to set a new password.");
+            }
+
+            // Vérifier que le 'password' fourni correspond au mot de passe stocké
+            if (!passwordEncoder.matches(userRequestDTO.getPassword(), user.getPassword())) {
+                log.error("Service: Current password is incorrect for user ID: {}", userID);
+                throw new ResourceNotValidException("Current password is incorrect.");
+            }
+
+
+            // Mettre à jour le mot de passe (encodé)
+            user.setPassword(passwordEncoder.encode(userRequestDTO.getNewPassword()));
             log.info("Service: Password updated for user ID: {}", userID);
         }
-
-        // Valider les champs de l'utilisateur
-        validateUser(user);
 
         // Enregistrer l'utilisateur mis à jour
         User updatedUser = userRepository.save(user);
         log.info("Service: User updated with ID: {}", updatedUser.getId());
         return updatedUser;
     }
+
 
     @Override
     public void deleteUser(UUID userID) throws ResourceNotFoundException {
@@ -127,43 +136,6 @@ public class UserServiceImpl implements UserService {
         log.info("Service: User deleted with ID: {}", userID);
     }
 
-    /**
-     * Méthode de validation des champs de l'utilisateur.
-     */
-    private void validateUser(User user) throws ResourceNotValidException {
-        if (user.getName() == null || user.getName().isEmpty()) {
-            log.error("User name is null or empty");
-            throw new ResourceNotValidException("User name is mandatory");
-        }
-        if (user.getEmail() == null || user.getEmail().isEmpty()) {
-            log.error("User email is null or empty");
-            throw new ResourceNotValidException("User email is mandatory");
-        }
-        if (user.getPassword() == null || user.getPassword().isEmpty()) {
-            log.error("User password is null or empty");
-            throw new ResourceNotValidException("User password is mandatory");
-        }
-        if (user.getPassword().length() < 6) {
-            log.error("User password is too short");
-            throw new ResourceNotValidException("User password must be at least 6 characters");
-        }
-        if (user.getPhoneNumber() == null || user.getPhoneNumber().isEmpty()) {
-            log.error("User phone number is null or empty");
-            throw new ResourceNotValidException("User phone number is mandatory");
-        }
-        if (user.getAddress() == null || user.getAddress().isEmpty()) {
-            log.error("User address is null or empty");
-            throw new ResourceNotValidException("User address is mandatory");
-        }
-        if (user.getRole() == null) {
-            log.error("User role is null");
-            throw new ResourceNotValidException("User role is mandatory");
-        }
-        if (user.getRating() != null && (user.getRating() < 0 || user.getRating() > 5)) {
-            log.error("User rating is invalid: {}", user.getRating());
-            throw new ResourceNotValidException("User rating must be between 0 and 5");
-        }
-    }
 
 
     private void validateSortParameters(Pageable pageable) throws ResourceNotValidException {

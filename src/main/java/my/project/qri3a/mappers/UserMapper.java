@@ -14,8 +14,7 @@ public class UserMapper {
             return null;
         }
         User user = new User();
-        BeanUtils.copyProperties(dto, user);
-        // Handle any special mappings here if necessary
+        BeanUtils.copyProperties(dto, user, "password", "newPassword");
         return user;
     }
 
@@ -25,8 +24,7 @@ public class UserMapper {
             return null;
         }
         UserResponseDTO dto = new UserResponseDTO();
-        BeanUtils.copyProperties(user, dto);
-        // Handle any special mappings here if necessary
+        BeanUtils.copyProperties(user, dto, "password", "newPassword");
         return dto;
     }
 
@@ -35,8 +33,7 @@ public class UserMapper {
         if (dto == null || user == null) {
             return;
         }
-        BeanUtils.copyProperties(dto, user, getNullPropertyNames(dto));
-        // The third parameter excludes null properties to avoid overwriting existing values with null
+        BeanUtils.copyProperties(dto, user, "id", "createdAt", "updatedAt", "role", "password", "newPassword");
     }
 
     /**

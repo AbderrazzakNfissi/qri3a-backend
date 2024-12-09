@@ -5,6 +5,7 @@ import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductCondition;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 public class ProductSpecifications {
@@ -27,5 +28,15 @@ public class ProductSpecifications {
     public static Specification<Product> hasSellerId(UUID sellerId) {
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.equal(root.join("seller").get("id"), sellerId);
+    }
+
+    public static Specification<Product> hasMinPrice(BigDecimal minPrice) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.greaterThanOrEqualTo(root.get("price"), minPrice);
+    }
+
+    public static Specification<Product> hasMaxPrice(BigDecimal maxPrice) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.lessThanOrEqualTo(root.get("price"), maxPrice);
     }
 }

@@ -1,30 +1,26 @@
 package my.project.qri3a.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductCondition;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "products")
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Product {
 
     @Id
@@ -35,12 +31,13 @@ public class Product {
     @Column(nullable = false)
     private String title;
 
-    @Lob
+    @Column(nullable = false, length = 1000)
     private String description;
 
     @Column(nullable = false)
     private BigDecimal price;
 
+    @Column(nullable = false)
     private String location;
 
     @Enumerated(EnumType.STRING)
@@ -51,40 +48,28 @@ public class Product {
     @Column(nullable = false)
     private ProductCondition condition;
 
-
-    // Relation Many-to-One : Vendeur
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id")
     @JsonIgnore
     private User seller;
 
-    // Relation Many-to-Many : Wishlist par les utilisateurs
-    @ManyToMany(mappedBy = "wishlist")
-    @JsonIgnore
-    private Set<User> wishlistedBy = new HashSet<>();
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Image> images = new ArrayList<>();
 
+    // Méthodes pour ajouter et retirer des images
+    public void addImage(Image image) {
+        images.add(image);
+        image.setProduct(this);
+    }
+
+    public void removeImage(Image image) {
+        images.remove(image);
+        image.setProduct(null);
+    }
 
     @CreationTimestamp
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime createdAt;
 
-
     @UpdateTimestamp
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime updatedAt;
-
-
-    public void setSeller(User seller) {
-        this.seller = seller;
-    }
-
-    public void addWishlistedBy(User user) {
-        wishlistedBy.add(user);
-    }
-
-    public void removeWishlistedBy(User user) {
-        wishlistedBy.remove(user);
-    }
-
-
 }

@@ -48,7 +48,6 @@ public class User {
     private String password;
 
     @NotBlank(message = "Phone number is mandatory")
-    @Pattern(regexp = "^\\+?[0-9 .()-]{7,25}$", message = "Phone number is invalid")
     @Column(nullable = false)
     private String phoneNumber;
 

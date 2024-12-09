@@ -90,20 +90,11 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponseDTO>> updateUser(@PathVariable(value = "id") UUID userID,
                                                                    @Valid @RequestBody UserRequestDTO userRequestDTO) throws ResourceNotFoundException, ResourceNotValidException {
         log.info("Controller: Updating user with ID: {}", userID);
-        try {
-            User updatedUser = userService.updateUser(userID, userRequestDTO);
-            UserResponseDTO responseDTO = userMapper.toDTO(updatedUser);
-            ApiResponse<UserResponseDTO> response = new ApiResponse<>(responseDTO, "User updated successfully.", HttpStatus.OK.value());
-            return ResponseEntity.ok(response);
-        } catch (ResourceNotFoundException ex) {
-            log.error("Error updating user: {}", ex.getMessage());
-            ApiResponse<UserResponseDTO> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.NOT_FOUND.value());
-            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-        } catch (ResourceNotValidException ex) {
-            log.error("Validation error updating user: {}", ex.getMessage());
-            ApiResponse<UserResponseDTO> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.FORBIDDEN.value());
-            return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
-        }
+
+        User updatedUser = userService.updateUser(userID, userRequestDTO);
+        UserResponseDTO responseDTO = userMapper.toDTO(updatedUser);
+        ApiResponse<UserResponseDTO> response = new ApiResponse<>(responseDTO, "User updated successfully.", HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
     }
 
     /**

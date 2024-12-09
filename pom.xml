@@ -70,6 +70,12 @@
 			<version>2.7.0</version>
 		</dependency>
 
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.20.18</version>
+		</dependency>
+
 
 		<dependency>
 			<groupId>org.mapstruct</groupId>
