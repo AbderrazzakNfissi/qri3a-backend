@@ -3,21 +3,18 @@ package my.project.qri3a.entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import my.project.qri3a.enums.Role;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.*;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "users")
@@ -78,7 +75,7 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "product_id")
     )
     @JsonIgnore
-    private Set<Product> wishlist = new HashSet<>();
+    private List<Product> wishlist = new ArrayList<>();
 
     @CreationTimestamp
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
@@ -88,22 +85,15 @@ public class User {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime updatedAt;
 
-
-    public void addProduct(Product product) {
-        products.add(product);
-        product.setSeller(this);
-    }
-
-    public void removeProduct(Product product) {
-        products.remove(product);
-        product.setSeller(null);
-    }
-
     public void addToWishlist(Product product) {
         wishlist.add(product);
     }
 
     public void removeFromWishlist(Product product) {
         wishlist.remove(product);
+    }
+
+    public void clearWishlist() {
+        wishlist.clear();
     }
 }

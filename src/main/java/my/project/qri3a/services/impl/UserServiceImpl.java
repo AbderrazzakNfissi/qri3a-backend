@@ -3,11 +3,13 @@ package my.project.qri3a.services.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.UserRequestDTO;
+import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
 import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
+import my.project.qri3a.mappers.ProductMapper;
 import my.project.qri3a.mappers.UserMapper;
 import my.project.qri3a.repositories.ProductRepository;
 import my.project.qri3a.repositories.UserRepository;
@@ -35,6 +37,7 @@ public class UserServiceImpl implements UserService {
     private final ProductRepository productRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final ProductMapper productMapper;
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Arrays.stream(User.class.getDeclaredFields())
             .map(Field::getName)
             .collect(Collectors.toSet());
@@ -153,47 +156,6 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    // Implémentation des nouvelles méthodes pour gérer les relations
-
-    @Override
-    public void addProductToUser(UUID userId, UUID productId) throws ResourceNotFoundException {
-        log.info("Service: Adding product with ID {} to user with ID {}", productId, userId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    log.warn("Service: User not found with ID: {}", userId);
-                    return new ResourceNotFoundException("User not found with ID " + userId);
-                });
-
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> {
-                    log.warn("Service: Product not found with ID: {}", productId);
-                    return new ResourceNotFoundException("Product not found with ID " + productId);
-                });
-
-        user.addProduct(product);
-        userRepository.save(user);
-        log.info("Service: Product with ID {} added to user with ID {}", productId, userId);
-    }
-
-    @Override
-    public void removeProductFromUser(UUID userId, UUID productId) throws ResourceNotFoundException {
-        log.info("Service: Removing product with ID {} from user with ID {}", productId, userId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    log.warn("Service: User not found with ID: {}", userId);
-                    return new ResourceNotFoundException("User not found with ID " + userId);
-                });
-
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> {
-                    log.warn("Service: Product not found with ID: {}", productId);
-                    return new ResourceNotFoundException("Product not found with ID " + productId);
-                });
-
-        user.removeProduct(product);
-        userRepository.save(user);
-        log.info("Service: Product with ID {} removed from user with ID {}", productId, userId);
-    }
 
     @Override
     public void addProductToWishlist(UUID userId, UUID productId) throws ResourceNotFoundException {
@@ -233,5 +195,42 @@ public class UserServiceImpl implements UserService {
         user.removeFromWishlist(product);
         userRepository.save(user);
         log.info("Service: Product with ID {} removed from wishlist of user with ID {}", productId, userId);
+    }
+
+    /**
+     * Supprime tous les produits de la wishlist de l'utilisateur.
+     *
+     * @param userId ID de l'utilisateur
+     * @throws ResourceNotFoundException si l'utilisateur n'est pas trouvé
+     */
+    @Override
+    public void clearWishlist(UUID userId) throws ResourceNotFoundException {
+        log.info("Service: Clearing wishlist for user with ID {}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.warn("Service: User not found with ID: {}", userId);
+                    return new ResourceNotFoundException("User not found with ID " + userId);
+                });
+
+        user.clearWishlist();
+        userRepository.save(user);
+        log.info("Service: Wishlist cleared for user with ID {}", userId);
+    }
+
+    @Override
+    public List<ProductResponseDTO> getWishlist(UUID userId) throws ResourceNotFoundException {
+        log.info("Service: Fetching wishlist for user with ID {}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.warn("Service: User not found with ID: {}", userId);
+                    return new ResourceNotFoundException("User not found with ID " + userId);
+                });
+
+        List<Product> wishlistProducts = user.getWishlist();
+        log.info("Service: User with ID {} has {} products in wishlist", userId, wishlistProducts.size());
+
+        return wishlistProducts.stream()
+                .map(productMapper::toDTO)
+                .collect(Collectors.toList());
     }
 }

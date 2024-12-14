@@ -53,8 +53,11 @@ public class Product {
     @JsonIgnore
     private User seller;
 
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Image> images = new ArrayList<>();
+
+
 
     // Méthodes pour ajouter et retirer des images
     public void addImage(Image image) {
