@@ -3,6 +3,7 @@ package my.project.qri3a.controllers;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserRequestDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.dtos.responses.UserResponseDTO;
@@ -49,17 +50,12 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponseDTO>> getUserById(@PathVariable(value = "id") UUID userID) throws ResourceNotFoundException{
         log.info("Controller: Fetching user with ID: {}", userID);
-        try {
+
             User user = userService.getUserById(userID)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found with ID " + userID));
             UserResponseDTO responseDTO = userMapper.toDTO(user);
             ApiResponse<UserResponseDTO> response = new ApiResponse<>(responseDTO, "User fetched successfully.", HttpStatus.OK.value());
             return ResponseEntity.ok(response);
-        } catch (ResourceNotFoundException ex) {
-            log.error("Error fetching user: {}", ex.getMessage());
-            ApiResponse<UserResponseDTO> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.NOT_FOUND.value());
-            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-        }
     }
 
     /**
@@ -69,6 +65,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponseDTO>> createUser(@Valid @RequestBody UserRequestDTO userRequestDTO)
             throws ResourceAlreadyExistsException, ResourceNotValidException{
         log.info("Controller: Creating new user with email: {}", userRequestDTO.getEmail());
+
         try {
             User user = userMapper.toEntity(userRequestDTO);
             User createdUser = userService.createUser(user);
@@ -91,7 +88,7 @@ public class UserController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponseDTO>> updateUser(@PathVariable(value = "id") UUID userID,
-                                                                   @Valid @RequestBody UserRequestDTO userRequestDTO) throws ResourceNotFoundException, ResourceNotValidException {
+                                                                   @Valid @RequestBody UpdateUserRequestDTO userRequestDTO) throws ResourceNotFoundException, ResourceNotValidException {
         log.info("Controller: Updating user with ID: {}", userID);
 
         User updatedUser = userService.updateUser(userID, userRequestDTO);
@@ -104,18 +101,14 @@ public class UserController {
      * DELETE /api/v1/users/{id}
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable(value = "id") UUID userID)  throws ResourceNotFoundException{
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable(value = "id") UUID userID) throws ResourceNotFoundException {
         log.info("Controller: Deleting user with ID: {}", userID);
-        try {
-            userService.deleteUser(userID);
-            ApiResponse<Void> response = new ApiResponse<>(null, "User deleted successfully.", HttpStatus.NO_CONTENT.value());
-            return ResponseEntity.noContent().build();
-        } catch (ResourceNotFoundException ex) {
-            log.error("Error deleting user: {}", ex.getMessage());
-            ApiResponse<Void> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.NOT_FOUND.value());
-            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-        }
+
+        userService.deleteUser(userID);
+        ApiResponse<Void> response = new ApiResponse<>(null, "User deleted successfully.", HttpStatus.NO_CONTENT.value());
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
     }
+
 
     /**
      * POST /api/v1/users/{userId}/wishlist/{productId}
@@ -124,15 +117,9 @@ public class UserController {
     @PostMapping("/{userId}/wishlist/{productId}")
     public ResponseEntity<ApiResponse<String>> addProductToWishlist(@PathVariable UUID userId, @PathVariable UUID productId) {
         log.info("Controller: Adding product with ID {} to wishlist of user with ID {}", productId, userId);
-        try {
             userService.addProductToWishlist(userId, productId);
             ApiResponse<String> response = new ApiResponse<>("Product added to wishlist successfully.", "Product added to wishlist successfully.", HttpStatus.OK.value());
             return ResponseEntity.ok(response);
-        } catch (ResourceNotFoundException ex) {
-            log.error("Error adding product to wishlist: {}", ex.getMessage());
-            ApiResponse<String> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.NOT_FOUND.value());
-            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-        }
     }
 
     /**
@@ -142,15 +129,11 @@ public class UserController {
     @DeleteMapping("/{userId}/wishlist/{productId}")
     public ResponseEntity<ApiResponse<String>> removeProductFromWishlist(@PathVariable UUID userId, @PathVariable UUID productId) {
         log.info("Controller: Removing product with ID {} from wishlist of user with ID {}", productId, userId);
-        try {
-            userService.removeProductFromWishlist(userId, productId);
-            ApiResponse<String> response = new ApiResponse<>("Product removed from wishlist successfully.", "Product removed from wishlist successfully.", HttpStatus.OK.value());
-            return ResponseEntity.ok(response);
-        } catch (ResourceNotFoundException ex) {
-            log.error("Error removing product from wishlist: {}", ex.getMessage());
-            ApiResponse<String> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.NOT_FOUND.value());
-            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-        }
+
+        userService.removeProductFromWishlist(userId, productId);
+        ApiResponse<String> response = new ApiResponse<>("Product removed from wishlist successfully.", "Product removed from wishlist successfully.", HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
+
     }
 
 
@@ -172,18 +155,13 @@ public class UserController {
         }
     }
 
+    //TO DO : I have to change the return type of getWishList ... to ProductInWithListDTO title, location...
     @GetMapping("/{userId}/wishlist")
     public ResponseEntity<ApiResponse<List<ProductResponseDTO>>> getWishlist(@PathVariable UUID userId) {
         log.info("Controller: Fetching wishlist for user with ID {}", userId);
-        try {
-            List<ProductResponseDTO> wishlistProducts = userService.getWishlist(userId);
-            ApiResponse<List<ProductResponseDTO>> response = new ApiResponse<>(wishlistProducts, "Wishlist fetched successfully.", HttpStatus.OK.value());
-            return ResponseEntity.ok(response);
-        } catch (ResourceNotFoundException ex) {
-            log.error("Error fetching wishlist: {}", ex.getMessage());
-            ApiResponse<List<ProductResponseDTO>> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.NOT_FOUND.value());
-            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-        }
+        List<ProductResponseDTO> wishlistProducts = userService.getWishlist(userId);
+        ApiResponse<List<ProductResponseDTO>> response = new ApiResponse<>(wishlistProducts, "Wishlist fetched successfully.", HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
     }
 
 

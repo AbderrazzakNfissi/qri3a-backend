@@ -1,10 +1,10 @@
 package my.project.qri3a.dtos.requests;
 import jakarta.validation.constraints.*;
-import my.project.qri3a.enums.Role;
 import lombok.Data;
+import my.project.qri3a.enums.Role;
 
 @Data
-public class UserRequestDTO {
+public class UpdateUserRequestDTO {
 
     @NotBlank(message = "Le nom est obligatoire")
     private String name;
@@ -16,6 +16,9 @@ public class UserRequestDTO {
     @NotBlank(message = "Le mot de passe est obligatoire")
     @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
     private String password;
+
+    @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
+    private String newPassword;
 
     @NotBlank(message = "Le numéro de téléphone est obligatoire")
     private String phoneNumber;

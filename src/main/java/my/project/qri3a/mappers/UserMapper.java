@@ -1,5 +1,6 @@
 package my.project.qri3a.mappers;
 
+import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserRequestDTO;
 import my.project.qri3a.dtos.responses.UserResponseDTO;
 import my.project.qri3a.entities.User;
@@ -14,7 +15,7 @@ public class UserMapper {
             return null;
         }
         User user = new User();
-        BeanUtils.copyProperties(dto, user, "password", "newPassword");
+        BeanUtils.copyProperties(dto, user);
         return user;
     }
 
@@ -24,7 +25,7 @@ public class UserMapper {
             return null;
         }
         UserResponseDTO dto = new UserResponseDTO();
-        BeanUtils.copyProperties(user, dto, "password", "newPassword");
+        BeanUtils.copyProperties(user, dto);
         return dto;
     }
 
@@ -35,6 +36,15 @@ public class UserMapper {
         }
         BeanUtils.copyProperties(dto, user, "id", "createdAt", "updatedAt", "role", "password", "newPassword");
     }
+
+    public void updateEntityFromDTO(UpdateUserRequestDTO dto, User user) {
+        if (dto == null || user == null) {
+            return;
+        }
+        BeanUtils.copyProperties(dto, user, "id", "createdAt", "updatedAt","password","newPassword");
+    }
+
+
 
     /**
      * Utility method to get null property names for exclusion during copy.

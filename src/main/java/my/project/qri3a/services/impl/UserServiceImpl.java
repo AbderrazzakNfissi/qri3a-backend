@@ -2,6 +2,7 @@ package my.project.qri3a.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserRequestDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.entities.Product;
@@ -80,33 +81,32 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateUser(UUID userID, UserRequestDTO userRequestDTO) throws ResourceNotFoundException, ResourceNotValidException {
+    public User updateUser(UUID userID, UpdateUserRequestDTO userRequestDTO) throws ResourceNotFoundException, ResourceNotValidException {
         log.info("Service: Updating user with ID: {}", userID);
 
         User user = userRepository.findById(userID)
                 .orElseThrow(() -> {
-                    log.warn("Service: User not found with ID: {}", userID);
+                    log.warn("-> Service: User not found with ID: {}", userID);
                     return new ResourceNotFoundException("User not found with ID " + userID);
                 });
 
-        // Vérifier si l'email est mis à jour et s'il est unique
         if (!user.getEmail().equals(userRequestDTO.getEmail())) {
             if (userRepository.findByEmail(userRequestDTO.getEmail()).isPresent()) {
-                log.error("User with email {} already exists", userRequestDTO.getEmail());
+                log.warn("User with email {} already exists", userRequestDTO.getEmail());
                 throw new ResourceAlreadyExistsException("User with email " + userRequestDTO.getEmail() + " already exists");
             }
         }
 
-        // Mettre à jour les champs de l'utilisateur à partir du DTO, en excluant 'password' et 'newPassword'
         userMapper.updateEntityFromDTO(userRequestDTO, user);
 
-        // Vérifier et mettre à jour le mot de passe si 'newPassword' est fourni
         if (userRequestDTO.getNewPassword() != null && !userRequestDTO.getNewPassword().isEmpty()) {
             // Vérifier que 'password' (ancien mot de passe) est fourni
+
             if (userRequestDTO.getPassword() == null || userRequestDTO.getPassword().isEmpty()) {
                 log.error("Service: Current password is required to set a new password for user ID: {}", userID);
                 throw new ResourceNotValidException("Current password is required to set a new password.");
             }
+
 
             // Vérifier que le 'password' fourni correspond au mot de passe stocké
             if (!passwordEncoder.matches(userRequestDTO.getPassword(), user.getPassword())) {
@@ -162,20 +162,25 @@ public class UserServiceImpl implements UserService {
         log.info("Service: Adding product with ID {} to wishlist of user with ID {}", productId, userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
-                    log.warn("Service: User not found with ID: {}", userId);
+                    log.warn("+ Service: User not found with ID: {}", userId);
                     return new ResourceNotFoundException("User not found with ID " + userId);
                 });
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> {
-                    log.warn("Service: Product not found with ID: {}", productId);
+                    log.warn("+ Service: Product not found with ID: {}", productId);
                     return new ResourceNotFoundException("Product not found with ID " + productId);
                 });
 
-        user.addToWishlist(product);
-        userRepository.save(user);
-        log.info("Service: Product with ID {} added to wishlist of user with ID {}", productId, userId);
+        if (!user.getWishlist().contains(product)) {
+            user.addToWishlist(product);
+            userRepository.save(user);
+            log.info("+ Service: Product with ID {} added to wishlist of user with ID {}", productId, userId);
+        } else {
+            log.info("+ Service: Product with ID {} is already in the wishlist of user with ID {}", productId, userId);
+        }
     }
+
 
     @Override
     public void removeProductFromWishlist(UUID userId, UUID productId) throws ResourceNotFoundException {
