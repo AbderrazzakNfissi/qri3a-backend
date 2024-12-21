@@ -31,6 +31,9 @@ public class Product {
     @Column(nullable = false)
     private String title;
 
+    @Column(nullable = true)
+    private String city;
+
     @Column(nullable = false, length = 1000)
     private String description;
 

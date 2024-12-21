@@ -1,4 +1,5 @@
 package my.project.qri3a.dtos.requests;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import my.project.qri3a.enums.ProductCategory;
@@ -23,6 +24,9 @@ public class ProductRequestDTO {
 
     @NotBlank(message = "Location is mandatory")
     private String location;
+
+    @NotBlank(message = "City is mandatory")
+    private String city;
 
     @NotNull(message = "Category is mandatory")
     private ProductCategory category;

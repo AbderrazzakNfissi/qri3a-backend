@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
 import my.project.qri3a.dtos.responses.ImageResponseDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
+import my.project.qri3a.dtos.responses.UserResponseDTO;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
 import org.springframework.beans.BeanUtils;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 @Component
 public class ProductMapper {
     private final ImageMapper imageMapper;
+    private final UserMapper userMapper;
 
     public ProductResponseDTO toDTO(Product product) {
         if (product == null) {
@@ -29,9 +31,9 @@ public class ProductMapper {
 
         // Map seller information
         User seller = product.getSeller();
-        if (seller != null) {
-            dto.setSellerId(seller.getId());
-            dto.setSellerName(seller.getName()); // Assuming User has a getName() method
+        UserResponseDTO userResponseDTO = userMapper.toDTO(seller);
+        if (userResponseDTO != null) {
+            dto.setUser(userResponseDTO);
         }
 
         // Map images

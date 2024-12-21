@@ -17,9 +17,9 @@ public class ProductResponseDTO {
     private BigDecimal price;
     private String location;
     private ProductCategory category;
+    private String city;
     private ProductCondition condition;
-    private UUID sellerId;
-    private String sellerName;
+    private UserResponseDTO user;
     private List<ImageResponseDTO> images;
     private LocalDateTime createdAt;
 }
