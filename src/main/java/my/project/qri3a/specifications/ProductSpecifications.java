@@ -39,4 +39,9 @@ public class ProductSpecifications {
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.lessThanOrEqualTo(root.get("price"), maxPrice);
     }
+
+    public static Specification<Product> hasCity(String city) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("city"), city);
+    }
 }

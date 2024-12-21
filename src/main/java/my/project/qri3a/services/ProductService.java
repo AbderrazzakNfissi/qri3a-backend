@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public interface ProductService {
-    Page<ProductResponseDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice,BigDecimal maxPrice) throws ResourceNotValidException;
+    Page<ProductResponseDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice,BigDecimal maxPrice,String city) throws ResourceNotValidException;
     ProductResponseDTO getProductById(UUID productId) throws ResourceNotFoundException;
     ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO) throws ResourceNotFoundException, ResourceNotValidException;
     ProductResponseDTO updateProduct(UUID productId, ProductRequestDTO productRequestDTO) throws ResourceNotFoundException, ResourceNotValidException;

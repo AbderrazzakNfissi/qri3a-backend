@@ -18,8 +18,9 @@ public class ProductResponseDTO {
     private String location;
     private ProductCategory category;
     private String city;
+    private String phone;
     private ProductCondition condition;
-    private UserResponseDTO user;
+    private UserDTO user;
     private List<ImageResponseDTO> images;
     private LocalDateTime createdAt;
 }

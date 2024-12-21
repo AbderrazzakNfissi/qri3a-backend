@@ -35,9 +35,9 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
 
     @Override
-    public Page<ProductResponseDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice) throws ResourceNotValidException {
-        log.info("Service: Fetching all products with filters - category: {}, location: {}, condition: {}, sellerId: {}, minPrice: {}, maxPrice: {}",
-                category, location, condition, sellerId, minPrice, maxPrice);
+    public Page<ProductResponseDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice, String city) throws ResourceNotValidException {
+        log.info("Service: Fetching all products with filters - category: {}, location: {}, condition: {}, sellerId: {}, minPrice: {}, maxPrice: {}, city{}",
+                category, location, condition, sellerId, minPrice, maxPrice,city);
 
         Specification<Product> spec = Specification.where(null);
 
@@ -73,6 +73,10 @@ public class ProductServiceImpl implements ProductService {
 
         if (maxPrice != null) {
             spec = spec.and(ProductSpecifications.hasMaxPrice(maxPrice));
+        }
+
+        if (city != null) {
+            spec = spec.and(ProductSpecifications.hasCity(city));
         }
 
         if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {

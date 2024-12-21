@@ -25,6 +25,9 @@ public class ProductRequestDTO {
     @NotBlank(message = "Location is mandatory")
     private String location;
 
+    @NotBlank(message = "phone is mandatory")
+    private String phone;
+
     @NotBlank(message = "City is mandatory")
     private String city;
 

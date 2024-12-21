@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
 import my.project.qri3a.dtos.responses.ImageResponseDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
+import my.project.qri3a.dtos.responses.UserDTO;
 import my.project.qri3a.dtos.responses.UserResponseDTO;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
@@ -31,9 +32,9 @@ public class ProductMapper {
 
         // Map seller information
         User seller = product.getSeller();
-        UserResponseDTO userResponseDTO = userMapper.toDTO(seller);
-        if (userResponseDTO != null) {
-            dto.setUser(userResponseDTO);
+        UserDTO userDTO = userMapper.toUserDTO(seller);
+        if (userDTO != null) {
+            dto.setUser(userDTO);
         }
 
         // Map images

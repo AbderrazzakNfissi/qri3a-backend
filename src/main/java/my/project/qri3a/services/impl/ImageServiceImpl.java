@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -139,6 +140,68 @@ public class ImageServiceImpl implements ImageService {
         log.info("Service: Image with ID: {} deleted from product with ID: {}", imageId, productId);
     }
 
+    @Override
+    public List<ImageResponseDTO> uploadImages(UUID productId, List<MultipartFile> files) throws ResourceNotFoundException, IOException, ResourceNotValidException {
+        log.info("Service: Uploading {} images for product '{}'", files.size(), productId);
+
+        // Vérifier que le produit existe
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + productId));
+
+        // Validation des fichiers
+        if (files.isEmpty()) {
+            throw new ResourceNotValidException("No files provided.");
+        }
+
+        if (files.size() > 4) {
+            throw new ResourceNotValidException("Cannot upload more than 4 images at once.");
+        }
+
+        // Vérifier le nombre d'images déjà associées au produit
+        long existingImageCount = imageRepository.countByProductId(productId);
+        if (existingImageCount + files.size() > 4) {
+            throw new ResourceNotValidException("Uploading these images would exceed the maximum of 4 images per product.");
+        }
+
+        List<ImageResponseDTO> uploadedImages = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) {
+                throw new ResourceNotValidException("One of the files is empty.");
+            }
+
+            if (!isImageFile(file)) {
+                throw new ResourceNotValidException("Only image files are allowed.");
+            }
+
+            // Générer un nom unique pour le fichier
+            String filename = generateUniqueFileName(file.getOriginalFilename());
+
+            // Télécharger le fichier sur S3
+            String fileUrl = s3Service.uploadFile(file, filename);
+            log.info("Image uploaded successfully and the URL is: {}", fileUrl);
+
+            // Créer une entité Image
+            Image image = Image.builder()
+                    .url(fileUrl)
+                    .product(product)
+                    .build();
+
+            // Ajouter l'image au produit
+            product.addImage(image);
+
+            // Sauvegarder l'image
+            Image savedImage = imageRepository.save(image);
+            uploadedImages.add(imageMapper.toDTO(savedImage));
+        }
+
+        // Sauvegarder le produit avec les nouvelles images
+        productRepository.save(product);
+        log.info("Service: {} images uploaded successfully for product '{}'", uploadedImages.size(), productId);
+
+        return uploadedImages;
+    }
+
     private boolean isImageFile(MultipartFile file) {
         String contentType = file.getContentType();
         return (
@@ -160,4 +223,5 @@ public class ImageServiceImpl implements ImageService {
     private String extractFileName(String imageUrl) {
         return imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
     }
+
 }

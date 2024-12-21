@@ -79,4 +79,21 @@ public class ImageController {
         ApiResponse<Void> response = new ApiResponse<>(null, "Image deleted successfully.", HttpStatus.NO_CONTENT.value());
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/p/{productId}/images")
+    public ResponseEntity<ApiResponse<List<ImageResponseDTO>>> uploadImages(
+            @PathVariable UUID productId,
+            @RequestParam("images") List<MultipartFile> images
+    ) throws ResourceNotFoundException, IOException, ResourceNotValidException {
+        log.info("Controller: Uploading {} images for product '{}'", images.size(), productId);
+
+        List<ImageResponseDTO> uploadedImages = imageService.uploadImages(productId, images);
+
+        ApiResponse<List<ImageResponseDTO>> response = new ApiResponse<>(
+                uploadedImages,
+                "Images uploaded successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
 }

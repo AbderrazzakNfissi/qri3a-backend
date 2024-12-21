@@ -22,4 +22,15 @@ public interface ImageService {
      List<ImageResponseDTO> getImages(UUID productId) throws ResourceNotFoundException;
      ImageResponseDTO uploadImage(UUID productId, MultipartFile file) throws ResourceNotFoundException, IOException, ResourceNotValidException;
      void deleteImage(UUID productId, UUID imageId) throws ResourceNotFoundException;
+     /**
+      * Upload multiple images for a specific product.
+      *
+      * @param productId ID du produit
+      * @param files Liste de fichiers Multipart à télécharger
+      * @return Liste de ImageResponseDTO représentant les images téléchargées
+      * @throws ResourceNotFoundException si le produit n'est pas trouvé
+      * @throws ResourceNotValidException si les fichiers ne sont pas valides ou dépassent la limite
+      * @throws IOException en cas d'erreur lors du téléchargement
+      */
+     List<ImageResponseDTO> uploadImages(UUID productId, List<MultipartFile> files) throws ResourceNotFoundException, IOException, ResourceNotValidException;
 }
