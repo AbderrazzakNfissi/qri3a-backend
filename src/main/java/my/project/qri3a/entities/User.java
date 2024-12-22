@@ -45,11 +45,11 @@ public class User {
     private String password;
 
     @NotBlank(message = "Phone number is mandatory")
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String phoneNumber;
 
     @NotBlank(message = "Address is mandatory")
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String address;
 
 
