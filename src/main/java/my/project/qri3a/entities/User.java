@@ -12,6 +12,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import my.project.qri3a.enums.Role;
 import org.hibernate.annotations.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -22,15 +24,14 @@ import java.util.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User implements UserDetails {
 
     @Id
     @UuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @NotBlank(message = "Name is mandatory")
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String name;
 
     @NotBlank(message = "Email is mandatory")
@@ -44,11 +45,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @NotBlank(message = "Phone number is mandatory")
     @Column(nullable = true)
     private String phoneNumber;
 
-    @NotBlank(message = "Address is mandatory")
     @Column(nullable = true)
     private String address;
 
@@ -95,5 +94,44 @@ public class User {
 
     public void clearWishlist() {
         wishlist.clear();
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        //return role.getAuthorities(); //ADDED THIS
+        return null;
+    }
+
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+
+    @Override
+    public String getPassword() {
+        return password;
     }
 }

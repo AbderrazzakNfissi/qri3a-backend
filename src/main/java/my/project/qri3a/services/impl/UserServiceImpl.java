@@ -2,9 +2,7 @@ package my.project.qri3a.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import my.project.qri3a.dtos.requests.CredentialsDTO;
 import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
-import my.project.qri3a.dtos.responses.LoggedInDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
@@ -45,37 +43,6 @@ public class UserServiceImpl implements UserService {
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Arrays.stream(User.class.getDeclaredFields())
             .map(Field::getName)
             .collect(Collectors.toSet());
-
-
-    @Override
-    public LoggedInDTO login(CredentialsDTO credentials) throws ResourceNotFoundException, ResourceNotValidException {
-        User user = userRepository.findByEmail(credentials.email())
-                                  .orElseThrow(() -> new ResourceNotFoundException("User not found with email " + credentials.email()));
-
-        if(passwordEncoder.matches(CharBuffer.wrap(credentials.password()),user.getPassword())){
-          return userMapper.toLoggedInDTO(user);
-        }
-        throw new ResourceNotValidException("Invalid Password");
-    }
-
-    @Override
-    public LoggedInDTO register(CredentialsDTO credentials) throws ResourceNotFoundException, ResourceNotValidException {
-
-        Optional<User> optionalUser = userRepository.findByEmail(credentials.email());
-        if(optionalUser.isPresent()){
-            throw new ResourceNotValidException("User with email " + credentials.email() + " already exists");
-        }
-        User userToRegister = userMapper.toEntity(credentials);
-        userToRegister.setName("Default User");
-        userToRegister.setAddress("Default Address");
-        userToRegister.setLocation("Default Location");
-        userToRegister.setPhoneNumber("0600000000");
-        userToRegister.setRole(Role.SELLER);
-        userToRegister.setRating(5F);
-        userToRegister.setPassword(passwordEncoder.encode(CharBuffer.wrap(credentials.password())));
-        User savedUser = userRepository.save(userToRegister);
-        return userMapper.toLoggedInDTO(savedUser);
-    }
 
     @Override
     public Page<User> getAllUsers(Pageable pageable) throws ResourceNotValidException {

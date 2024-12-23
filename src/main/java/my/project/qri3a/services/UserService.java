@@ -1,11 +1,7 @@
 package my.project.qri3a.services;
 
-import my.project.qri3a.dtos.requests.CredentialsDTO;
 import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
-import my.project.qri3a.dtos.requests.UserRequestDTO;
-import my.project.qri3a.dtos.responses.LoggedInDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
-import my.project.qri3a.dtos.responses.UserDTO;
 import my.project.qri3a.entities.User;
 import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
@@ -27,7 +23,4 @@ public interface UserService {
     void removeProductFromWishlist(UUID userId, UUID productId) throws ResourceNotFoundException;
     void clearWishlist(UUID userId) throws ResourceNotFoundException;
     List<ProductResponseDTO> getWishlist(UUID userId) throws ResourceNotFoundException;
-    LoggedInDTO login(CredentialsDTO credentials) throws ResourceNotFoundException, ResourceNotValidException;
-    LoggedInDTO register(CredentialsDTO credentials) throws ResourceNotFoundException, ResourceNotValidException;
-
 }

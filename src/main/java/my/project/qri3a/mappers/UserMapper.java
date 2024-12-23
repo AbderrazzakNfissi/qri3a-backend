@@ -1,9 +1,7 @@
 package my.project.qri3a.mappers;
 
-import my.project.qri3a.dtos.requests.CredentialsDTO;
 import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserRequestDTO;
-import my.project.qri3a.dtos.responses.LoggedInDTO;
 import my.project.qri3a.dtos.responses.UserDTO;
 import my.project.qri3a.dtos.responses.UserResponseDTO;
 import my.project.qri3a.entities.User;
@@ -22,14 +20,7 @@ public class UserMapper {
         return user;
     }
 
-    public User toEntity(CredentialsDTO dto) {
-        if (dto == null) {
-            return null;
-        }
-        User user = new User();
-        BeanUtils.copyProperties(dto, user,"password");
-        return user;
-    }
+
 
     public UserResponseDTO toDTO(User user) {
         if (user == null) {
@@ -40,14 +31,6 @@ public class UserMapper {
         return dto;
     }
 
-    public LoggedInDTO toLoggedInDTO(User user) {
-        if (user == null) {
-            return null;
-        }
-        LoggedInDTO dto = new LoggedInDTO();
-        BeanUtils.copyProperties(user, dto);
-        return dto;
-    }
 
     public UserDTO toUserDTO(User user) {
         if (user == null) {
