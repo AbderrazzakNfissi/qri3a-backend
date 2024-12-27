@@ -1,11 +1,11 @@
 package my.project.qri3a.services;
 
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -19,11 +19,11 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    //UserDetails Username <---> Email : you can check for it in the predifined class code
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
     @Value("${application.security.jwt.expiration}")
     private long jwtExpiration;
+    @Getter
     @Value("${application.security.jwt.refresh-token.expiration}")
     private long refreshExpiration;
 
@@ -51,6 +51,7 @@ public class JwtService {
         return Keys.hmacShaKeyFor(key);
     }
 
+    //constructs a jwt token with claims, subject, issued at and signs it with the secret key
     private String buildToken(
             Map<String, Object> extraClaims,
             UserDetails userDetails,
@@ -84,7 +85,6 @@ public class JwtService {
             UserDetails userDetails
     ){
         return buildToken(new HashMap<>(), userDetails, refreshExpiration);
-
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails){
@@ -103,4 +103,5 @@ public class JwtService {
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
+
 }

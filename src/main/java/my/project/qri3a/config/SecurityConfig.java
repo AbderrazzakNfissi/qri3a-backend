@@ -1,5 +1,6 @@
 package my.project.qri3a.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +17,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
@@ -27,7 +27,6 @@ public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final LogoutHandler logoutHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -73,10 +72,10 @@ public class SecurityConfig {
                 // Configuration de la déconnexion
                 .logout(logout -> logout
                         .logoutUrl("/api/v1/auth/logout")
-                        .addLogoutHandler(logoutHandler)
-                        .logoutSuccessHandler((request, response, authentication) ->
-                                SecurityContextHolder.clearContext()
-                        )
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            SecurityContextHolder.clearContext();
+                            response.setStatus(HttpServletResponse.SC_OK);
+                        })
                 );
 
         return http.build();

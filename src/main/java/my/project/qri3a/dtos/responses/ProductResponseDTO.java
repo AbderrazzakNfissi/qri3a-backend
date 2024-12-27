@@ -22,5 +22,5 @@ public class ProductResponseDTO {
     private ProductCondition condition;
     private UserDTO user;
     private List<ImageResponseDTO> images;
-    private LocalDateTime createdAt;
+    private String createdAt;
 }

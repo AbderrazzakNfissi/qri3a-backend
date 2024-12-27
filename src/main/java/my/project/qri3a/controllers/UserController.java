@@ -18,6 +18,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,6 +39,13 @@ public class UserController {
     @GetMapping
     public ResponseEntity<ApiResponse<Page<UserResponseDTO>>> getAllUsers(Pageable pageable) throws ResourceNotValidException {
         log.info("Controller: Fetching all users with pagination: page={}, size={}, sort={}", pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+        //Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        /*
+        if (authentication != null && authentication.isAuthenticated()) {
+            String currentPrincipalName = authentication.getName();
+            log.info("==> Controller: Fetching all users with current principal: {}", currentPrincipalName);
+        }
+        */
         Page<User> usersPage = userService.getAllUsers(pageable);
         Page<UserResponseDTO> dtoPage = usersPage.map(userMapper::toDTO);
         ApiResponse<Page<UserResponseDTO>> response = new ApiResponse<>(dtoPage, "Users fetched successfully.", HttpStatus.OK.value());

@@ -11,6 +11,10 @@ import my.project.qri3a.entities.User;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +32,7 @@ public class ProductMapper {
         ProductResponseDTO dto = new ProductResponseDTO();
 
         // Copy basic properties
-        BeanUtils.copyProperties(product, dto, "seller", "images");
+        BeanUtils.copyProperties(product, dto, "seller", "images","createdAt");
 
         // Map seller information
         User seller = product.getSeller();
@@ -42,6 +46,16 @@ public class ProductMapper {
                 .map(imageMapper::toDTO)
                 .collect(Collectors.toList());
         dto.setImages(imageDTOs);
+
+        LocalDateTime createdAt = product.getCreatedAt();
+        if (createdAt != null) {
+            // Convertir LocalDateTime en ZonedDateTime avec le fuseau horaire UTC
+            ZonedDateTime utcDateTime = createdAt.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("UTC"));
+            // Définir un format ISO 8601
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            // Appliquer le format et définir dans le DTO
+            dto.setCreatedAt(utcDateTime.format(formatter));
+        }
 
         return dto;
     }
