@@ -11,8 +11,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ImageResponseDTO {
-
     private UUID id;
     private String url;
-    private LocalDateTime createdAt;
 }

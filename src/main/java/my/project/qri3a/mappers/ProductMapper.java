@@ -2,10 +2,7 @@ package my.project.qri3a.mappers;
 
 import lombok.RequiredArgsConstructor;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
-import my.project.qri3a.dtos.responses.ImageResponseDTO;
-import my.project.qri3a.dtos.responses.ProductResponseDTO;
-import my.project.qri3a.dtos.responses.UserDTO;
-import my.project.qri3a.dtos.responses.UserResponseDTO;
+import my.project.qri3a.dtos.responses.*;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
 import org.springframework.beans.BeanUtils;
@@ -54,6 +51,45 @@ public class ProductMapper {
             // Définir un format ISO 8601
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
             // Appliquer le format et définir dans le DTO
+            dto.setCreatedAt(utcDateTime.format(formatter));
+        }
+
+        return dto;
+    }
+
+    public ProductListingDTO toProductListingDTO(Product product) {
+        if (product == null) {
+            return null;
+        }
+
+        ProductListingDTO dto = new ProductListingDTO();
+
+        // Copy basic properties, excluding "seller", "images", and "createdAt"
+        BeanUtils.copyProperties(product, dto, "seller", "images", "createdAt");
+
+        // Map images from Product to ImageResponseDTO
+        List<ImageResponseDTO> imageDTOs = product.getImages().stream()
+                .map(imageMapper::toDTO)
+                .toList();
+
+        // Check if the imageDTOs list is not empty before setting the first image
+        if (!imageDTOs.isEmpty()) {
+            dto.setImage(imageDTOs.get(0));
+        } else {
+            // Optionally, handle the case when there are no images
+            // For example, you can set a default image or leave it null
+            dto.setImage(null); // or dto.setImage(defaultImageDTO);
+        }
+
+        // Handle the creation date
+        LocalDateTime createdAt = product.getCreatedAt();
+        if (createdAt != null) {
+            // Convert LocalDateTime to ZonedDateTime with UTC timezone
+            ZonedDateTime utcDateTime = createdAt.atZone(ZoneId.systemDefault())
+                    .withZoneSameInstant(ZoneId.of("UTC"));
+            // Define ISO 8601 format
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            // Apply format and set in DTO
             dto.setCreatedAt(utcDateTime.format(formatter));
         }
 

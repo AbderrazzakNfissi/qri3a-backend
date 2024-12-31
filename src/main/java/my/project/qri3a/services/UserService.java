@@ -23,4 +23,6 @@ public interface UserService {
     void removeProductFromWishlist(UUID userId, UUID productId) throws ResourceNotFoundException;
     void clearWishlist(UUID userId) throws ResourceNotFoundException;
     List<ProductResponseDTO> getWishlist(UUID userId) throws ResourceNotFoundException;
+    User getUserByEmail(String email) throws ResourceNotFoundException;
+    List<UUID> getWishlistProductIds(UUID userId) throws ResourceNotFoundException;
 }

@@ -3,6 +3,7 @@ package my.project.qri3a.services.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
+import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
@@ -35,7 +36,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
 
     @Override
-    public Page<ProductResponseDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice, String city) throws ResourceNotValidException {
+    public Page<ProductListingDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice, String city) throws ResourceNotValidException {
         log.info("Service: Fetching all products with filters - category: {}, location: {}, condition: {}, sellerId: {}, minPrice: {}, maxPrice: {}, city{}",
                 category, location, condition, sellerId, minPrice, maxPrice,city);
 
@@ -86,7 +87,7 @@ public class ProductServiceImpl implements ProductService {
         Page<Product> productsPage = productRepository.findAll(spec, pageable);
         log.info("Service: Found {} products", productsPage.getTotalElements());
 
-        return productsPage.map(productMapper::toDTO);
+        return productsPage.map(productMapper::toProductListingDTO);
     }
 
     @Override

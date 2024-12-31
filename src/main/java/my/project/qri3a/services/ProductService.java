@@ -1,6 +1,7 @@
 package my.project.qri3a.services;
 
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
+import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
@@ -12,7 +13,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public interface ProductService {
-    Page<ProductResponseDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice,BigDecimal maxPrice,String city) throws ResourceNotValidException;
+    Page<ProductListingDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice, String city) throws ResourceNotValidException;
     ProductResponseDTO getProductById(UUID productId) throws ResourceNotFoundException;
     ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO) throws ResourceNotFoundException, ResourceNotValidException;
     ProductResponseDTO updateProduct(UUID productId, ProductRequestDTO productRequestDTO) throws ResourceNotFoundException, ResourceNotValidException;

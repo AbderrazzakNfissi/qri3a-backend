@@ -118,59 +118,6 @@ public class UserController {
     }
 
 
-    /**
-     * POST /api/v1/users/{userId}/wishlist/{productId}
-     * Ajouter un produit à la wishlist de l'utilisateur
-     */
-    @PostMapping("/{userId}/wishlist/{productId}")
-    public ResponseEntity<ApiResponse<String>> addProductToWishlist(@PathVariable UUID userId, @PathVariable UUID productId) {
-        log.info("Controller: Adding product with ID {} to wishlist of user with ID {}", productId, userId);
-            userService.addProductToWishlist(userId, productId);
-            ApiResponse<String> response = new ApiResponse<>("Product added to wishlist successfully.", "Product added to wishlist successfully.", HttpStatus.OK.value());
-            return ResponseEntity.ok(response);
-    }
-
-    /**
-     * DELETE /api/v1/users/{userId}/wishlist/{productId}
-     * Retirer un produit de la wishlist de l'utilisateur
-     */
-    @DeleteMapping("/{userId}/wishlist/{productId}")
-    public ResponseEntity<ApiResponse<String>> removeProductFromWishlist(@PathVariable UUID userId, @PathVariable UUID productId) {
-        log.info("Controller: Removing product with ID {} from wishlist of user with ID {}", productId, userId);
-
-        userService.removeProductFromWishlist(userId, productId);
-        ApiResponse<String> response = new ApiResponse<>("Product removed from wishlist successfully.", "Product removed from wishlist successfully.", HttpStatus.OK.value());
-        return ResponseEntity.ok(response);
-
-    }
-
-
-    /**
-     * DELETE /api/v1/users/{userId}/wishlist
-     * Supprimer tous les produits de la wishlist de l'utilisateur
-     */
-    @DeleteMapping("/{userId}/wishlist")
-    public ResponseEntity<ApiResponse<String>> clearWishlist(@PathVariable UUID userId) {
-        log.info("Controller: Clearing wishlist for user with ID {}", userId);
-        try {
-            userService.clearWishlist(userId);
-            ApiResponse<String> response = new ApiResponse<>("Wishlist cleared successfully.", "All products removed from wishlist.", HttpStatus.OK.value());
-            return ResponseEntity.ok(response);
-        } catch (ResourceNotFoundException ex) {
-            log.error("Error clearing wishlist: {}", ex.getMessage());
-            ApiResponse<String> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.NOT_FOUND.value());
-            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-        }
-    }
-
-    //TO DO : I have to change the return type of getWishList ... to ProductInWithListDTO title, location...
-    @GetMapping("/{userId}/wishlist")
-    public ResponseEntity<ApiResponse<List<ProductResponseDTO>>> getWishlist(@PathVariable UUID userId) {
-        log.info("Controller: Fetching wishlist for user with ID {}", userId);
-        List<ProductResponseDTO> wishlistProducts = userService.getWishlist(userId);
-        ApiResponse<List<ProductResponseDTO>> response = new ApiResponse<>(wishlistProducts, "Wishlist fetched successfully.", HttpStatus.OK.value());
-        return ResponseEntity.ok(response);
-    }
 
 
 }

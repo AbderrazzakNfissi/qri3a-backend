@@ -241,4 +241,28 @@ public class UserServiceImpl implements UserService {
     }
 
 
+
+    @Override
+    public User getUserByEmail(String email) throws ResourceNotFoundException {
+        log.info("Service: Fetching user with email: {}", email);
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.warn("Service: User not found with email: {}", email);
+                    return new ResourceNotFoundException("User not found with email " + email);
+                });
+    }
+
+    @Override
+    public List<UUID> getWishlistProductIds(UUID userId) throws ResourceNotFoundException {
+        log.info("Service: Fetching wishlist product IDs for user with ID {}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.warn("Service: User not found with ID: {}", userId);
+                    return new ResourceNotFoundException("User not found with ID " + userId);
+                });
+
+        return user.getWishlist().stream()
+                .map(Product::getId)
+                .collect(Collectors.toList());
+    }
 }

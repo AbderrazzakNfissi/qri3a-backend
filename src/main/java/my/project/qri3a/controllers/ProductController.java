@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
+import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
@@ -31,7 +32,7 @@ public class ProductController {
      * Example: /api/v1/products?page=0&size=10&sort=price,asc&category=SMARTPHONES_AND_TELEPHONES&location=Rabat&condition=NEW
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<ProductResponseDTO>>> getAllProducts(
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getAllProducts(
             Pageable pageable,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String location,
@@ -44,8 +45,8 @@ public class ProductController {
         log.info("Controller: Fetching all products with pagination: page={}, size={}, sort={}, category={}, location={}, condition={}, sellerId={}, minPrice={}, maxPrice={}, city={}",
                 pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort(), category, location, condition, sellerId, minPrice, maxPrice,city);
 
-        Page<ProductResponseDTO> productsPage = productService.getAllProducts(pageable, category, location, condition, sellerId, minPrice, maxPrice,city);
-        ApiResponse<Page<ProductResponseDTO>> response = new ApiResponse<>(productsPage, "Products fetched successfully.", HttpStatus.OK.value());
+        Page<ProductListingDTO> productsPage = productService.getAllProducts(pageable, category, location, condition, sellerId, minPrice, maxPrice,city);
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(productsPage, "Products fetched successfully.", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
 
