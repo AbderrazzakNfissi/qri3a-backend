@@ -15,10 +15,12 @@ import my.project.qri3a.mappers.ProductMapper;
 import my.project.qri3a.repositories.ProductRepository;
 import my.project.qri3a.repositories.UserRepository;
 import my.project.qri3a.services.ProductService;
+import my.project.qri3a.services.UserService;
 import my.project.qri3a.specifications.ProductSpecifications;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
@@ -34,6 +36,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final ProductMapper productMapper;
+    private final UserService userService;
 
     @Override
     public Page<ProductListingDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice, String city) throws ResourceNotValidException {
@@ -102,18 +105,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO) throws ResourceNotFoundException, ResourceNotValidException {
+    public ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO, Authentication authentication) throws ResourceNotFoundException, ResourceNotValidException {
         log.info("Service: Creating product with title: {}", productRequestDTO.getTitle());
 
-        // Vérifier que le vendeur existe
-        UUID sellerId = productRequestDTO.getSellerId();
-        User seller = userRepository.findById(sellerId)
-                .orElseThrow(() -> {
-                    log.warn("Service: Seller not found with ID: {}", sellerId);
-                    return new ResourceNotFoundException("Seller not found with ID " + sellerId);
-                });
+        String email = authentication.getName();
+        User seller = userService.getUserByEmail(email);
+        productRequestDTO.setSellerId(seller.getId());
 
-        // Mapper le DTO vers l'entité
         Product product = productMapper.toEntity(productRequestDTO);
         product.setSeller(seller);
 
@@ -164,5 +162,15 @@ public class ProductServiceImpl implements ProductService {
                 });
         productRepository.delete(product);
         log.info("Service: Product deleted with ID: {}", productId);
+    }
+
+
+    @Override
+    public Page<ProductListingDTO> getMyProducts(Authentication authentication, Pageable pageable) throws ResourceNotValidException {
+        String email = authentication.getName();
+        User seller = userService.getUserByEmail(email);
+        log.info("=> seller email: {}", seller.getEmail());
+        Page<Product> productsPage = productRepository.findBySeller(seller, pageable);
+        return productsPage.map(productMapper::toProductListingDTO);
     }
 }

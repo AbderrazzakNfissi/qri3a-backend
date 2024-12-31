@@ -14,6 +14,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -50,6 +53,8 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
+
+
     /**
      * GET /api/v1/products/{id}
      */
@@ -61,14 +66,26 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getMyProducts(
+            Pageable pageable,
+            Authentication authentication
+    ) throws ResourceNotValidException, ResourceNotFoundException {
+        Page<ProductListingDTO> myProducts = productService.getMyProducts(authentication, pageable);
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(myProducts, "Products fetched successfully.", HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
+    }
+
     /**
      * POST /api/v1/products
      */
     @PostMapping
-    public ResponseEntity<ApiResponse<ProductResponseDTO>> createProduct(@Valid @RequestBody ProductRequestDTO productRequestDTO)
+    public ResponseEntity<ApiResponse<ProductResponseDTO>> createProduct(@Valid @RequestBody ProductRequestDTO productRequestDTO,Authentication authentication)
             throws ResourceNotFoundException, ResourceNotValidException {
         log.info("Controller: Creating new product with title: {}", productRequestDTO.getTitle());
-        ProductResponseDTO createdProduct = productService.createProduct(productRequestDTO);
+
+
+        ProductResponseDTO createdProduct = productService.createProduct(productRequestDTO,authentication);
         ApiResponse<ProductResponseDTO> response = new ApiResponse<>(createdProduct, "Product created successfully.", HttpStatus.CREATED.value());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -96,4 +113,6 @@ public class ProductController {
         ApiResponse<Void> response = new ApiResponse<>(null, "Product deleted successfully.", HttpStatus.NO_CONTENT.value());
         return ResponseEntity.noContent().build();
     }
+
+
 }

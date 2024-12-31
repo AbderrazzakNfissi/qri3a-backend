@@ -17,4 +17,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     @Query("SELECT p FROM User u JOIN u.wishlist p WHERE u.id = :userId")
     Page<Product> findWishlistByUserId(@Param("userId") UUID userId, Pageable pageable);
+
+
 }
