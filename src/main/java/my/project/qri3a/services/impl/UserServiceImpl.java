@@ -3,6 +3,7 @@ package my.project.qri3a.services.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
+import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
@@ -15,10 +16,7 @@ import my.project.qri3a.mappers.UserMapper;
 import my.project.qri3a.repositories.ProductRepository;
 import my.project.qri3a.repositories.UserRepository;
 import my.project.qri3a.services.UserService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -223,23 +221,24 @@ public class UserServiceImpl implements UserService {
         log.info("Service: Wishlist cleared for user with ID {}", userId);
     }
 
-    @Override
-    public List<ProductResponseDTO> getWishlist(UUID userId) throws ResourceNotFoundException {
+    public Page<ProductListingDTO> getWishlist(UUID userId, Pageable pageable) throws ResourceNotFoundException {
         log.info("Service: Fetching wishlist for user with ID {}", userId);
+
+        // Verify that the user exists
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.warn("Service: User not found with ID: {}", userId);
                     return new ResourceNotFoundException("User not found with ID " + userId);
                 });
 
-        List<Product> wishlistProducts = user.getWishlist();
-        log.info("Service: User with ID {} has {} products in wishlist", userId, wishlistProducts.size());
+        // Fetch paginated wishlist products directly from the repository
+        Page<Product> wishlistPage = productRepository.findWishlistByUserId(userId, pageable);
+        log.info("Service: User with ID {} has {} products in wishlist (Total: {})",
+                userId, wishlistPage.getNumberOfElements(), wishlistPage.getTotalElements());
 
-        return wishlistProducts.stream()
-                .map(productMapper::toDTO)
-                .collect(Collectors.toList());
+        // Map entities to DTOs
+        return wishlistPage.map(productMapper::toProductListingDTO);
     }
-
 
 
     @Override

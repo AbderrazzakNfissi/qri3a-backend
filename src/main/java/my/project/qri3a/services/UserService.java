@@ -1,6 +1,7 @@
 package my.project.qri3a.services;
 
 import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
+import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.entities.User;
 import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
@@ -22,7 +23,7 @@ public interface UserService {
     void addProductToWishlist(UUID userId, UUID productId) throws ResourceNotFoundException;
     void removeProductFromWishlist(UUID userId, UUID productId) throws ResourceNotFoundException;
     void clearWishlist(UUID userId) throws ResourceNotFoundException;
-    List<ProductResponseDTO> getWishlist(UUID userId) throws ResourceNotFoundException;
+    Page<ProductListingDTO> getWishlist(UUID userId, Pageable pageable) throws ResourceNotFoundException;
     User getUserByEmail(String email) throws ResourceNotFoundException;
     List<UUID> getWishlistProductIds(UUID userId) throws ResourceNotFoundException;
 }

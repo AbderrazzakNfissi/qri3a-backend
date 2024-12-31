@@ -1,15 +1,20 @@
 package my.project.qri3a.controllers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.mappers.UserMapper;
 import my.project.qri3a.responses.ApiResponse;
 import my.project.qri3a.services.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -73,14 +78,23 @@ public class FavoritesController {
         }
     }
 
-    //TO DO : I have to change the return type of getWishList ... to ProductInWithListDTO title, location...
-    @GetMapping()
-    public ResponseEntity<ApiResponse<List<ProductResponseDTO>>> getWishlist(Authentication authentication) {
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getWishlist(
+            Pageable pageable,
+            Authentication authentication) {
+
         String email = authentication.getName();
         UUID userId = userService.getUserByEmail(email).getId();
         log.info("Controller: Fetching wishlist for user with email {}", email);
-        List<ProductResponseDTO> wishlistProducts = userService.getWishlist(userId);
-        ApiResponse<List<ProductResponseDTO>> response = new ApiResponse<>(wishlistProducts, "Wishlist fetched successfully.", HttpStatus.OK.value());
+
+        Page<ProductListingDTO> wishlistProducts = userService.getWishlist(userId, pageable);
+
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                wishlistProducts,
+                "Wishlist fetched successfully.",
+                HttpStatus.OK.value()
+        );
+
         return ResponseEntity.ok(response);
     }
 
