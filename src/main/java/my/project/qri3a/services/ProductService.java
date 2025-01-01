@@ -4,6 +4,7 @@ import my.project.qri3a.dtos.requests.ProductRequestDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.entities.User;
+import my.project.qri3a.exceptions.NotAuthorizedException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
 import org.springframework.data.domain.Page;
@@ -21,5 +22,5 @@ public interface ProductService {
     ProductResponseDTO updateProduct(UUID productId, ProductRequestDTO productRequestDTO) throws ResourceNotFoundException, ResourceNotValidException;
     void deleteProduct(UUID productId) throws ResourceNotFoundException;
     Page<ProductListingDTO> getMyProducts(Authentication authentication, Pageable pageable) throws ResourceNotValidException;
-
+    void deleteMyProduct(UUID productId, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException;
 }

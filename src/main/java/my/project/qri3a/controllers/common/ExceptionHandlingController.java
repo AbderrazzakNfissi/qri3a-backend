@@ -2,6 +2,7 @@ package my.project.qri3a.controllers.common;
 
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.controllers.common.error.ApiError;
+import my.project.qri3a.exceptions.NotAuthorizedException;
 import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
@@ -32,6 +33,17 @@ public class ExceptionHandlingController {
                 null
         );
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+    @ExceptionHandler(NotAuthorizedException.class)
+    public ResponseEntity<ApiError> handleNotAuthorizedException(NotAuthorizedException ex, WebRequest request) {
+        log.error("not authorized exception: {}", ex.getMessage());
+        ApiError error = new ApiError(
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
 

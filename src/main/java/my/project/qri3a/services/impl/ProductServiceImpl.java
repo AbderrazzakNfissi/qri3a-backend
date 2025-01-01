@@ -9,6 +9,7 @@ import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
 import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductCondition;
+import my.project.qri3a.exceptions.NotAuthorizedException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
 import my.project.qri3a.mappers.ProductMapper;
@@ -173,4 +174,28 @@ public class ProductServiceImpl implements ProductService {
         Page<Product> productsPage = productRepository.findBySeller(seller, pageable);
         return productsPage.map(productMapper::toProductListingDTO);
     }
+
+
+    @Override
+    public void deleteMyProduct(UUID productId, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Service: Deleting my product with ID: {}", productId);
+
+        String email = authentication.getName();
+        User seller = userService.getUserByEmail(email);
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> {
+                    log.warn("Service: Product not found with ID: {}", productId);
+                    return new ResourceNotFoundException("Product not found with ID " + productId);
+                });
+
+        if (!product.getSeller().getId().equals(seller.getId())) {
+            log.warn("Service: Unauthorized attempt to delete product with ID: {}", productId);
+            throw new NotAuthorizedException("You are not authorized to delete this product");
+        }
+
+        productRepository.delete(product);
+        log.info("Service: Product deleted with ID: {}", productId);
+    }
+
 }

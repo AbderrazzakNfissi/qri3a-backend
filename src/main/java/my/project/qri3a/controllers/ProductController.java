@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
+import my.project.qri3a.exceptions.NotAuthorizedException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
 import my.project.qri3a.responses.ApiResponse;
@@ -83,8 +84,6 @@ public class ProductController {
     public ResponseEntity<ApiResponse<ProductResponseDTO>> createProduct(@Valid @RequestBody ProductRequestDTO productRequestDTO,Authentication authentication)
             throws ResourceNotFoundException, ResourceNotValidException {
         log.info("Controller: Creating new product with title: {}", productRequestDTO.getTitle());
-
-
         ProductResponseDTO createdProduct = productService.createProduct(productRequestDTO,authentication);
         ApiResponse<ProductResponseDTO> response = new ApiResponse<>(createdProduct, "Product created successfully.", HttpStatus.CREATED.value());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -113,6 +112,18 @@ public class ProductController {
         ApiResponse<Void> response = new ApiResponse<>(null, "Product deleted successfully.", HttpStatus.NO_CONTENT.value());
         return ResponseEntity.noContent().build();
     }
+
+
+    @DeleteMapping("/my/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteMyProduct(
+            @PathVariable UUID id,
+            Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Controller: Deleting my product with ID: {}", id);
+        productService.deleteMyProduct(id, authentication);
+        ApiResponse<Void> response = new ApiResponse<>(null, "Product deleted successfully.", HttpStatus.NO_CONTENT.value());
+        return ResponseEntity.noContent().build();
+    }
+
 
 
 }
