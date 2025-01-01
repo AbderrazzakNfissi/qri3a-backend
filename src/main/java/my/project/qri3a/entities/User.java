@@ -59,7 +59,7 @@ public class User implements UserDetails {
 
 
     @Column(nullable = true)
-    private String location;
+    private String city;
 
     @NotNull(message = "Role is mandatory")
     @Enumerated(EnumType.STRING)

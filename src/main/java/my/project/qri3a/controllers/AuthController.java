@@ -5,15 +5,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import my.project.qri3a.dtos.requests.AuthenticationRequest;
-import my.project.qri3a.dtos.requests.UserRequestDTO;
+import my.project.qri3a.dtos.requests.EmailAndPasswordDTO;
 import my.project.qri3a.dtos.responses.AuthenticationResponse;
 import my.project.qri3a.services.AuthenticationService;
 import my.project.qri3a.services.JwtService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
@@ -28,9 +26,11 @@ public class AuthController {
 
 
 
+
+
     @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(
-            @Valid @RequestBody UserRequestDTO request,
+    public ResponseEntity<AuthenticationResponse> registerUserByEmailAndPassword(
+            @Valid @RequestBody EmailAndPasswordDTO request,
             HttpServletResponse response
     ) throws IOException {
         // Encode the password before registration

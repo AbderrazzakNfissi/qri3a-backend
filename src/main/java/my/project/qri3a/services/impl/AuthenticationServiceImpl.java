@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import my.project.qri3a.dtos.requests.AuthenticationRequest;
+import my.project.qri3a.dtos.requests.EmailAndPasswordDTO;
 import my.project.qri3a.dtos.requests.UserRequestDTO;
 import my.project.qri3a.dtos.responses.AuthenticationResponse;
 import my.project.qri3a.entities.User;
@@ -34,22 +35,23 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserMapper userMapper;
 
     @Override
-    public AuthenticationResponse registerUser(UserRequestDTO request) throws ResourceAlreadyExistsException {
+    public AuthenticationResponse registerUser(EmailAndPasswordDTO request) throws ResourceAlreadyExistsException {
 
         userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
             throw new ResourceAlreadyExistsException("User with email: " + request.getEmail() + " already exists.");
         });
 
-        User userToRegister = userMapper.toEntity(request);
-        User savedUser = userRepository.save(userToRegister);
-
+        User userToRegister = new User();
+        userToRegister.setEmail(request.getEmail());
+        userToRegister.setPassword(request.getPassword());
         // Initialize default user attributes
-        savedUser.setName("");
-        savedUser.setAddress("");
-        savedUser.setLocation("");
-        savedUser.setPhoneNumber("");
-        savedUser.setRole(Role.SELLER);
-        savedUser.setRating(5F);
+        userToRegister.setName("");
+        userToRegister.setAddress("");
+        userToRegister.setCity("");
+        userToRegister.setPhoneNumber("");
+        userToRegister.setRole(Role.SELLER);
+        userToRegister.setRating(5F);
+        User savedUser = userRepository.save(userToRegister);
 
         // Generate tokens
         String accessToken = jwtService.generateToken((UserDetails) savedUser);

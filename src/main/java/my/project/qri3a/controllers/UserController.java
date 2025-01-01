@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserRequestDTO;
+import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.dtos.responses.UserResponseDTO;
 import my.project.qri3a.entities.User;
@@ -67,6 +68,36 @@ public class UserController {
     }
 
     /**
+     * GET /api/v1/users/me
+     */
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserSettingsInfosDTO>> getUserMe(Authentication authentication) throws ResourceNotFoundException {
+        log.info("Controller: Fetching current authenticated user");
+
+        User user = userService.getUserMe(authentication);
+        UserSettingsInfosDTO responseDTO = userMapper.toUserSettingsInfosDTO(user);
+        ApiResponse<UserSettingsInfosDTO> response = new ApiResponse<>(
+                responseDTO,
+                "Current user fetched successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+
+    /**
+     * DELETE /api/v1/users/me
+     */
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<Void>> deleteUserMe(Authentication authentication) throws ResourceNotFoundException {
+        log.info("Controller: Deleting current authenticated user");
+
+        userService.deleteUserMe(authentication);
+        ApiResponse<Void> response = new ApiResponse<>(null, "User deleted successfully.", HttpStatus.NO_CONTENT.value());
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
+    }
+
+    /**
      * POST /api/v1/users
      */
     @PostMapping
@@ -94,17 +125,21 @@ public class UserController {
     /**
      * PUT /api/v1/users/{id}
      */
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponseDTO>> updateUser(@PathVariable(value = "id") UUID userID,
-                                                                   @Valid @RequestBody UpdateUserRequestDTO userRequestDTO) throws ResourceNotFoundException, ResourceNotValidException {
-        log.info("Controller: Updating user with ID: {}", userID);
+    @PutMapping("/update/personal-info")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updateUserInfo(
+            @Valid @RequestBody UserSettingsInfosDTO userSettingsInfosDTO,
+            Authentication authentication)
+            throws ResourceNotFoundException, ResourceNotValidException {
 
-        User updatedUser = userService.updateUser(userID, userRequestDTO);
+        User updatedUser = userService.updateUser(userSettingsInfosDTO, authentication);
         UserResponseDTO responseDTO = userMapper.toDTO(updatedUser);
-        ApiResponse<UserResponseDTO> response = new ApiResponse<>(responseDTO, "User updated successfully.", HttpStatus.OK.value());
+        ApiResponse<UserResponseDTO> response = new ApiResponse<>(
+                responseDTO,
+                "User updated successfully.",
+                HttpStatus.OK.value()
+        );
         return ResponseEntity.ok(response);
     }
-
     /**
      * DELETE /api/v1/users/{id}
      */

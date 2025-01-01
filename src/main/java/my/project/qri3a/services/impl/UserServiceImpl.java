@@ -3,6 +3,7 @@ package my.project.qri3a.services.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
+import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.entities.Product;
@@ -17,6 +18,8 @@ import my.project.qri3a.repositories.ProductRepository;
 import my.project.qri3a.repositories.UserRepository;
 import my.project.qri3a.services.UserService;
 import org.springframework.data.domain.*;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -79,50 +82,23 @@ public class UserServiceImpl implements UserService {
         return createdUser;
     }
 
-    @Override
-    public User updateUser(UUID userID, UpdateUserRequestDTO userRequestDTO) throws ResourceNotFoundException, ResourceNotValidException {
-        log.info("Service: Updating user with ID: {}", userID);
+    public User updateUser(UserSettingsInfosDTO dto, Authentication authentication)
+            throws ResourceNotFoundException, BadCredentialsException {
 
-        User user = userRepository.findById(userID)
-                .orElseThrow(() -> {
-                    log.warn("-> Service: User not found with ID: {}", userID);
-                    return new ResourceNotFoundException("User not found with ID " + userID);
-                });
+        // Vérifier si l'utilisateur authentifié a le droit de mettre à jour cet utilisateur
+        // Ceci est un exemple, ajustez selon vos besoins
+        User currentUser = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
 
-        if (!user.getEmail().equals(userRequestDTO.getEmail())) {
-            if (userRepository.findByEmail(userRequestDTO.getEmail()).isPresent()) {
-                log.warn("User with email {} already exists", userRequestDTO.getEmail());
-                throw new ResourceAlreadyExistsException("User with email " + userRequestDTO.getEmail() + " already exists");
-            }
-        }
+        User userToUpdate = userRepository.findById(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id " + currentUser.getId()));
 
-        userMapper.updateEntityFromDTO(userRequestDTO, user);
+        userToUpdate.setEmail(dto.getEmail());
+        userToUpdate.setName(dto.getName());
+        userToUpdate.setPhoneNumber(dto.getPhoneNumber());
+        userToUpdate.setCity(dto.getCity());
 
-        if (userRequestDTO.getNewPassword() != null && !userRequestDTO.getNewPassword().isEmpty()) {
-            // Vérifier que 'password' (ancien mot de passe) est fourni
-
-            if (userRequestDTO.getPassword() == null || userRequestDTO.getPassword().isEmpty()) {
-                log.error("Service: Current password is required to set a new password for user ID: {}", userID);
-                throw new ResourceNotValidException("Current password is required to set a new password.");
-            }
-
-
-            // Vérifier que le 'password' fourni correspond au mot de passe stocké
-            if (!passwordEncoder.matches(userRequestDTO.getPassword(), user.getPassword())) {
-                log.error("Service: Current password is incorrect for user ID: {}", userID);
-                throw new ResourceNotValidException("Current password is incorrect.");
-            }
-
-
-            // Mettre à jour le mot de passe (encodé)
-            user.setPassword(passwordEncoder.encode(userRequestDTO.getNewPassword()));
-            log.info("Service: Password updated for user ID: {}", userID);
-        }
-
-        // Enregistrer l'utilisateur mis à jour
-        User updatedUser = userRepository.save(user);
-        log.info("Service: User updated with ID: {}", updatedUser.getId());
-        return updatedUser;
+        return userRepository.save(userToUpdate);
     }
 
 
@@ -263,5 +239,24 @@ public class UserServiceImpl implements UserService {
         return user.getWishlist().stream()
                 .map(Product::getId)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public User getUserMe(Authentication authentication) throws ResourceNotFoundException {
+        log.info("Service: Fetching current authenticated user");
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.warn("Service: Authenticated user not found with email: {}", email);
+                    return new ResourceNotFoundException("Authenticated user not found");
+                });
+    }
+
+    @Override
+    public void deleteUserMe(Authentication authentication) throws ResourceNotFoundException {
+        log.info("Service: Deleting current authenticated user");
+        User user = getUserMe(authentication);
+        userRepository.delete(user);
+        log.info("Service: User deleted with ID: {}", user.getId());
     }
 }

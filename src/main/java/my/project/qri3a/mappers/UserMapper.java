@@ -2,6 +2,7 @@ package my.project.qri3a.mappers;
 
 import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserRequestDTO;
+import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
 import my.project.qri3a.dtos.responses.UserDTO;
 import my.project.qri3a.dtos.responses.UserResponseDTO;
 import my.project.qri3a.entities.User;
@@ -31,6 +32,15 @@ public class UserMapper {
         return dto;
     }
 
+
+    public UserSettingsInfosDTO toUserSettingsInfosDTO(User user) {
+        if (user == null) {
+            return null;
+        }
+        UserSettingsInfosDTO dto = new UserSettingsInfosDTO();
+        BeanUtils.copyProperties(user, dto);
+        return dto;
+    }
 
     public UserDTO toUserDTO(User user) {
         if (user == null) {
