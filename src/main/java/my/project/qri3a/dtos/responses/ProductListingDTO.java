@@ -18,6 +18,7 @@ public class ProductListingDTO {
     //private String phone;
     private ProductCondition condition;
     //private UserDTO user;
+    private int numberOfImages;
     private ImageResponseDTO image;
     //private List<ImageResponseDTO> images;
     private String createdAt;

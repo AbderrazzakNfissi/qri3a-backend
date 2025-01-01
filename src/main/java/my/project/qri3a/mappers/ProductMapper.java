@@ -75,6 +75,7 @@ public class ProductMapper {
         // Check if the imageDTOs list is not empty before setting the first image
         if (!imageDTOs.isEmpty()) {
             dto.setImage(imageDTOs.get(0));
+            dto.setNumberOfImages(imageDTOs.size());
         } else {
             // Optionally, handle the case when there are no images
             // For example, you can set a default image or leave it null
