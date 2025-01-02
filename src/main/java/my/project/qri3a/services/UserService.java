@@ -1,5 +1,6 @@
 package my.project.qri3a.services;
 
+import my.project.qri3a.dtos.requests.ChangePasswordRequestDTO;
 import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
@@ -10,6 +11,7 @@ import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 
 import java.util.List;
@@ -45,4 +47,16 @@ public interface UserService {
      * @throws ResourceNotFoundException si l'utilisateur n'est pas trouvé.
      */
     void deleteUserMe(Authentication authentication) throws ResourceNotFoundException;
+
+    /**
+     * Change le mot de passe de l'utilisateur actuellement authentifié.
+     *
+     * @param changePasswordRequestDTO Les détails du changement de mot de passe.
+     * @param authentication          L'objet d'authentification contenant les détails de l'utilisateur.
+     * @throws ResourceNotFoundException Si l'utilisateur authentifié n'est pas trouvé.
+     * @throws BadCredentialsException   Si le mot de passe actuel est incorrect.
+     * @throws ResourceNotValidException Si le nouveau mot de passe ne respecte pas les contraintes.
+     */
+    void changePassword(ChangePasswordRequestDTO changePasswordRequestDTO, Authentication authentication)
+            throws ResourceNotFoundException, BadCredentialsException, ResourceNotValidException;
 }

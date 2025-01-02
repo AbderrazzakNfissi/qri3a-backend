@@ -2,6 +2,7 @@ package my.project.qri3a.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.project.qri3a.dtos.requests.ChangePasswordRequestDTO;
 import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
@@ -259,4 +260,35 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
         log.info("Service: User deleted with ID: {}", user.getId());
     }
+
+    @Override
+    public void changePassword(ChangePasswordRequestDTO changePasswordRequestDTO, Authentication authentication)
+            throws ResourceNotFoundException, BadCredentialsException, ResourceNotValidException {
+        log.info("Service: Changing password for user: {}", authentication.getName());
+
+        // Récupérer l'utilisateur authentifié
+        User user = getUserMe(authentication);
+
+        // Vérifier si le mot de passe actuel est correct
+        if (!passwordEncoder.matches(changePasswordRequestDTO.getCurrentPassword(), user.getPassword())) {
+            log.warn("Service: Incorrect current password for user: {}", user.getEmail());
+            throw new BadCredentialsException("Mot de passe actuel incorrect.");
+        }
+
+        // Vérifier que le nouveau mot de passe correspond à la confirmation
+        if (!changePasswordRequestDTO.getNewPassword().equals(changePasswordRequestDTO.getConfirmPassword())) {
+            log.warn("Service: New password and confirmation do not match for user: {}", user.getEmail());
+            throw new ResourceNotValidException("Les nouveaux mots de passe ne correspondent pas.");
+        }
+
+        // Optionnel : Ajouter d'autres validations sur le nouveau mot de passe si nécessaire
+
+        // Encoder et mettre à jour le mot de passe
+        String encodedNewPassword = passwordEncoder.encode(changePasswordRequestDTO.getNewPassword());
+        user.setPassword(encodedNewPassword);
+        userRepository.save(user);
+
+        log.info("Service: Password changed successfully for user: {}", user.getEmail());
+    }
+
 }

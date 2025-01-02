@@ -3,6 +3,7 @@ package my.project.qri3a.controllers;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.project.qri3a.dtos.requests.ChangePasswordRequestDTO;
 import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserRequestDTO;
 import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -97,6 +99,22 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
     }
 
+    @PutMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Valid @RequestBody ChangePasswordRequestDTO changePasswordRequestDTO,
+            Authentication authentication) throws ResourceNotFoundException, BadCredentialsException, ResourceNotValidException {
+        log.info("Controller: Changing password for user: {}", authentication.getName());
+
+        userService.changePassword(changePasswordRequestDTO, authentication);
+
+        ApiResponse<Void> response = new ApiResponse<>(
+                null,
+                "Mot de passe changé avec succès.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
     /**
      * POST /api/v1/users
      */
@@ -151,6 +169,7 @@ public class UserController {
         ApiResponse<Void> response = new ApiResponse<>(null, "User deleted successfully.", HttpStatus.NO_CONTENT.value());
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
     }
+
 
 
 
