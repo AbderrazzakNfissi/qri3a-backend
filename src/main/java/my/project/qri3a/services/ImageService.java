@@ -33,4 +33,5 @@ public interface ImageService {
       * @throws IOException en cas d'erreur lors du téléchargement
       */
      List<ImageResponseDTO> uploadImages(UUID productId, List<MultipartFile> files) throws ResourceNotFoundException, IOException, ResourceNotValidException;
+     void deleteImageById(UUID imageId) throws ResourceNotFoundException;
 }

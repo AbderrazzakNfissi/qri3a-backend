@@ -3,13 +3,11 @@ package my.project.qri3a.services.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.ChangePasswordRequestDTO;
-import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
-import my.project.qri3a.dtos.responses.ProductResponseDTO;
+import my.project.qri3a.entities.Image;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
-import my.project.qri3a.enums.Role;
 import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
@@ -17,17 +15,16 @@ import my.project.qri3a.mappers.ProductMapper;
 import my.project.qri3a.mappers.UserMapper;
 import my.project.qri3a.repositories.ProductRepository;
 import my.project.qri3a.repositories.UserRepository;
+import my.project.qri3a.services.ImageService;
+import my.project.qri3a.services.S3Service;
 import my.project.qri3a.services.UserService;
 import org.springframework.data.domain.*;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import jakarta.transaction.Transactional;
-
 import java.lang.reflect.Field;
-import java.nio.CharBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,6 +42,8 @@ public class UserServiceImpl implements UserService {
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Arrays.stream(User.class.getDeclaredFields())
             .map(Field::getName)
             .collect(Collectors.toSet());
+    private final S3Service s3Service;
+    private final ImageService imageService;
 
     @Override
     public Page<User> getAllUsers(Pageable pageable) throws ResourceNotValidException {
@@ -254,11 +253,39 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUserMe(Authentication authentication) throws ResourceNotFoundException {
         log.info("Service: Deleting current authenticated user");
         User user = getUserMe(authentication);
+
+        // Supprimer toutes les images des produits de l'utilisateur depuis S3 et la base de données
+        for (Product product : user.getProducts()) {
+            for (Image image : product.getImages()) {
+                // Extraire le nom du fichier depuis l'URL
+                String filename = extractFileName(image.getUrl());
+                // Supprimer le fichier de S3
+                s3Service.deleteFile(filename);
+                log.info("Service: Deleted image from S3 with filename: {}", filename);
+                // Supprimer l'image de la base de données
+                imageService.deleteImageById(image.getId());
+                log.info("Service: Deleted image from DB with ID: {}", image.getId());
+            }
+            // Supprimer le produit de la base de données
+            productRepository.delete(product);
+            log.info("Service: Deleted product with ID: {}", product.getId());
+        }
+
+        // Vider la wishlist de l'utilisateur
+        user.getWishlist().clear();
+        log.info("Service: Cleared wishlist for user ID: {}", user.getId());
+
+        // Supprimer l'utilisateur de la base de données
         userRepository.delete(user);
         log.info("Service: User deleted with ID: {}", user.getId());
+    }
+
+    private String extractFileName(String imageUrl) {
+        return imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
     }
 
     @Override

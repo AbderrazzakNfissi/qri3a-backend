@@ -220,6 +220,15 @@ public class ImageServiceImpl implements ImageService {
         return UUID.randomUUID().toString() + fileExtension;
     }
 
+    @Override
+    @Transactional
+    public void deleteImageById(UUID imageId) throws ResourceNotFoundException {
+        Image image = imageRepository.findById(imageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Image not found with ID " + imageId));
+        imageRepository.delete(image);
+        log.info("ImageService: Deleted image with ID: {}", imageId);
+    }
+
     private String extractFileName(String imageUrl) {
         return imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
     }
