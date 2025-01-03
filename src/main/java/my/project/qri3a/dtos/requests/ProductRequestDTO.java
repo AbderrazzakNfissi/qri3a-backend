@@ -14,7 +14,7 @@ public class ProductRequestDTO {
     @NotBlank(message = "Title is mandatory")
     private String title;
 
-    @Size(max = 5000, message = "Description must not exceed 5000 characters")
+    @Size(max = 60000, message = "Description must not exceed 5000 characters")
     @NotBlank(message = "Description is mandatory")
     private String description;
 

@@ -34,7 +34,7 @@ public class Product {
     @Column(nullable = true)
     private String city;
 
-    @Column(nullable = false, length = 5000)
+    @Column(nullable = false, length = 60000)
     private String description;
 
     @Column(nullable = false)
