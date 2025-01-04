@@ -12,7 +12,7 @@ public class ProductListingDTO {
     private String title;
     //private String description;
     private BigDecimal price;
-    //private String location;
+    private String location;
     private ProductCategory category;
     private String city;
     //private String phone;
