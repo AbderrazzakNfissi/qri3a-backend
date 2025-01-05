@@ -164,7 +164,7 @@ public class ImageServiceImpl implements ImageService {
         }
 
         List<ImageResponseDTO> uploadedImages = new ArrayList<>();
-
+        int order = 1;
         for (MultipartFile file : files) {
             if (file.isEmpty()) {
                 throw new ResourceNotValidException("One of the files is empty.");
@@ -185,8 +185,9 @@ public class ImageServiceImpl implements ImageService {
             Image image = Image.builder()
                     .url(fileUrl)
                     .product(product)
+                    .order(order)
                     .build();
-
+            order++;
             // Ajouter l'image au produit
             product.addImage(image);
 

@@ -27,6 +27,9 @@ public class Image {
     @Column(nullable = false)
     private String url; // URL complète de l'image sur S3
 
+    @Column(name = "\"order\"", nullable = true, columnDefinition = "integer default 1")
+    private Integer order;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     @JsonIgnore
