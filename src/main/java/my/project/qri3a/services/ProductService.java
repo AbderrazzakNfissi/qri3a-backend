@@ -23,4 +23,5 @@ public interface ProductService {
     void deleteProduct(UUID productId) throws ResourceNotFoundException;
     Page<ProductListingDTO> getMyProducts(Authentication authentication, Pageable pageable) throws ResourceNotValidException;
     void deleteMyProduct(UUID productId, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException;
+    Page<ProductListingDTO> getRecommendedProducts(UUID productId, Pageable pageable) throws ResourceNotFoundException;
 }

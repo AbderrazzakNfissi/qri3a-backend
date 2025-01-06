@@ -198,4 +198,25 @@ public class ProductServiceImpl implements ProductService {
         log.info("Service: Product deleted with ID: {}", productId);
     }
 
+
+    @Override
+    public Page<ProductListingDTO> getRecommendedProducts(UUID productId, Pageable pageable) throws ResourceNotFoundException {
+        log.info("Service: Récupération des produits recommandés pour le produit ID: {}", productId);
+
+        // Récupérer le produit actuel
+        Product currentProduct = productRepository.findById(productId)
+                .orElseThrow(() -> {
+                    log.warn("Service: Produit non trouvé avec l'ID: {}", productId);
+                    return new ResourceNotFoundException("Produit non trouvé avec l'ID " + productId);
+                });
+
+        ProductCategory category = currentProduct.getCategory();
+        BigDecimal price = currentProduct.getPrice();
+
+        // Récupérer les produits recommandés triés par même catégorie puis par proximité de prix
+        Page<Product> recommendedPage = productRepository.findRecommendedProducts(category, price, productId, pageable);
+        log.info("Service: {} produits recommandés trouvés", recommendedPage.getTotalElements());
+
+        return recommendedPage.map(productMapper::toProductListingDTO);
+    }
 }

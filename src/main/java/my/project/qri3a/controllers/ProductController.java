@@ -125,5 +125,20 @@ public class ProductController {
     }
 
 
+    @GetMapping("/{id}/recommended")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getRecommendedProducts(
+            @PathVariable UUID id,
+            Pageable pageable
+    ) throws ResourceNotFoundException {
+        log.info("Controller: Récupération des produits recommandés pour le produit ID: {}", id);
+        Page<ProductListingDTO> recommendedProducts = productService.getRecommendedProducts(id, pageable);
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                recommendedProducts,
+                "Produits recommandés récupérés avec succès.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
 
 }
