@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
@@ -40,6 +41,15 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
             @Param("category") ProductCategory category,
             @Param("price") BigDecimal price,
             @Param("productId") UUID productId,
+            Pageable pageable
+    );
+
+
+    List<Product> findTop10ByTitleContainingIgnoreCase(String query, Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE (LOWER(p.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%'))) ORDER BY p.createdAt DESC")
+    Page<Product> searchProducts(
+            @Param("query") String query,
             Pageable pageable
     );
 }

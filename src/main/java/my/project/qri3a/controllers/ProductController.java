@@ -12,7 +12,9 @@ import my.project.qri3a.exceptions.ResourceNotValidException;
 import my.project.qri3a.responses.ApiResponse;
 import my.project.qri3a.services.ProductService;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,6 +23,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -140,5 +143,41 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/search-suggestions")
+    public ResponseEntity<ApiResponse<List<ProductListingDTO>>> getSearchSuggestions(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        log.info("Controller: Récupération des suggestions de recherche pour le terme: {}", query);
+        List<ProductListingDTO> suggestions = productService.searchProductSuggestions(query, limit);
+        ApiResponse<List<ProductListingDTO>> response = new ApiResponse<>(
+                suggestions,
+                "Suggestions de recherche récupérées avec succès.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> searchProducts(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt,desc") String sort
+    ) {
+        log.info("Controller: Recherche de produits avec le terme: {}", query);
+
+        String[] sortParams = sort.split(",");
+        Sort sortOrder = Sort.by(Sort.Direction.fromString(sortParams[1]), sortParams[0]);
+        Pageable pageable = PageRequest.of(page, size, sortOrder);
+        Page<ProductListingDTO> results = productService.searchProducts(query, pageable);
+
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                results,
+                "Résultats de recherche récupérés avec succès.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
 
 }

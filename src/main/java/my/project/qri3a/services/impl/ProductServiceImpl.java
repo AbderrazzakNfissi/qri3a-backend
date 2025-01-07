@@ -19,6 +19,7 @@ import my.project.qri3a.services.ProductService;
 import my.project.qri3a.services.UserService;
 import my.project.qri3a.specifications.ProductSpecifications;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
@@ -26,7 +27,10 @@ import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -219,4 +223,29 @@ public class ProductServiceImpl implements ProductService {
 
         return recommendedPage.map(productMapper::toProductListingDTO);
     }
+
+    @Override
+    public List<ProductListingDTO> searchProductSuggestions(String query, int limit) {
+        log.info("Service: Recherche des suggestions de produits pour le terme: {}", query);
+
+        if (query == null || query.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        PageRequest pageable = PageRequest.of(0, limit);
+        List<Product> products = productRepository.findTop10ByTitleContainingIgnoreCase(query, pageable);
+
+        return products.stream()
+                .map(productMapper::toProductListingDTO)
+                .collect(Collectors.toList());
+    }
+
+
+    @Override
+    public Page<ProductListingDTO> searchProducts(String query, Pageable pageable) {
+        log.info("Service: Recherche des produits pour le terme: {}", query);
+        Page<Product> products = productRepository.searchProducts(query, pageable);
+        return products.map(productMapper::toProductListingDTO);
+    }
+
 }
