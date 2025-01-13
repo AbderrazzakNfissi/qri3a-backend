@@ -6,16 +6,22 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import my.project.qri3a.dtos.UserInfo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
+import org.springframework.security.oauth2.server.resource.introspection.OAuth2IntrospectionAuthenticatedPrincipal;
+import org.springframework.security.oauth2.server.resource.introspection.OpaqueTokenIntrospector;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-
+@RequiredArgsConstructor
 @Service
 public class JwtService {
 
@@ -26,6 +32,7 @@ public class JwtService {
     @Getter
     @Value("${application.security.jwt.refresh-token.expiration}")
     private long refreshExpiration;
+    private final WebClient userInfoClient;
 
     public String extractEmailFromToken(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -104,4 +111,20 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public OAuth2AuthenticatedPrincipal getPrincipalFromToken(String token) {
+        UserInfo userInfo = userInfoClient.get()
+                .uri( uriBuilder -> uriBuilder
+                        .path("/oauth2/v3/userinfo")
+                        .queryParam("access_token", token)
+                        .build())
+                .retrieve()
+                .bodyToMono(UserInfo.class)
+                .block();
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("sub", userInfo.sub());
+        attributes.put("email", userInfo.email());
+        attributes.put("name", userInfo.name());
+        attributes.put("picture",userInfo.picture());
+        return new OAuth2IntrospectionAuthenticatedPrincipal(userInfo.name(), attributes, null);
+    }
 }

@@ -24,10 +24,6 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-
-
-
-
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> registerUserByEmailAndPassword(
             @Valid @RequestBody EmailAndPasswordDTO request,
