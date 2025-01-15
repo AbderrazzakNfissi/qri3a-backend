@@ -33,6 +33,9 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final WebClient userInfoClient;
+    private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
+
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -56,8 +59,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/{id}/recommended").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/search-suggestions").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/search").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/favorites").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/favorites/ids").permitAll()
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/swagger-ui/**",
@@ -73,7 +74,7 @@ public class SecurityConfig {
                         // Toutes les autres requêtes nécessitent une authentification
                         .anyRequest().authenticated()
                 )
-               // .oauth2ResourceServer(c->c.opaqueToken(Customizer.withDefaults()))
+                // .oauth2ResourceServer(c->c.opaqueToken(Customizer.withDefaults()))
                 // Configuration du fournisseur d'authentification
                 .authenticationProvider(authenticationProvider())
 
@@ -83,10 +84,7 @@ public class SecurityConfig {
                 // Configuration de la déconnexion
                 .logout(logout -> logout
                         .logoutUrl("/api/v1/auth/logout")
-                        .logoutSuccessHandler((request, response, authentication) -> {
-                            SecurityContextHolder.clearContext();
-                            response.setStatus(HttpServletResponse.SC_OK);
-                        })
+                        .logoutSuccessHandler(customLogoutSuccessHandler) // Utiliser le handler personnalisé
                 );
 
         return http.build();

@@ -15,7 +15,6 @@ import java.io.IOException;
 public interface AuthenticationService {
     AuthenticationResponse registerUser(EmailAndPasswordDTO request) throws ResourceAlreadyExistsException;
     AuthenticationResponse authenticate(AuthenticationRequest request);
-    void refreshToken( HttpServletRequest request,  HttpServletResponse response ) throws IOException;
-
+    AuthenticationResponse refreshToken(String refreshToken);
 }
 

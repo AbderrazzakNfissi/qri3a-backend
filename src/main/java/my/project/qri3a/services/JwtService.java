@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.function.Function;
 @RequiredArgsConstructor
 @Service
+@Getter
 public class JwtService {
 
     @Value("${application.security.jwt.secret-key}")
@@ -127,4 +128,6 @@ public class JwtService {
         attributes.put("picture",userInfo.picture());
         return new OAuth2IntrospectionAuthenticatedPrincipal(userInfo.name(), attributes, null);
     }
+
+
 }
