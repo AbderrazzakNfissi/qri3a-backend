@@ -180,4 +180,24 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getProductsByUserId(
+            @PathVariable UUID userId,
+            Pageable pageable
+    ) throws ResourceNotFoundException {
+        log.info("Controller: Fetching products for user ID: {} with pagination: page={}, size={}, sort={}",
+                userId, pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+
+        Page<ProductListingDTO> productsPage = productService.getProductsByUserId(userId, pageable);
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                productsPage,
+                "Products fetched successfully for user ID " + userId + ".",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+
+
 }

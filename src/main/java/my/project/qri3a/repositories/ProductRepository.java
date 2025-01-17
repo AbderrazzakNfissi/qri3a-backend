@@ -43,4 +43,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
             @Param("query") String query,
             Pageable pageable
     );
+
+
+
 }

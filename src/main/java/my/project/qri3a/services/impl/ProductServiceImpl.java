@@ -248,4 +248,23 @@ public class ProductServiceImpl implements ProductService {
         return products.map(productMapper::toProductListingDTO);
     }
 
+    @Override
+    public Page<ProductListingDTO> getProductsByUserId(UUID userId, Pageable pageable) throws ResourceNotFoundException {
+        log.info("Service: Fetching products for user ID: {} with pagination: {}", userId, pageable);
+
+        // Fetch the user by userId
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.warn("Service: User not found with ID: {}", userId);
+                    return new ResourceNotFoundException("User not found with ID " + userId);
+                });
+
+        // Fetch products by the seller (user)
+        Page<Product> productsPage = productRepository.findBySeller(user, pageable);
+        log.info("Service: Found {} products for user ID: {}", productsPage.getTotalElements(), userId);
+
+        // Convert entities to DTOs
+        return productsPage.map(productMapper::toProductListingDTO);
+    }
+
 }

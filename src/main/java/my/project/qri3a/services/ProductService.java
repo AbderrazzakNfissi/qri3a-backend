@@ -27,4 +27,5 @@ public interface ProductService {
     Page<ProductListingDTO> getRecommendedProducts(UUID productId, Pageable pageable) throws ResourceNotFoundException;
     List<ProductListingDTO> searchProductSuggestions(String query, int limit);
      Page<ProductListingDTO> searchProducts(String query, Pageable pageable);
+    Page<ProductListingDTO> getProductsByUserId(UUID userId, Pageable pageable) throws ResourceNotFoundException;
 }
