@@ -33,11 +33,6 @@ public class ReviewMapper {
         // Copy basic properties except for user and date fields
         BeanUtils.copyProperties(review, dto, "user");
 
-        // Set userId
-        if (review.getUser() != null) {
-            dto.setUserId(review.getUser().getId());
-        }
-
         if(review.getReviewer() != null) {
             dto.setReviewer(userMapper.toReviewerResponseDTO(review.getReviewer()));
         }

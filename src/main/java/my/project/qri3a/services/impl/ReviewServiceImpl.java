@@ -10,6 +10,7 @@ import my.project.qri3a.entities.User;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.UnauthorizedException;
 import my.project.qri3a.mappers.ReviewMapper;
+import my.project.qri3a.mappers.UserMapper;
 import my.project.qri3a.projections.ReviewStatisticsProjection;
 import my.project.qri3a.repositories.ReviewRepository;
 import my.project.qri3a.repositories.UserRepository;
@@ -33,6 +34,8 @@ public class ReviewServiceImpl implements ReviewService {
     private final UserRepository userRepository;
     private final ReviewMapper reviewMapper;
     private final UserService userService;
+    private final UserMapper userMapper;
+
     /**
      * Adds a new review authored by the authenticated user for a specified user.
      *
@@ -195,7 +198,8 @@ public class ReviewServiceImpl implements ReviewService {
                 (projection.getThreeStarCount() != null) ? projection.getThreeStarCount() : 0L,
                 (projection.getFourStarCount() != null) ? projection.getFourStarCount() : 0L,
                 (projection.getFiveStarCount() != null) ? projection.getFiveStarCount() : 0L,
-                average
+                average,
+                userMapper.toReviewerResponseDTO(user)
         );
 
         log.debug("Review statistics for userId {}: {}", userId, statistics);

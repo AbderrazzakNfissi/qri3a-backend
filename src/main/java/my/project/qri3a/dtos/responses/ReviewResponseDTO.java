@@ -12,9 +12,6 @@ public class ReviewResponseDTO {
 
     private UUID id;
     private String comment;
-    private Float rating;
-    @JsonProperty("userId")
-    private UUID userId;
     private ReviewerResponseDTO reviewer;
     private String createdAt;
     private String updatedAt;

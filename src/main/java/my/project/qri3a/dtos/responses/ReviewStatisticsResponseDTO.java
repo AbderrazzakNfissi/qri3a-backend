@@ -14,5 +14,5 @@ public class ReviewStatisticsResponseDTO {
     private Long fourStarCount;
     private Long fiveStarCount;
     private Double averageRating;
-    private SellerInfoDTO sellerInfo;
+    private ReviewerResponseDTO seller;
 }
