@@ -6,13 +6,11 @@ import lombok.Data;
 
 @Data
 public class UserResponseDTO {
-
     private UUID id;
     private String name;
     private String email;
     private String phoneNumber;
     private String address;
     private Role role;
-    private Float rating;
     private LocalDateTime createdAt;
 }

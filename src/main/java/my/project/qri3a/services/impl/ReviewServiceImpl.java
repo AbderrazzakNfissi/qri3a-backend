@@ -4,11 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.ReviewRequestDTO;
 import my.project.qri3a.dtos.requests.UpdateReviewRequestDTO;
 import my.project.qri3a.dtos.responses.ReviewResponseDTO;
+import my.project.qri3a.dtos.responses.ReviewStatisticsResponseDTO;
 import my.project.qri3a.entities.Review;
 import my.project.qri3a.entities.User;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.UnauthorizedException;
 import my.project.qri3a.mappers.ReviewMapper;
+import my.project.qri3a.projections.ReviewStatisticsProjection;
 import my.project.qri3a.repositories.ReviewRepository;
 import my.project.qri3a.repositories.UserRepository;
 import my.project.qri3a.services.ReviewService;
@@ -142,5 +144,62 @@ public class ReviewServiceImpl implements ReviewService {
         log.debug("Fetched {} reviews for userId: {}", reviewDTOs.size(), userId);
 
         return reviewDTOs;
+    }
+
+    /**
+     * Retrieves review statistics for a specific user using an optimized single query.
+     *
+     * @param userId The ID of the user.
+     * @return The review statistics as ReviewStatisticsResponseDTO.
+     * @throws ResourceNotFoundException If the user does not exist.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public ReviewStatisticsResponseDTO getReviewStatistics(UUID userId) throws ResourceNotFoundException {
+        log.debug("Fetching review statistics for userId: {}", userId);
+
+        // Verify user exists
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Fetch statistics using the optimized single query
+        ReviewStatisticsProjection projection = reviewRepository.getReviewStatisticsByUserId(userId);
+
+        // Handle case where user has no reviews
+        if (projection == null) {
+            projection = new ReviewStatisticsProjection() {
+                @Override
+                public Long getOneStarCount() { return 0L; }
+                @Override
+                public Long getTwoStarCount() { return 0L; }
+                @Override
+                public Long getThreeStarCount() { return 0L; }
+                @Override
+                public Long getFourStarCount() { return 0L; }
+                @Override
+                public Long getFiveStarCount() { return 0L; }
+                @Override
+                public Double getAverageRating() { return 0.0; }
+            };
+        }
+
+        // Round the average rating to two decimal places
+        Double average = (projection.getAverageRating() != null)
+                ? Math.round(projection.getAverageRating() * 100.0) / 100.0
+                : 0.0;
+
+        // Construct the response DTO
+        ReviewStatisticsResponseDTO statistics = new ReviewStatisticsResponseDTO(
+                (projection.getOneStarCount() != null) ? projection.getOneStarCount() : 0L,
+                (projection.getTwoStarCount() != null) ? projection.getTwoStarCount() : 0L,
+                (projection.getThreeStarCount() != null) ? projection.getThreeStarCount() : 0L,
+                (projection.getFourStarCount() != null) ? projection.getFourStarCount() : 0L,
+                (projection.getFiveStarCount() != null) ? projection.getFiveStarCount() : 0L,
+                average
+        );
+
+        log.debug("Review statistics for userId {}: {}", userId, statistics);
+
+        return statistics;
     }
 }

@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import my.project.qri3a.dtos.requests.ReviewRequestDTO;
 import my.project.qri3a.dtos.requests.UpdateReviewRequestDTO;
 import my.project.qri3a.dtos.responses.ReviewResponseDTO;
+import my.project.qri3a.dtos.responses.ReviewStatisticsResponseDTO;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.UnauthorizedException;
 import my.project.qri3a.services.ReviewService;
@@ -73,5 +74,18 @@ public class ReviewController {
             @PathVariable UUID userId) throws ResourceNotFoundException {
         List<ReviewResponseDTO> reviews = reviewService.getAllReviews(userId);
         return new ResponseEntity<>(reviews, HttpStatus.OK);
+    }
+
+
+    /**
+     * Get review statistics for a specific user.
+     * @param userId The ID of the user.
+     * @return The review statistics as ReviewStatisticsResponseDTO.
+     */
+    @GetMapping("{userId}/statistics")
+    public ResponseEntity<ReviewStatisticsResponseDTO> getReviewStatistics(
+            @PathVariable UUID userId) throws ResourceNotFoundException {
+        ReviewStatisticsResponseDTO statistics = reviewService.getReviewStatistics(userId);
+        return new ResponseEntity<>(statistics, HttpStatus.OK);
     }
 }
