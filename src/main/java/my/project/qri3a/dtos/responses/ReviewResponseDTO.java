@@ -16,6 +16,7 @@ public class ReviewResponseDTO {
     @JsonProperty("userId")
     private UUID userId;
 
+    private UUID reviewerId;
     private String createdAt;
     private String updatedAt;
 }

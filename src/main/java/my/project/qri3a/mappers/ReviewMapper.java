@@ -1,11 +1,13 @@
 package my.project.qri3a.mappers;
 import lombok.RequiredArgsConstructor;
 import my.project.qri3a.dtos.requests.ReviewRequestDTO;
+import my.project.qri3a.dtos.requests.UpdateReviewRequestDTO;
 import my.project.qri3a.dtos.responses.ReviewResponseDTO;
 import my.project.qri3a.entities.Review;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,21 +30,37 @@ public class ReviewMapper {
         ReviewResponseDTO dto = new ReviewResponseDTO();
 
         // Copy basic properties except for user and date fields
-        BeanUtils.copyProperties(review, dto, "user", "createdAt", "updatedAt");
+        BeanUtils.copyProperties(review, dto, "user");
 
         // Set userId
         if (review.getUser() != null) {
             dto.setUserId(review.getUser().getId());
         }
 
-        // Format createdAt
-        if (review.getCreatedAt() != null) {
-            dto.setCreatedAt(formatDate(review.getCreatedAt()));
+        if(review.getReviewer() != null) {
+            dto.setReviewerId(review.getReviewer().getId());
         }
 
-        // Format updatedAt
-        if (review.getUpdatedAt() != null) {
-            dto.setUpdatedAt(formatDate(review.getUpdatedAt()));
+        LocalDateTime createdAt = review.getCreatedAt();
+        if (createdAt != null) {
+            // Convert LocalDateTime to ZonedDateTime with UTC timezone
+            ZonedDateTime utcDateTime = createdAt.atZone(ZoneId.systemDefault())
+                    .withZoneSameInstant(ZoneId.of("UTC"));
+            // Define ISO 8601 format
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            // Apply format and set in DTO
+            dto.setCreatedAt(utcDateTime.format(formatter));
+        }
+
+        LocalDateTime updatedAt = review.getUpdatedAt();
+        if (updatedAt != null) {
+            // Convert LocalDateTime to ZonedDateTime with UTC timezone
+            ZonedDateTime utcDateTime = updatedAt.atZone(ZoneId.systemDefault())
+                    .withZoneSameInstant(ZoneId.of("UTC"));
+            // Define ISO 8601 format
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            // Apply format and set in DTO
+            dto.setUpdatedAt(utcDateTime.format(formatter));
         }
 
         return dto;
@@ -76,7 +94,7 @@ public class ReviewMapper {
      * @param dto    The ReviewRequestDTO containing updated data.
      * @param entity The Review entity to update.
      */
-    public void updateEntityFromDTO(ReviewRequestDTO dto, Review entity) {
+    public void updateEntityFromDTO(UpdateReviewRequestDTO dto, Review entity) {
         if (dto == null || entity == null) {
             return;
         }

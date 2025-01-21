@@ -2,13 +2,18 @@ package my.project.qri3a.services.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.ReviewRequestDTO;
+import my.project.qri3a.dtos.requests.UpdateReviewRequestDTO;
 import my.project.qri3a.dtos.responses.ReviewResponseDTO;
 import my.project.qri3a.entities.Review;
 import my.project.qri3a.entities.User;
+import my.project.qri3a.exceptions.ResourceNotFoundException;
+import my.project.qri3a.exceptions.UnauthorizedException;
 import my.project.qri3a.mappers.ReviewMapper;
 import my.project.qri3a.repositories.ReviewRepository;
 import my.project.qri3a.repositories.UserRepository;
 import my.project.qri3a.services.ReviewService;
+import my.project.qri3a.services.UserService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,18 +30,37 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final ReviewMapper reviewMapper;
-
+    private final UserService userService;
+    /**
+     * Adds a new review authored by the authenticated user for a specified user.
+     *
+     * @param authentication   The authentication object containing the authenticated user's details.
+     * @param reviewRequestDTO The DTO containing review data.
+     * @return The created review as ReviewResponseDTO.
+     * @throws ResourceNotFoundException If the user being reviewed does not exist.
+     */
     @Override
-    public ReviewResponseDTO addReview(UUID userId, ReviewRequestDTO reviewRequestDTO) {
-        log.debug("Adding review for userId: {}", userId);
+    public ReviewResponseDTO addReview(Authentication authentication, ReviewRequestDTO reviewRequestDTO) throws ResourceNotFoundException {
+        UUID reviewedUserId = reviewRequestDTO.getUserId();
+        log.debug("Adding review for userId: {}", reviewedUserId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        // Retrieve the user being reviewed
+        User reviewedUser = userRepository.findById(reviewedUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User to be reviewed not found"));
 
+        // Retrieve the authenticated user (reviewer) based on authentication details
+        String reviewerEmail = authentication.getName();
+        User reviewer = userService.getUserByEmail(reviewerEmail);
+
+        // Map DTO to Review entity
         Review review = reviewMapper.toEntity(reviewRequestDTO);
-        review.setUser(user);
+        review.setUser(reviewedUser);
+        review.setReviewer(reviewer);
 
-        user.addReview(review);
+        // Optionally, manage bidirectional relationships if applicable
+        reviewedUser.addReview(review);
+
+        // Save the review to the repository
         Review savedReview = reviewRepository.save(review);
 
         log.debug("Review added with id: {}", savedReview.getId());
@@ -44,39 +68,42 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewMapper.toDTO(savedReview);
     }
 
+
+    /**
+     * Removes a review authored by the authenticated user.
+     *
+     * @param authentication The authentication object containing the authenticated user's details.
+     * @param reviewId       The ID of the review to remove.
+     * @throws ResourceNotFoundException If the review does not exist.
+     * @throws UnauthorizedException     If the authenticated user is not the author of the review.
+     */
     @Override
-    public void removeReview(UUID userId, UUID reviewId) {
-        log.debug("Removing review with id: {} for userId: {}", reviewId, userId);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+    public void removeReview(Authentication authentication, UUID reviewId) throws ResourceNotFoundException, UnauthorizedException {
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new IllegalArgumentException("Review not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found"));
 
-        if (!review.getUser().equals(user)) {
-            throw new IllegalArgumentException("Review does not belong to the specified user");
+        // Retrieve the authenticated user (reviewer) based on authentication details
+        String reviewerEmail = authentication.getName();
+        User currentUser = userService.getUserByEmail(reviewerEmail);
+
+        // Check if the current user is the author of the review
+        if (!review.getReviewer().getId().equals(currentUser.getId())) {
+            log.warn("User {} is not authorized to delete review {}", currentUser.getId(), reviewId);
+            throw new UnauthorizedException("You are not authorized to delete this review.");
         }
 
-        user.removeReview(review);
+        // Delete the review from the repository
         reviewRepository.delete(review);
 
-        log.debug("Review with id: {} removed successfully", reviewId);
+        log.debug("Review with id: {} removed successfully by user: {}", reviewId, currentUser.getId());
     }
 
-    @Override
-    public ReviewResponseDTO updateReview(UUID userId, UUID reviewId, ReviewRequestDTO reviewRequestDTO) {
-        log.debug("Updating review with id: {} for userId: {}", reviewId, userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    @Override
+    public ReviewResponseDTO updateReview(Authentication authentication, UUID reviewId, UpdateReviewRequestDTO reviewRequestDTO) throws ResourceNotFoundException {
 
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new IllegalArgumentException("Review not found"));
-
-        if (!review.getUser().equals(user)) {
-            throw new IllegalArgumentException("Review does not belong to the specified user");
-        }
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found"));
 
         // Use the mapper to update the entity from DTO
         reviewMapper.updateEntityFromDTO(reviewRequestDTO, review);
@@ -90,12 +117,12 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ReviewResponseDTO> getAllReviews(UUID userId) {
+    public List<ReviewResponseDTO> getAllReviews(UUID userId) throws ResourceNotFoundException {
         log.debug("Fetching all reviews for userId: {}", userId);
 
         // Verify user exists
         userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         List<Review> reviews = reviewRepository.findByUserId(userId);
 
