@@ -105,6 +105,15 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found"));
 
+        // Retrieve the authenticated user (reviewer) based on authentication details
+        String reviewerEmail = authentication.getName();
+        User currentUser = userService.getUserByEmail(reviewerEmail);
+
+        // Check if the current user is the author of the review
+        if (!review.getReviewer().getId().equals(currentUser.getId())) {
+            log.warn("User {} is not authorized to update review {}", currentUser.getId(), reviewId);
+            throw new UnauthorizedException("You are not authorized to update this review.");
+        }
         // Use the mapper to update the entity from DTO
         reviewMapper.updateEntityFromDTO(reviewRequestDTO, review);
 

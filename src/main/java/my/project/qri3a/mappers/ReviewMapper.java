@@ -15,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 @RequiredArgsConstructor
 @Component
 public class ReviewMapper {
+    private final UserMapper userMapper;
 
     /**
      * Converts a Review entity to a ReviewResponseDTO.
@@ -38,7 +39,7 @@ public class ReviewMapper {
         }
 
         if(review.getReviewer() != null) {
-            dto.setReviewerId(review.getReviewer().getId());
+            dto.setReviewer(userMapper.toReviewerResponseDTO(review.getReviewer()));
         }
 
         LocalDateTime createdAt = review.getCreatedAt();
