@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.ChangePasswordRequestDTO;
 import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
+import my.project.qri3a.dtos.responses.SellerProfileDTO;
 import my.project.qri3a.entities.Image;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
@@ -316,6 +317,23 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
         log.info("Service: Password changed successfully for user: {}", user.getEmail());
+    }
+
+    @Override
+    public SellerProfileDTO getSellerProfile(UUID userId) throws ResourceNotFoundException {
+        log.info("Service: Fetching seller profile for user ID: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.warn("Service: User not found with ID: {}", userId);
+                    return new ResourceNotFoundException("User not found with ID " + userId);
+                });
+
+        // Map User entity to SellerProfileDTO
+        SellerProfileDTO sellerProfileDTO = userMapper.toSellerProfileDTO(user);
+
+        log.info("Service: Seller profile fetched for user ID: {}", userId);
+        return sellerProfileDTO;
     }
 
 }

@@ -52,7 +52,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = true)
+    @Column(nullable = true,length = 50)
     private String phoneNumber;
 
     @Column(nullable = true)
@@ -69,6 +69,12 @@ public class User implements UserDetails {
     @Min(value = 0, message = "Rating must be at least 0")
     @Max(value = 5, message = "Rating must be at most 5")
     private Float rating;
+
+    @Column(nullable = true,length = 200)
+    private String website;
+
+    @Column(nullable = true, length = 500)
+    private String aboutMe;
 
     @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore

@@ -4,11 +4,17 @@ import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserRequestDTO;
 import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
 import my.project.qri3a.dtos.responses.ReviewerResponseDTO;
+import my.project.qri3a.dtos.responses.SellerProfileDTO;
 import my.project.qri3a.dtos.responses.UserDTO;
 import my.project.qri3a.dtos.responses.UserResponseDTO;
 import my.project.qri3a.entities.User;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Component
 public class UserMapper {
@@ -52,6 +58,24 @@ public class UserMapper {
         return dto;
     }
 
+    public SellerProfileDTO toSellerProfileDTO(User user) {
+        if (user == null) {
+            return null;
+        }
+        SellerProfileDTO dto = new SellerProfileDTO();
+        BeanUtils.copyProperties(user, dto);
+
+        LocalDateTime userCreatedAt= user.getCreatedAt();
+        if (userCreatedAt != null) {
+            // Convertir LocalDateTime en ZonedDateTime avec le fuseau horaire UTC
+            ZonedDateTime utcDateTime = userCreatedAt.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("UTC"));
+            // Définir un format ISO 8601
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            // Appliquer le format et définir dans le DTO
+            dto.setCreatedAt(utcDateTime.format(formatter));
+        }
+        return dto;
+    }
     public ReviewerResponseDTO toReviewerResponseDTO(User user) {
         if (user == null) {
             return null;

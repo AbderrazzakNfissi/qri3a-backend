@@ -5,6 +5,7 @@ import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
+import my.project.qri3a.dtos.responses.SellerProfileDTO;
 import my.project.qri3a.entities.User;
 import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
@@ -59,4 +60,7 @@ public interface UserService {
      */
     void changePassword(ChangePasswordRequestDTO changePasswordRequestDTO, Authentication authentication)
             throws ResourceNotFoundException, BadCredentialsException, ResourceNotValidException;
+
+
+    public SellerProfileDTO getSellerProfile(UUID userId) throws ResourceNotFoundException;
 }

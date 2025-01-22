@@ -3,6 +3,7 @@ package my.project.qri3a.services;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
+import my.project.qri3a.dtos.responses.SellerProfileDTO;
 import my.project.qri3a.entities.User;
 import my.project.qri3a.exceptions.NotAuthorizedException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;

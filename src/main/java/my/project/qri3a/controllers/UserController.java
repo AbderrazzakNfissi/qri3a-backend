@@ -8,6 +8,7 @@ import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserRequestDTO;
 import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
+import my.project.qri3a.dtos.responses.SellerProfileDTO;
 import my.project.qri3a.dtos.responses.UserResponseDTO;
 import my.project.qri3a.entities.User;
 import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
@@ -171,6 +172,18 @@ public class UserController {
     }
 
 
+    @GetMapping("/seller-profile/{id}")
+    public ResponseEntity<ApiResponse<SellerProfileDTO>> getSellerProfile(@PathVariable("id") UUID userId) throws ResourceNotFoundException {
+        log.info("Controller: Fetching seller profile for user ID: {}", userId);
+
+        SellerProfileDTO sellerProfile = userService.getSellerProfile(userId);
+        ApiResponse<SellerProfileDTO> response = new ApiResponse<>(
+                sellerProfile,
+                "Seller profile fetched successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
 
 
 
