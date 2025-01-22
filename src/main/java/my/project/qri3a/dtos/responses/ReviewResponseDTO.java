@@ -12,6 +12,7 @@ public class ReviewResponseDTO {
 
     private UUID id;
     private String comment;
+    private Float rating;
     private ReviewerResponseDTO reviewer;
     private String createdAt;
     private String updatedAt;
