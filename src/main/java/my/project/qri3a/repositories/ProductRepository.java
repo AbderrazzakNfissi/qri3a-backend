@@ -44,6 +44,5 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
             Pageable pageable
     );
 
-
-
+    long countBySellerId(UUID sellerId);
 }

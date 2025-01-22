@@ -1,9 +1,9 @@
 package my.project.qri3a.services.impl;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.ChangePasswordRequestDTO;
 import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
+import my.project.qri3a.dtos.responses.ImageResponseDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.SellerProfileDTO;
 import my.project.qri3a.entities.Image;
@@ -12,8 +12,10 @@ import my.project.qri3a.entities.User;
 import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
+import my.project.qri3a.mappers.ImageMapper;
 import my.project.qri3a.mappers.ProductMapper;
 import my.project.qri3a.mappers.UserMapper;
+import my.project.qri3a.repositories.ImageRepository;
 import my.project.qri3a.repositories.ProductRepository;
 import my.project.qri3a.repositories.UserRepository;
 import my.project.qri3a.services.ImageService;
@@ -45,6 +47,8 @@ public class UserServiceImpl implements UserService {
             .collect(Collectors.toSet());
     private final S3Service s3Service;
     private final ImageService imageService;
+    private final ImageRepository imageRepository;
+    private final ImageMapper imageMapper;
 
     @Override
     public Page<User> getAllUsers(Pageable pageable) throws ResourceNotValidException {
@@ -331,6 +335,21 @@ public class UserServiceImpl implements UserService {
 
         // Map User entity to SellerProfileDTO
         SellerProfileDTO sellerProfileDTO = userMapper.toSellerProfileDTO(user);
+
+        // Fetch top 3 images for the seller's products
+        List<Image> images = imageRepository.findTop3ByProductSellerIdOrderByCreatedAtDesc(userId);
+
+        // Map Image entities to ImageResponseDTOs
+        List<ImageResponseDTO> imageDTOs = images.stream()
+                .map(imageMapper::toDTO)
+                .collect(Collectors.toList());
+
+        // Set images in the DTO
+        sellerProfileDTO.setImages(imageDTOs);
+
+
+        long totalProducts = productRepository.countBySellerId(userId);
+        sellerProfileDTO.setTotalProducts(totalProducts);
 
         log.info("Service: Seller profile fetched for user ID: {}", userId);
         return sellerProfileDTO;

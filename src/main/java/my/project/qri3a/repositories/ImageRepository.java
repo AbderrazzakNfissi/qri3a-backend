@@ -2,7 +2,10 @@ package my.project.qri3a.repositories;
 
 import my.project.qri3a.entities.Image;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.awt.print.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,4 +35,6 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
      * @return List of images.
      */
     List<Image> findByProductId(UUID productId);
+
+    List<Image> findTop3ByProductSellerIdOrderByCreatedAtDesc(UUID sellerId);
 }
