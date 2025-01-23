@@ -24,4 +24,8 @@ public class UserSettingsInfosDTO {
     @Size(max = 100, message = "La ville ne doit pas dépasser 100 caractères")
     //@Pattern(regexp = "^[A-Za-zÀ-ÿ\\s'-]+$", message = "La ville contient des caractères invalides")
     private String city;
+
+    private String aboutMe;
+
+    private String website;
 }

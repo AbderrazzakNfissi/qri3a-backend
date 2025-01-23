@@ -1,10 +1,6 @@
 package my.project.qri3a.dtos.responses;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import my.project.qri3a.entities.User;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
