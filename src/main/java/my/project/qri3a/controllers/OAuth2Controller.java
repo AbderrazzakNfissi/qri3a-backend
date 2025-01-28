@@ -74,7 +74,7 @@ public class OAuth2Controller {
                     clientId,
                     clientSecret,
                     code,
-                    "http://localhost:4200" // Updated Redirect URI
+                    "http://localhost:4200"
             ).execute();
 
             token = tokenResponse.getAccessToken();

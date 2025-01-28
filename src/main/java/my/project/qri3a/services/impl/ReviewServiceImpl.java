@@ -7,6 +7,7 @@ import my.project.qri3a.dtos.responses.ReviewResponseDTO;
 import my.project.qri3a.dtos.responses.ReviewStatisticsResponseDTO;
 import my.project.qri3a.entities.Review;
 import my.project.qri3a.entities.User;
+import my.project.qri3a.exceptions.BadRequestException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.UnauthorizedException;
 import my.project.qri3a.mappers.ReviewMapper;
@@ -45,27 +46,35 @@ public class ReviewServiceImpl implements ReviewService {
      * @throws ResourceNotFoundException If the user being reviewed does not exist.
      */
     @Override
-    public ReviewResponseDTO addReview(Authentication authentication, ReviewRequestDTO reviewRequestDTO) throws ResourceNotFoundException {
+    public ReviewResponseDTO addReview(Authentication authentication, ReviewRequestDTO reviewRequestDTO) throws ResourceNotFoundException, BadRequestException {
         UUID reviewedUserId = reviewRequestDTO.getUserId();
         log.debug("Adding review for userId: {}", reviewedUserId);
 
-        // Retrieve the user being reviewed
+        // Récupérer l'utilisateur qui est évalué
         User reviewedUser = userRepository.findById(reviewedUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User to be reviewed not found"));
 
-        // Retrieve the authenticated user (reviewer) based on authentication details
+        // Récupérer l'utilisateur authentifié (reviewer) basé sur les détails d'authentification
         String reviewerEmail = authentication.getName();
         User reviewer = userService.getUserByEmail(reviewerEmail);
 
-        // Map DTO to Review entity
+        // Vérifier que l'utilisateur ne s'évalue pas lui-même
+        if (reviewer.getId().equals(reviewedUser.getId())) {
+            log.warn("User {} attempted to review themselves.", reviewer.getId());
+            throw new BadRequestException("Vous ne pouvez pas vous évaluer vous-même.");
+            // Vous pouvez également créer une exception personnalisée si nécessaire
+            // throw new BadRequestException("Vous ne pouvez pas vous évaluer vous-même.");
+        }
+
+        // Mapper le DTO en entité Review
         Review review = reviewMapper.toEntity(reviewRequestDTO);
         review.setUser(reviewedUser);
         review.setReviewer(reviewer);
 
-        // Optionally, manage bidirectional relationships if applicable
+        // Gérer éventuellement les relations bidirectionnelles si applicable
         reviewedUser.addReview(review);
 
-        // Save the review to the repository
+        // Sauvegarder l'évaluation dans le repository
         Review savedReview = reviewRepository.save(review);
 
         log.debug("Review added with id: {}", savedReview.getId());

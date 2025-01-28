@@ -3,6 +3,7 @@ import my.project.qri3a.dtos.requests.ReviewRequestDTO;
 import my.project.qri3a.dtos.requests.UpdateReviewRequestDTO;
 import my.project.qri3a.dtos.responses.ReviewResponseDTO;
 import my.project.qri3a.dtos.responses.ReviewStatisticsResponseDTO;
+import my.project.qri3a.exceptions.BadRequestException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.UnauthorizedException;
 import org.springframework.security.core.Authentication;
@@ -13,7 +14,7 @@ import java.util.UUID;
 
 public interface ReviewService {
 
-    ReviewResponseDTO addReview(Authentication authentication, ReviewRequestDTO reviewRequestDTO) throws ResourceNotFoundException;
+    ReviewResponseDTO addReview(Authentication authentication, ReviewRequestDTO reviewRequestDTO) throws ResourceNotFoundException, BadRequestException;
 
     void removeReview(Authentication authentication, UUID reviewId) throws ResourceNotFoundException, UnauthorizedException;
 

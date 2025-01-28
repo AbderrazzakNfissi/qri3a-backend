@@ -6,6 +6,7 @@ import my.project.qri3a.dtos.requests.ReviewRequestDTO;
 import my.project.qri3a.dtos.requests.UpdateReviewRequestDTO;
 import my.project.qri3a.dtos.responses.ReviewResponseDTO;
 import my.project.qri3a.dtos.responses.ReviewStatisticsResponseDTO;
+import my.project.qri3a.exceptions.BadRequestException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.UnauthorizedException;
 import my.project.qri3a.services.ReviewService;
@@ -44,7 +45,7 @@ public class ReviewController {
     @DeleteMapping("{reviewId}")
     public ResponseEntity<Void> deleteReview(
             Authentication authentication,
-            @PathVariable UUID reviewId) throws ResourceNotFoundException , UnauthorizedException {
+            @PathVariable UUID reviewId) throws ResourceNotFoundException , UnauthorizedException, BadRequestException {
         reviewService.removeReview(authentication, reviewId);
         return ResponseEntity.noContent().build();
     }

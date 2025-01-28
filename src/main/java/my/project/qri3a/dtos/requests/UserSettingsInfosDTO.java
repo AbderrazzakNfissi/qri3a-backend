@@ -5,8 +5,13 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+
+import java.util.UUID;
+
 @Data
 public class UserSettingsInfosDTO {
+
+    private UUID id;
 
     @NotBlank(message = "L'email est obligatoire")
     @Email(message = "L'email doit être valide")
