@@ -93,6 +93,17 @@ public class User implements UserDetails {
     @JsonManagedReference
     private Set<Review> reviews = new HashSet<>();
 
+
+    // Signalements faits par cet utilisateur
+    @OneToMany(mappedBy = "reporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<Report> reportsMade = new HashSet<>();
+
+    // Signalements reçus par cet utilisateur
+    @OneToMany(mappedBy = "reportedUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<Report> reportsReceived = new HashSet<>();
+
     @CreationTimestamp
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime createdAt;
@@ -161,4 +172,26 @@ public class User implements UserDetails {
         reviews.remove(review);
         review.setUser(null);
     }
+
+    // Méthodes utilitaires
+    public void addReportMade(Report report) {
+        reportsMade.add(report);
+        report.setReporter(this);
+    }
+
+    public void removeReportMade(Report report) {
+        reportsMade.remove(report);
+        report.setReporter(null);
+    }
+
+    public void addReportReceived(Report report) {
+        reportsReceived.add(report);
+        report.setReportedUser(this);
+    }
+
+    public void removeReportReceived(Report report) {
+        reportsReceived.remove(report);
+        report.setReportedUser(null);
+    }
+
 }

@@ -9,6 +9,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -45,10 +47,24 @@ public class Review {
     @JsonIgnore
     private User reviewer;
 
+    @OneToMany(mappedBy = "reportedReview", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<Report> reportsReceived = new HashSet<>();
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    // Méthodes utilitaires
+    public void addReport(Report report) {
+        reportsReceived.add(report);
+        report.setReportedReview(this);
+    }
+
+    public void removeReport(Report report) {
+        reportsReceived.remove(report);
+        report.setReportedReview(null);
+    }
 }
