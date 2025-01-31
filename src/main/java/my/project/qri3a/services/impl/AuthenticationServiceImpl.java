@@ -32,15 +32,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new ResourceAlreadyExistsException("User with email: " + request.getEmail() + " already exists.");
         });
 
-        User userToRegister = new User();
-        userToRegister.setEmail(request.getEmail());
-        userToRegister.setPassword(request.getPassword());
-        userToRegister.setName("");
-        userToRegister.setAddress("");
-        userToRegister.setCity("");
-        userToRegister.setPhoneNumber("");
-        userToRegister.setRole(Role.SELLER);
-        userToRegister.setRating(5F);
+        User userToRegister = getUser(request);
         User savedUser = userRepository.save(userToRegister);
 
         // Generate tokens
@@ -54,6 +46,21 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .role("SELLER")
                 .id(userToRegister.getId())
                 .build();
+    }
+
+    private static User getUser(EmailAndPasswordDTO request) {
+        String email = request.getEmail();
+        String name = email.contains("@") ? email.split("@")[0] : email;
+        User userToRegister = new User();
+        userToRegister.setEmail(request.getEmail());
+        userToRegister.setPassword(request.getPassword());
+        userToRegister.setName(name);
+        userToRegister.setAddress("");
+        userToRegister.setCity("");
+        userToRegister.setPhoneNumber("");
+        userToRegister.setRole(Role.SELLER);
+        userToRegister.setRating(5F);
+        return userToRegister;
     }
 
     @Override
