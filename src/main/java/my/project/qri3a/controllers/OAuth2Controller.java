@@ -52,7 +52,7 @@ public class OAuth2Controller {
     @GetMapping("/url")
     public ResponseEntity<UrlDto> auth() {
         String url = new GoogleAuthorizationCodeRequestUrl(clientId,
-                "http://localhost:4200",
+                "http://localhost:4200/auth/callback",
                 Arrays.asList(
                         "email",
                         "profile",
@@ -74,7 +74,7 @@ public class OAuth2Controller {
                     clientId,
                     clientSecret,
                     code,
-                    "http://localhost:4200"
+                    "http://localhost:4200/auth/callback"
             ).execute();
 
             token = tokenResponse.getAccessToken();
