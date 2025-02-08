@@ -99,6 +99,65 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public Page<ProductListingDTO> searchProducts(String query, Pageable pageable, String category, String location, String condition, BigDecimal minPrice, BigDecimal maxPrice, String city) {
+        log.info("Service: Recherche des produits avec le terme: {} et filtres - category: {}, location: {}, condition: {}, minPrice: {}, maxPrice: {}, city: {}",
+                query, category, location, condition, minPrice, maxPrice, city);
+
+        // Démarrer avec une spécification sur le texte (titre ou description)
+        Specification<Product> spec = Specification.where(ProductSpecifications.containsText(query));
+
+        // Filtre sur la catégorie
+        if (category != null && !category.isEmpty()) {
+            try {
+                spec = spec.and(ProductSpecifications.hasCategory(ProductCategory.valueOf(category.toUpperCase())));
+            } catch (IllegalArgumentException ex) {
+                log.error("Invalid category: {}", category);
+                throw new ResourceNotValidException("Invalid category: " + category);
+            }
+        }
+
+        // Filtre sur la location (si vous avez une spécification associée)
+        if (location != null && !location.isEmpty()) {
+            spec = spec.and(ProductSpecifications.hasLocation(location));
+        }
+
+        // Filtre sur la condition
+        if (condition != null && !condition.isEmpty()) {
+            try {
+                spec = spec.and(ProductSpecifications.hasCondition(ProductCondition.valueOf(condition.toUpperCase())));
+            } catch (IllegalArgumentException ex) {
+                log.error("Invalid condition: {}", condition);
+                throw new ResourceNotValidException("Invalid condition: " + condition);
+            }
+        }
+
+        // Filtre sur le prix minimum
+        if (minPrice != null) {
+            spec = spec.and(ProductSpecifications.hasMinPrice(minPrice));
+        }
+
+        // Filtre sur le prix maximum
+        if (maxPrice != null) {
+            spec = spec.and(ProductSpecifications.hasMaxPrice(maxPrice));
+        }
+
+        // Filtre sur la ville
+        if (city != null && !city.isEmpty()) {
+            spec = spec.and(ProductSpecifications.hasCity(city));
+        }
+
+        // Vérifier que minPrice n'est pas supérieur à maxPrice
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            log.error("minPrice {} is greater than maxPrice {}", minPrice, maxPrice);
+            throw new ResourceNotValidException("minPrice cannot be greater than maxPrice");
+        }
+
+        Page<Product> productsPage = productRepository.findAll(spec, pageable);
+        return productsPage.map(productMapper::toProductListingDTO);
+    }
+
+
+    @Override
     public ProductResponseDTO getProductById(UUID productId) throws ResourceNotFoundException {
         log.info("Service: Fetching product with ID: {}", productId);
         Product product = productRepository.findById(productId)

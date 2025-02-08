@@ -158,6 +158,7 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
+    /*
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> searchProducts(
             @RequestParam String query,
@@ -179,7 +180,7 @@ public class ProductController {
         );
         return ResponseEntity.ok(response);
     }
-
+  */
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getProductsByUserId(
@@ -198,6 +199,37 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> searchProducts(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt,desc") String sort,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String condition,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) String city
+    ) {
+        log.info("Controller: Recherche de produits avec le terme: {} et filtres - category: {}, location: {}, condition: {}, minPrice: {}, maxPrice: {}, city: {}",
+                query, category, location, condition, minPrice, maxPrice, city);
+
+        String[] sortParams = sort.split(",");
+        Sort sortOrder = Sort.by(Sort.Direction.fromString(sortParams[1]), sortParams[0]);
+        Pageable pageable = PageRequest.of(page, size, sortOrder);
+
+        // Appeler la méthode de recherche avec filtres
+        Page<ProductListingDTO> results = productService.searchProducts(query, pageable, category, location, condition, minPrice, maxPrice, city);
+
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                results,
+                "Résultats de recherche récupérés avec succès.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
 
 
 }

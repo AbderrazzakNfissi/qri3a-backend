@@ -44,4 +44,15 @@ public class ProductSpecifications {
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.equal(root.get("city"), city);
     }
+
+    public static Specification<Product> containsText(String query) {
+        return (root, criteriaQuery, criteriaBuilder) -> {
+            String likePattern = "%" + query.toLowerCase() + "%";
+            return criteriaBuilder.or(
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), likePattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), likePattern)
+            );
+        };
+    }
+
 }

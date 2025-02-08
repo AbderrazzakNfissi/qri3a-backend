@@ -27,6 +27,16 @@ public interface ProductService {
     void deleteMyProduct(UUID productId, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException;
     Page<ProductListingDTO> getRecommendedProducts(UUID productId, Pageable pageable) throws ResourceNotFoundException;
     List<ProductListingDTO> searchProductSuggestions(String query, int limit);
-     Page<ProductListingDTO> searchProducts(String query, Pageable pageable);
+    Page<ProductListingDTO> searchProducts(String query, Pageable pageable);
+    Page<ProductListingDTO> searchProducts(
+            String query,
+            Pageable pageable,
+            String category,
+            String location,
+            String condition,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String city
+    );
     Page<ProductListingDTO> getProductsByUserId(UUID userId, Pageable pageable) throws ResourceNotFoundException;
 }
