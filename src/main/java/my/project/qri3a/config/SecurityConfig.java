@@ -68,7 +68,8 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/docs",
                                 "/api-docs/swagger-config",
-                                "/api-docs"
+                                "/api-docs",
+                                "/ws/**"
                         ).permitAll()
 
                         // Toutes les autres requêtes nécessitent une authentification

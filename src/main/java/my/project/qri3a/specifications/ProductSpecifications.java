@@ -48,6 +48,7 @@ public class ProductSpecifications {
     public static Specification<Product> containsText(String query) {
         return (root, criteriaQuery, criteriaBuilder) -> {
             String likePattern = "%" + query.toLowerCase() + "%";
+            //on peut ajouter apres une logique de recherche avance avec une integration avec Elastic search par exemple
             return criteriaBuilder.or(
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), likePattern),
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), likePattern)
