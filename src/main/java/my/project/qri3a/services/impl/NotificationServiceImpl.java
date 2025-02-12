@@ -5,9 +5,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.responses.NotificationResponseDTO;
 import my.project.qri3a.entities.Notification;
+import my.project.qri3a.entities.User;
 import my.project.qri3a.mappers.NotificationMapper;
 import my.project.qri3a.repositories.NotificationRepository;
 import my.project.qri3a.services.NotificationService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -66,5 +69,11 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void deleteNotification(UUID id) {
         notificationRepository.deleteById(id);
+    }
+
+
+    @Override
+    public Page<Notification> getMyNotifications(User user, Pageable pageable) {
+        return notificationRepository.findByUser(user, pageable);
     }
 }

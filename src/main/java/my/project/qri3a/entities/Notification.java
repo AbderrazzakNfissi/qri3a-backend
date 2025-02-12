@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import my.project.qri3a.enums.ProductCategory;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDateTime;
@@ -39,5 +40,6 @@ public class Notification {
 
     private boolean read = false;
 
+    @CreationTimestamp
     private LocalDateTime createdAt;
 }
