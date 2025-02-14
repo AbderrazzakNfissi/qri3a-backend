@@ -39,4 +39,5 @@ public interface ProductService {
             String city
     );
     Page<ProductListingDTO> getProductsByUserId(UUID userId, Pageable pageable) throws ResourceNotFoundException;
+
 }

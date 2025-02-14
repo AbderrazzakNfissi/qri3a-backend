@@ -1,5 +1,4 @@
 package my.project.qri3a.controllers;
-
 import lombok.RequiredArgsConstructor;
 import my.project.qri3a.dtos.requests.NotificationRequestDTO;
 import my.project.qri3a.dtos.responses.NotificationResponseDTO;
@@ -133,4 +132,6 @@ public class NotificationController {
         User user = userService.getUserByEmail(email);
         notificationService.markAllAsSeen(user);
     }
+
+
 }

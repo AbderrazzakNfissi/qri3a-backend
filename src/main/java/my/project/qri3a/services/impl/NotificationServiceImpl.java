@@ -35,7 +35,6 @@ public class NotificationServiceImpl implements NotificationService {
 
         // Use the mapper to convert to a DTO including the first product image if available
         NotificationResponseDTO dto = notificationMapper.toDTO(savedNotification);
-
         // Publish the notification via WebSocket (it will be converted to JSON)
         messagingTemplate.convertAndSend("/topic/notifications", dto);
         return savedNotification;
