@@ -3,6 +3,7 @@ package my.project.qri3a.controllers;
 import lombok.RequiredArgsConstructor;
 import my.project.qri3a.dtos.requests.NotificationRequestDTO;
 import my.project.qri3a.dtos.responses.NotificationResponseDTO;
+import my.project.qri3a.dtos.responses.UnreadCountDTO;
 import my.project.qri3a.entities.Notification;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
@@ -116,5 +117,20 @@ public class NotificationController {
         Page<Notification> notifications = notificationService.getMyNotifications(seller, pageable);
         // Retourner la page de notifications convertie en DTO
         return notifications.map(notificationMapper::toDTO);
+    }
+
+    @GetMapping("/unread-count")
+    public UnreadCountDTO getUnreadCount(Authentication authentication) {
+        String email = authentication.getName();
+        User user = userService.getUserByEmail(email);
+        long count = notificationService.getUnreadCount(user);
+        return new UnreadCountDTO(count);
+    }
+
+    @PutMapping("/mark-all-as-seen")
+    public void markAllAsSeen(Authentication authentication) {
+        String email = authentication.getName();
+        User user = userService.getUserByEmail(email);
+        notificationService.markAllAsSeen(user);
     }
 }

@@ -76,4 +76,14 @@ public class NotificationServiceImpl implements NotificationService {
     public Page<Notification> getMyNotifications(User user, Pageable pageable) {
         return notificationRepository.findByUser(user, pageable);
     }
+
+    @Override
+    public long getUnreadCount(User user) {
+        return notificationRepository.countByUserAndReadFalse(user);
+    }
+
+    @Override
+    public void markAllAsSeen(User user) {
+        notificationRepository.markAllAsSeenByUser(user);
+    }
 }

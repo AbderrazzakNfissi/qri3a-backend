@@ -15,4 +15,6 @@ public interface NotificationService {
     Notification updateNotification(UUID id, Notification notification);
     void deleteNotification(UUID id);
     Page<Notification> getMyNotifications(User user, Pageable pageable);
+    long getUnreadCount(User user);
+    void markAllAsSeen(User user);
 }
