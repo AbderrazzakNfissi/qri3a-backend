@@ -1,5 +1,6 @@
 package my.project.qri3a.services;
 
+import my.project.qri3a.documents.ProductDoc;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
@@ -40,4 +41,7 @@ public interface ProductService {
     );
     Page<ProductListingDTO> getProductsByUserId(UUID userId, Pageable pageable) throws ResourceNotFoundException;
 
+    Page<ProductDoc> searchProductsElastic(String query, Pageable pageable);
+
+    Page<ProductDoc> findAll(Pageable pageable);
 }

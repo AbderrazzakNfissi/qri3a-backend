@@ -3,6 +3,7 @@ package my.project.qri3a.controllers;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.project.qri3a.documents.ProductDoc;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
@@ -231,5 +232,35 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/search-elastic")
+    public ResponseEntity<ApiResponse<Page<ProductDoc>>> searchProductsElastic(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+        log.info("Controller: Recherche de produits dans Elasticsearch avec le terme: {}", query);
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductDoc> results = productService.searchProductsElastic(query, pageable);
+        ApiResponse<Page<ProductDoc>> response = new ApiResponse<>(results, "Résultats de recherche Elasticsearch récupérés avec succès.", HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
+    }
+
+
+    @GetMapping("/find-all")
+    public ResponseEntity<ApiResponse<Page<ProductDoc>>> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductDoc> results = productService.findAll(pageable);
+        ApiResponse<Page<ProductDoc>> response = new ApiResponse<>(
+                results,
+                "Résultats de recherche récupérés avec succès.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
 
 }

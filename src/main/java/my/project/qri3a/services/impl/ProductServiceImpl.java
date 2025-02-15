@@ -2,6 +2,7 @@ package my.project.qri3a.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.project.qri3a.documents.ProductDoc;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
@@ -15,6 +16,8 @@ import my.project.qri3a.exceptions.ResourceNotValidException;
 import my.project.qri3a.mappers.ProductMapper;
 import my.project.qri3a.repositories.ProductRepository;
 import my.project.qri3a.repositories.UserRepository;
+import my.project.qri3a.repositories.search.ProductDocRepository;
+import my.project.qri3a.services.ProductIndexService;
 import my.project.qri3a.services.ProductService;
 import my.project.qri3a.services.UserService;
 import my.project.qri3a.specifications.ProductSpecifications;
@@ -42,6 +45,8 @@ public class ProductServiceImpl implements ProductService {
     private final UserRepository userRepository;
     private final ProductMapper productMapper;
     private final UserService userService;
+    private final ProductIndexService productIndexService;
+    private final ProductDocRepository productDocRepository;
 
     @Override
     public Page<ProductListingDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice, String city) throws ResourceNotValidException {
@@ -183,6 +188,9 @@ public class ProductServiceImpl implements ProductService {
         Product savedProduct = productRepository.save(product);
         log.info("Service: Product created with ID: {}", savedProduct.getId());
 
+        // Synchroniser l'index Elasticsearch
+        productIndexService.indexProduct(savedProduct);
+
         return productMapper.toDTO(savedProduct);
     }
 
@@ -213,6 +221,9 @@ public class ProductServiceImpl implements ProductService {
         Product updatedProduct = productRepository.save(existingProduct);
         log.info("Service: Product updated with ID: {}", updatedProduct.getId());
 
+        // Mettre à jour l'index Elasticsearch
+        productIndexService.indexProduct(updatedProduct);
+
         return productMapper.toDTO(updatedProduct);
     }
 
@@ -226,6 +237,7 @@ public class ProductServiceImpl implements ProductService {
                 });
         productRepository.delete(product);
         log.info("Service: Product deleted with ID: {}", productId);
+        productIndexService.deleteProductIndex(productId);
     }
 
 
@@ -259,6 +271,8 @@ public class ProductServiceImpl implements ProductService {
 
         productRepository.delete(product);
         log.info("Service: Product deleted with ID: {}", productId);
+
+        productIndexService.deleteProductIndex(productId);
     }
 
 
@@ -328,5 +342,21 @@ public class ProductServiceImpl implements ProductService {
 
 
 
+    @Override
+    public Page<ProductDoc> searchProductsElastic(String query, Pageable pageable) {
+        log.info("Service: Recherche Elasticsearch pour le terme: {}", query);
+
+        // Utilisation de la méthode personnalisée dans le repository
+        Page<ProductDoc> productDocPage = productDocRepository.findProductDocByTitle(query, pageable);
+
+        // Conversion des résultats en ProductListingDTO via le mapper dédié
+        return productDocPage;
+    }
+
+    @Override
+    public Page<ProductDoc> findAll(Pageable pageable) {
+        Page<ProductDoc> productDocs = productDocRepository.findAll(pageable);
+        return productDocs;
+    }
 
 }

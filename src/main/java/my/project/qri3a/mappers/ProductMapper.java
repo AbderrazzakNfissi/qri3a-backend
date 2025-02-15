@@ -1,10 +1,13 @@
 package my.project.qri3a.mappers;
 
 import lombok.RequiredArgsConstructor;
+import my.project.qri3a.documents.ProductDoc;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
 import my.project.qri3a.dtos.responses.*;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
+import my.project.qri3a.enums.ProductCategory;
+import my.project.qri3a.enums.ProductCondition;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -97,6 +100,28 @@ public class ProductMapper {
         return dto;
     }
 
+    /*
+    public ProductListingDTO toProductListingDTO(ProductDoc doc) {
+        if (doc == null) {
+            return null;
+        }
+        ProductListingDTO dto = new ProductListingDTO();
+        dto.setId(doc.getId());
+        dto.setTitle(doc.getTitle());
+        dto.setPrice(doc.getPrice());
+        dto.setLocation(doc.getLocation());
+        dto.setCity(doc.getCity());
+        // Convertir la chaîne en enum (assurez-vous que la casse est correcte)
+        dto.setCategory(ProductCategory.valueOf(doc.getCategory()));
+        dto.setCondition(ProductCondition.valueOf(doc.getCondition()));
+        // Les informations sur les images ne sont pas présentes dans le document Elasticsearch
+        dto.setNumberOfImages(0);
+        dto.setImage(null);
+
+        return dto;
+    }
+  */
+
 
     public Product toEntity(ProductRequestDTO productRequestDTO) {
         Product product = new Product();
@@ -107,4 +132,24 @@ public class ProductMapper {
     public void updateEntityFromDTO(ProductRequestDTO dto, Product entity) {
         BeanUtils.copyProperties(dto, entity, "id", "createdAt", "updatedAt", "seller","images");
     }
+
+
+    public ProductDoc toProductDoc(Product product) {
+        return ProductDoc.builder()
+                .id(product.getId())
+                .title(product.getTitle())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .location(product.getLocation())
+                .city(product.getCity())
+                .category(product.getCategory().name())
+                .condition(product.getCondition().name())
+                .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
+                .firstImageUrl(product.getImages().isEmpty() ? null : product.getImages().get(0).getUrl())
+                .numberOfImages(product.getImages().size())
+                .build();
+    }
+
+
 }
