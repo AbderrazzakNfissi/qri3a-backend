@@ -11,6 +11,7 @@ import my.project.qri3a.mappers.ImageMapper;
 import my.project.qri3a.repositories.ImageRepository;
 import my.project.qri3a.repositories.ProductRepository;
 import my.project.qri3a.services.ImageService;
+import my.project.qri3a.services.ProductIndexService;
 import my.project.qri3a.services.S3Service;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.Resource;
@@ -35,7 +36,7 @@ public class ImageServiceImpl implements ImageService {
     private final ImageRepository imageRepository;
     private final S3Service s3Service;
     private final ImageMapper imageMapper;
-
+    private final ProductIndexService productIndexService;
     /**
      * Récupère toutes les images pour un produit donné.
      *
@@ -148,6 +149,8 @@ public class ImageServiceImpl implements ImageService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + productId));
 
+
+
         // Validation des fichiers
         if (files.isEmpty()) {
             throw new ResourceNotValidException("No files provided.");
@@ -200,6 +203,7 @@ public class ImageServiceImpl implements ImageService {
         productRepository.save(product);
         log.info("Service: {} images uploaded successfully for product '{}'", uploadedImages.size(), productId);
 
+        this.productIndexService.indexProduct(product);
         return uploadedImages;
     }
 

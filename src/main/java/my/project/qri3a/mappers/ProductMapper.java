@@ -135,6 +135,18 @@ public class ProductMapper {
 
 
     public ProductDoc toProductDoc(Product product) {
+
+        LocalDateTime createdAt = product.getCreatedAt();
+        String createdAtStr = "";
+        if (createdAt != null) {
+            // Convert LocalDateTime to ZonedDateTime with UTC timezone
+            ZonedDateTime utcDateTime = createdAt.atZone(ZoneId.systemDefault())
+                    .withZoneSameInstant(ZoneId.of("UTC"));
+            // Define ISO 8601 format
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            // Apply format and set in DTO
+            createdAtStr = utcDateTime.format(formatter);
+        }
         return ProductDoc.builder()
                 .id(product.getId())
                 .title(product.getTitle())
@@ -144,8 +156,7 @@ public class ProductMapper {
                 .city(product.getCity())
                 .category(product.getCategory().name())
                 .condition(product.getCondition().name())
-                .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt())
+                .createdAt(createdAtStr)
                 .firstImageUrl(product.getImages().isEmpty() ? null : product.getImages().get(0).getUrl())
                 .numberOfImages(product.getImages().size())
                 .build();

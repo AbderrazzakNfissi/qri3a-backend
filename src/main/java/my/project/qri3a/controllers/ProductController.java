@@ -237,12 +237,19 @@ public class ProductController {
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort) {
-        log.info("Controller: Recherche de produits dans Elasticsearch avec le terme: {}", query);
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String condition,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) String city) {
+
+        log.info("Controller: Elasticsearch search with query: {} and filters - category: {}, location: {}, condition: {}, minPrice: {}, maxPrice: {}, city: {}",
+                query, category, location, condition, minPrice, maxPrice, city);
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<ProductDoc> results = productService.searchProductsElastic(query, pageable);
-        ApiResponse<Page<ProductDoc>> response = new ApiResponse<>(results, "Résultats de recherche Elasticsearch récupérés avec succès.", HttpStatus.OK.value());
+        Page<ProductDoc> results = productService.searchProductsElastic(query, pageable, category, location, condition, minPrice, maxPrice, city);
+        ApiResponse<Page<ProductDoc>> response = new ApiResponse<>(results, "Elasticsearch search results fetched successfully.", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
 

@@ -188,8 +188,6 @@ public class ProductServiceImpl implements ProductService {
         Product savedProduct = productRepository.save(product);
         log.info("Service: Product created with ID: {}", savedProduct.getId());
 
-        // Synchroniser l'index Elasticsearch
-        productIndexService.indexProduct(savedProduct);
 
         return productMapper.toDTO(savedProduct);
     }
@@ -341,17 +339,33 @@ public class ProductServiceImpl implements ProductService {
     }
 
 
-
+    /*
     @Override
-    public Page<ProductDoc> searchProductsElastic(String query, Pageable pageable) {
-        log.info("Service: Recherche Elasticsearch pour le terme: {}", query);
+    public Page<ProductDoc> searchProductsElastic(String query, Pageable pageable, String category, String location, String condition, BigDecimal minPrice, BigDecimal maxPrice, String city) {
+        log.info("Service: Elasticsearch search with query: {} and filters - category: {}, location: {}, condition: {}, minPrice: {}, maxPrice: {}, city: {}",
+                query, category, location, condition, minPrice, maxPrice, city);
 
-        // Utilisation de la méthode personnalisée dans le repository
-        Page<ProductDoc> productDocPage = productDocRepository.findProductDocByTitle(query, pageable);
 
-        // Conversion des résultats en ProductListingDTO via le mapper dédié
-        return productDocPage;
+        String safeCategory = category == null ? "" : category;
+        String safeLocation = location == null ? "" : location;
+        String safeCondition = condition == null ? "" : condition;
+        String safeCity = city == null ? "" : city;
+        BigDecimal safeMinPrice = minPrice == null ? BigDecimal.ZERO : minPrice;
+        BigDecimal safeMaxPrice = maxPrice == null ? new BigDecimal("9999999") : maxPrice;
+
+        return productDocRepository.searchProductsElastic(query, safeCategory, safeLocation, safeCondition,
+                safeMinPrice, safeMaxPrice, safeCity, pageable);
+
     }
+    */
+    @Override
+    public Page<ProductDoc> searchProductsElastic(String query, Pageable pageable, String category, String location, String condition, BigDecimal minPrice, BigDecimal maxPrice, String city) {
+        log.info("Service: Elasticsearch search with query: {} and filters - category: {}, location: {}, condition: {}, minPrice: {}, maxPrice: {}, city: {}",
+                query, category, location, condition, minPrice, maxPrice, city);
+
+        return productDocRepository.searchProductsElastic(query, category, location, condition, minPrice, maxPrice, city, pageable);
+    }
+
 
     @Override
     public Page<ProductDoc> findAll(Pageable pageable) {
