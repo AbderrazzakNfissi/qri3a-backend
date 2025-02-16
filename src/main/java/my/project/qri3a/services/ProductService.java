@@ -44,4 +44,6 @@ public interface ProductService {
     Page<ProductDoc> searchProductsElastic(String query, Pageable pageable, String category, String location, String condition, BigDecimal minPrice, BigDecimal maxPrice, String city) ;
 
     Page<ProductDoc> findAll(Pageable pageable);
+
+    List<ProductDoc> searchProductSuggestionsElastic(String query);
 }

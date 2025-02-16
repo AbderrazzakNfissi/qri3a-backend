@@ -4,6 +4,7 @@ import my.project.qri3a.documents.ProductDoc;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface ProductDocRepositoryCustom {
     Page<ProductDoc> searchProductsElastic(String query,
@@ -14,4 +15,6 @@ public interface ProductDocRepositoryCustom {
                                            BigDecimal maxPrice,
                                            String city,
                                            Pageable pageable);
+
+    List<ProductDoc> findTop10ByTitleOrDescriptionContainingIgnoreCase(String title);
 }

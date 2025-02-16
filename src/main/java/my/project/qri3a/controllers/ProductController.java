@@ -270,4 +270,19 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/suggestions")
+    public ResponseEntity<ApiResponse<List<ProductDoc>>> getSuggestions(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        log.info("Controller: Récupération des suggestions de recherche pour le terme: {} using Elastic Search ", query);
+        List<ProductDoc> suggestions = productService.searchProductSuggestionsElastic(query);
+        ApiResponse<List<ProductDoc>> response = new ApiResponse<>(
+                suggestions,
+                "Suggestions de recherche récupérées avec succès.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
 }

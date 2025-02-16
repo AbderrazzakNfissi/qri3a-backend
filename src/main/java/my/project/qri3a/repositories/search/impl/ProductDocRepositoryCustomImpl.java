@@ -4,6 +4,7 @@ import my.project.qri3a.documents.ProductDoc;
 import my.project.qri3a.repositories.search.ProductDocRepositoryCustom;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
@@ -12,6 +13,7 @@ import org.springframework.data.elasticsearch.core.query.Criteria;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -79,5 +81,32 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
                 .collect(Collectors.toList());
 
         return new PageImpl<>(productDocs, pageable, searchHits.getTotalHits());
+    }
+
+    @Override
+    public List<ProductDoc> findTop10ByTitleOrDescriptionContainingIgnoreCase(String title) {
+        if (title == null || title.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        // Clean and trim the input to remove problematic characters
+        String cleanedTitle = title.replace("\"", "").trim();
+        // Prepare a wildcard expression for partial matching
+        String expression = "*" + cleanedTitle + "*";
+
+        // Build criteria for either title or description using OR
+        Criteria titleCriteria = new Criteria("title").expression(expression);
+        Criteria descriptionCriteria = new Criteria("description").expression(expression);
+        Criteria criteria = new Criteria().or(titleCriteria).or(descriptionCriteria);
+
+        // Create the query and limit the result to 10 items
+        CriteriaQuery query = new CriteriaQuery(criteria);
+        Pageable pageable = PageRequest.of(0, 10);
+        query.setPageable(pageable);
+
+        // Execute the query
+        SearchHits<ProductDoc> searchHits = elasticsearchOperations.search(query, ProductDoc.class);
+        return searchHits.get()
+                .map(SearchHit::getContent)
+                .collect(Collectors.toList());
     }
 }

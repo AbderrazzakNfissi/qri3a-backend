@@ -373,4 +373,16 @@ public class ProductServiceImpl implements ProductService {
         return productDocs;
     }
 
+    @Override
+    public List<ProductDoc> searchProductSuggestionsElastic(String query) {
+        log.info("Service: Recherche des suggestions de produits pour le terme: {} - Using Elastic Search", query);
+
+        if (query == null || query.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<ProductDoc> products = productDocRepository.findTop10ByTitleOrDescriptionContainingIgnoreCase(query);
+        return products;
+    }
+
 }
