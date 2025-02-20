@@ -11,7 +11,6 @@ import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.Criteria;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
-
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
