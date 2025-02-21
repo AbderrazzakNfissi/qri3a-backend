@@ -1,19 +1,9 @@
 package my.project.qri3a.controllers;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
-import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import my.project.qri3a.dtos.UrlDto;
-import my.project.qri3a.dtos.responses.ApiResponseDto;
-import my.project.qri3a.entities.User;
-import my.project.qri3a.enums.Role;
-import my.project.qri3a.repositories.UserRepository;
-import my.project.qri3a.services.JwtService;
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.Arrays;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -27,10 +17,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.security.SecureRandom;
-import java.util.Arrays;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
+import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import my.project.qri3a.dtos.UrlDto;
+import my.project.qri3a.dtos.responses.ApiResponseDto;
+import my.project.qri3a.entities.User;
+import my.project.qri3a.enums.Role;
+import my.project.qri3a.repositories.UserRepository;
+import my.project.qri3a.services.JwtService;
 
 @Slf4j
 @RestController

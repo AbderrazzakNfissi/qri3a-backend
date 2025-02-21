@@ -1,14 +1,14 @@
 package my.project.qri3a.services;
 
-import my.project.qri3a.dtos.responses.ImageResponseDTO;
-import my.project.qri3a.exceptions.ResourceNotFoundException;
-import my.project.qri3a.exceptions.ResourceNotValidException;
-import org.springframework.core.io.Resource;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import my.project.qri3a.dtos.responses.ImageResponseDTO;
+import my.project.qri3a.exceptions.ResourceNotFoundException;
+import my.project.qri3a.exceptions.ResourceNotValidException;
 
 public interface ImageService {
 

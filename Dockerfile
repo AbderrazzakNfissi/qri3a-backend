@@ -5,11 +5,7 @@ WORKDIR /app
 # Copier le jar de l'application
 COPY target/*.jar app.jar
 
-# Copier le script wait-for-it.sh et rendre exécutable
-COPY wait-for-it.sh wait-for-it.sh
-RUN chmod +x wait-for-it.sh
-
 EXPOSE 8080
 
-# Utiliser wait-for-it pour attendre PostgreSQL et Elasticsearch avant de lancer l'application
-ENTRYPOINT ["sh", "-c", "./wait-for-it.sh postgres:5432 -t 60 && ./wait-for-it.sh elasticsearch:9200 -t 60 && java -jar app.jar"]
+# Attendre que PostgreSQL et Elasticsearch soient disponibles, puis lancer l'application
+ENTRYPOINT ["sh", "-c", "until echo > /dev/tcp/postgres/5432; do echo 'Waiting for PostgreSQL'; sleep 1; done; until echo > /dev/tcp/elasticsearch/9200; do echo 'Waiting for Elasticsearch'; sleep 1; done; java -jar app.jar"]

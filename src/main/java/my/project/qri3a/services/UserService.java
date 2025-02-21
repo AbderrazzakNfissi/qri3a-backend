@@ -1,23 +1,22 @@
 package my.project.qri3a.services;
 
-import my.project.qri3a.dtos.requests.ChangePasswordRequestDTO;
-import my.project.qri3a.dtos.requests.UpdateUserRequestDTO;
-import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
-import my.project.qri3a.dtos.responses.ProductListingDTO;
-import my.project.qri3a.dtos.responses.ProductResponseDTO;
-import my.project.qri3a.dtos.responses.SellerProfileDTO;
-import my.project.qri3a.entities.User;
-import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
-import my.project.qri3a.exceptions.ResourceNotFoundException;
-import my.project.qri3a.exceptions.ResourceNotValidException;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import my.project.qri3a.dtos.requests.ChangePasswordRequestDTO;
+import my.project.qri3a.dtos.requests.UserSettingsInfosDTO;
+import my.project.qri3a.dtos.responses.ProductListingDTO;
+import my.project.qri3a.dtos.responses.SellerProfileDTO;
+import my.project.qri3a.entities.User;
+import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
+import my.project.qri3a.exceptions.ResourceNotFoundException;
+import my.project.qri3a.exceptions.ResourceNotValidException;
 
 
 public interface UserService {

@@ -1,16 +1,16 @@
 package my.project.qri3a.documents;
 
-import lombok.*;
-import my.project.qri3a.entities.Image;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import java.math.BigDecimal;
+import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 
 @NoArgsConstructor

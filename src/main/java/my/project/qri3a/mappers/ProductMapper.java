@@ -1,22 +1,24 @@
 package my.project.qri3a.mappers;
 
-import lombok.RequiredArgsConstructor;
-import my.project.qri3a.documents.ProductDoc;
-import my.project.qri3a.dtos.requests.ProductRequestDTO;
-import my.project.qri3a.dtos.responses.*;
-import my.project.qri3a.entities.Product;
-import my.project.qri3a.entities.User;
-import my.project.qri3a.enums.ProductCategory;
-import my.project.qri3a.enums.ProductCondition;
-import org.springframework.beans.BeanUtils;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.stereotype.Component;
+
+import lombok.RequiredArgsConstructor;
+import my.project.qri3a.documents.ProductDoc;
+import my.project.qri3a.dtos.requests.ProductRequestDTO;
+import my.project.qri3a.dtos.responses.ImageResponseDTO;
+import my.project.qri3a.dtos.responses.ProductListingDTO;
+import my.project.qri3a.dtos.responses.ProductResponseDTO;
+import my.project.qri3a.dtos.responses.UserDTO;
+import my.project.qri3a.entities.Product;
+import my.project.qri3a.entities.User;
 
 @RequiredArgsConstructor
 @Component

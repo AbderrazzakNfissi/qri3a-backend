@@ -1,12 +1,15 @@
 package my.project.qri3a.dtos.requests;
-import jakarta.persistence.Column;
-import jakarta.validation.constraints.*;
-import lombok.Data;
-import my.project.qri3a.enums.ProductCategory;
-import my.project.qri3a.enums.ProductCondition;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+import my.project.qri3a.enums.ProductCategory;
+import my.project.qri3a.enums.ProductCondition;
 
 @Data
 public class ProductRequestDTO {

@@ -1,7 +1,10 @@
 package my.project.qri3a.repositories.search.impl;
 
-import my.project.qri3a.documents.ProductDoc;
-import my.project.qri3a.repositories.search.ProductDocRepositoryCustom;
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -12,18 +15,16 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.Criteria;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 
-import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import my.project.qri3a.documents.ProductDoc;
+import my.project.qri3a.repositories.search.ProductDocRepositoryCustom;
+ 
+@Slf4j
+@RequiredArgsConstructor
 public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCustom {
 
     private final ElasticsearchOperations elasticsearchOperations;
-
-    public ProductDocRepositoryCustomImpl(ElasticsearchOperations elasticsearchOperations) {
-        this.elasticsearchOperations = elasticsearchOperations;
-    }
 
     @Override
     public Page<ProductDoc> searchProductsElastic(String searchText,
@@ -109,4 +110,8 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
                 .map(SearchHit::getContent)
                 .collect(Collectors.toList());
     }
+
+
+    
+
 }

@@ -1,14 +1,12 @@
 package my.project.qri3a.repositories;
 
-import my.project.qri3a.entities.Image;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-
-import java.awt.print.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import my.project.qri3a.entities.Image;
 
 public interface ImageRepository extends JpaRepository<Image, UUID> {
     /**

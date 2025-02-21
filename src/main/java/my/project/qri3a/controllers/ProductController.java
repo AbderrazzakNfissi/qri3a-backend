@@ -1,17 +1,10 @@
 package my.project.qri3a.controllers;
 
-import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import my.project.qri3a.documents.ProductDoc;
-import my.project.qri3a.dtos.requests.ProductRequestDTO;
-import my.project.qri3a.dtos.responses.ProductListingDTO;
-import my.project.qri3a.dtos.responses.ProductResponseDTO;
-import my.project.qri3a.exceptions.NotAuthorizedException;
-import my.project.qri3a.exceptions.ResourceNotFoundException;
-import my.project.qri3a.exceptions.ResourceNotValidException;
-import my.project.qri3a.responses.ApiResponse;
-import my.project.qri3a.services.ProductService;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,13 +12,29 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import my.project.qri3a.documents.ProductDoc;
+import my.project.qri3a.dtos.requests.ProductRequestDTO;
+import my.project.qri3a.dtos.responses.ProductListingDTO;
+import my.project.qri3a.dtos.responses.ProductResponseDTO;
+import my.project.qri3a.dtos.responses.ProductSuggestionDTO;
+import my.project.qri3a.exceptions.NotAuthorizedException;
+import my.project.qri3a.exceptions.ResourceNotFoundException;
+import my.project.qri3a.exceptions.ResourceNotValidException;
+import my.project.qri3a.responses.ApiResponse;
+import my.project.qri3a.services.ProductService;
 
 @RestController
 @AllArgsConstructor
@@ -271,18 +280,30 @@ public class ProductController {
     }
 
     @GetMapping("/suggestions")
-    public ResponseEntity<ApiResponse<List<ProductDoc>>> getSuggestions(
+    public ResponseEntity<ApiResponse<List<ProductSuggestionDTO>>> getSuggestions(
             @RequestParam String query,
-            @RequestParam(defaultValue = "10") int limit
-    ) {
-        log.info("Controller: Récupération des suggestions de recherche pour le terme: {} using Elastic Search ", query);
+            @RequestParam(defaultValue = "10") int limit) {
+
+        log.info("Controller: Récupération des suggestions de recherche pour le terme: {} using Elastic Search", query);
         List<ProductDoc> suggestions = productService.searchProductSuggestionsElastic(query);
-        ApiResponse<List<ProductDoc>> response = new ApiResponse<>(
-                suggestions,
+
+        List<ProductSuggestionDTO> suggestionDTOs = suggestions.stream()
+                .limit(limit)
+                .map(doc -> {
+                    ProductSuggestionDTO dto = new ProductSuggestionDTO();
+                    dto.setId(doc.getId());
+                    dto.setTitle(doc.getTitle());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        ApiResponse<List<ProductSuggestionDTO>> response = new ApiResponse<>(
+                suggestionDTOs,
                 "Suggestions de recherche récupérées avec succès.",
-                HttpStatus.OK.value()
-        );
+                HttpStatus.OK.value());
+
         return ResponseEntity.ok(response);
     }
+
 
 }
