@@ -5,6 +5,7 @@ import my.project.qri3a.entities.User;
 import my.project.qri3a.enums.ProductCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +18,7 @@ import java.util.UUID;
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
 
     Page<Product> findBySeller(User seller, Pageable pageable);
+    Page<Product> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     @Query("SELECT p FROM User u JOIN u.wishlist p WHERE u.id = :userId")
     Page<Product> findWishlistByUserId(@Param("userId") UUID userId, Pageable pageable);

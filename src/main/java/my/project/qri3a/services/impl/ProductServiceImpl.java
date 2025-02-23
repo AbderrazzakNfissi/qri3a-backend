@@ -53,51 +53,7 @@ public class ProductServiceImpl implements ProductService {
         log.info("Service: Fetching all products with filters - category: {}, location: {}, condition: {}, sellerId: {}, minPrice: {}, maxPrice: {}, city{}",
                 category, location, condition, sellerId, minPrice, maxPrice,city);
 
-        Specification<Product> spec = Specification.where(null);
-
-        if (category != null && !category.isEmpty()) {
-            try {
-                spec = spec.and(ProductSpecifications.hasCategory(ProductCategory.valueOf(category.toUpperCase())));
-            } catch (IllegalArgumentException ex) {
-                log.error("Invalid category: {}", category);
-                throw new ResourceNotValidException("Invalid category: " + category);
-            }
-        }
-
-        if (location != null && !location.isEmpty()) {
-            spec = spec.and(ProductSpecifications.hasLocation(location));
-        }
-
-        if (condition != null && !condition.isEmpty()) {
-            try {
-                spec = spec.and(ProductSpecifications.hasCondition(ProductCondition.valueOf(condition.toUpperCase())));
-            } catch (IllegalArgumentException ex) {
-                log.error("Invalid condition: {}", condition);
-                throw new ResourceNotValidException("Invalid condition: " + condition);
-            }
-        }
-
-        if (sellerId != null) {
-            spec = spec.and(ProductSpecifications.hasSellerId(sellerId));
-        }
-
-        if (minPrice != null) {
-            spec = spec.and(ProductSpecifications.hasMinPrice(minPrice));
-        }
-
-        if (maxPrice != null) {
-            spec = spec.and(ProductSpecifications.hasMaxPrice(maxPrice));
-        }
-
-        if (city != null) {
-            spec = spec.and(ProductSpecifications.hasCity(city));
-        }
-
-        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
-            log.error("minPrice {} is greater than maxPrice {}", minPrice, maxPrice);
-            throw new ResourceNotValidException("minPrice cannot be greater than maxPrice");
-        }
-        Page<Product> productsPage = productRepository.findAll(spec, pageable);
+        Page<Product> productsPage = productRepository.findAllByOrderByCreatedAtDesc(pageable);
         log.info("Service: Found {} products", productsPage.getTotalElements());
 
         return productsPage.map(productMapper::toProductListingDTO);
@@ -220,7 +176,7 @@ public class ProductServiceImpl implements ProductService {
         log.info("Service: Product updated with ID: {}", updatedProduct.getId());
 
         // Mettre à jour l'index Elasticsearch
-        productIndexService.indexProduct(updatedProduct);
+        productIndexService.indexProduct(updatedProduct,0);
 
         return productMapper.toDTO(updatedProduct);
     }
@@ -369,7 +325,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Page<ProductDoc> findAll(Pageable pageable) {
-        Page<ProductDoc> productDocs = productDocRepository.findAll(pageable);
+        Page<ProductDoc> productDocs = productDocRepository.findAllByOrderByCreatedAtDesc(pageable);
         return productDocs;
     }
 
@@ -381,7 +337,7 @@ public class ProductServiceImpl implements ProductService {
             return Collections.emptyList();
         }
 
-        List<ProductDoc> products = productDocRepository.findTop10ByTitleOrDescriptionContainingIgnoreCase(query);
+        List<ProductDoc> products = productDocRepository.findTop10ByTitleOrDescription(query);
         return products;
     }
 

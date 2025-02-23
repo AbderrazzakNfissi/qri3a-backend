@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,7 @@ import my.project.qri3a.dtos.responses.UserDTO;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class ProductMapper {
@@ -136,7 +138,7 @@ public class ProductMapper {
     }
 
 
-    public ProductDoc toProductDoc(Product product) {
+    public ProductDoc toProductDoc(Product product, int nbOfImages) {
 
         LocalDateTime createdAt = product.getCreatedAt();
         String createdAtStr = "";
@@ -149,6 +151,11 @@ public class ProductMapper {
             // Apply format and set in DTO
             createdAtStr = utcDateTime.format(formatter);
         }
+        // Map images from Product to ImageResponseDTO
+        List<ImageResponseDTO> imageDTOs = product.getImages().stream()
+                .map(imageMapper::toDTO)
+                .toList();
+
         return ProductDoc.builder()
                 .id(product.getId())
                 .title(product.getTitle())
@@ -160,7 +167,7 @@ public class ProductMapper {
                 .condition(product.getCondition().name())
                 .createdAt(createdAtStr)
                 .firstImageUrl(product.getImages().isEmpty() ? null : product.getImages().get(0).getUrl())
-                .numberOfImages(product.getImages().size())
+                .numberOfImages(nbOfImages == 0 ? product.getImages().size() : nbOfImages)
                 .build();
     }
 

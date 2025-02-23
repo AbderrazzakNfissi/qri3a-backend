@@ -16,8 +16,8 @@ public class ProductIndexService {
     private final ProductDocRepository productDocRepository;
     private final ProductMapper productMapper;
 
-    public void indexProduct(Product product) {
-        ProductDoc doc = productMapper.toProductDoc(product);
+    public void indexProduct(Product product,int nbOfImages) {
+        ProductDoc doc = productMapper.toProductDoc(product,nbOfImages);
         productDocRepository.save(doc);
     }
 

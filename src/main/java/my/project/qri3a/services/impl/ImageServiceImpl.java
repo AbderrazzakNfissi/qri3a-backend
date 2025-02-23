@@ -203,7 +203,7 @@ public class ImageServiceImpl implements ImageService {
         productRepository.save(product);
         log.info("Service: {} images uploaded successfully for product '{}'", uploadedImages.size(), productId);
         
-        this.productIndexService.indexProduct(product);
+        this.productIndexService.indexProduct(product,files.size());
         return uploadedImages;
     }
 

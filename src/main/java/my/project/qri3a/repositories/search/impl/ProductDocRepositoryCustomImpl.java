@@ -5,10 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -36,23 +33,22 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
                                                   String city,
                                                   Pageable pageable) {
 
-        // Start with an empty Criteria
+        // Démarrer avec un critère vide
         Criteria criteria = new Criteria();
 
-        // Build text search criteria:
+        // Construction du critère de recherche sur le texte avec boost sur le titre
         if (searchText != null && !searchText.trim().isEmpty()) {
-            // Remove any double quotes to avoid issues in the wildcard query.
             String cleanedText = searchText.replace("\"", "");
-            // Add wildcards manually if you want partial matching.
             String expression = "*" + cleanedText + "*";
 
-            // Use the expression() method instead of contains().
-            Criteria textCriteria = new Criteria("title").expression(expression)
-                    .or(new Criteria("description").expression(expression));
+            // Appliquer un boost sur le champ title pour qu'il soit prioritaire sur description
+            Criteria titleCriteria = new Criteria("title").expression(expression).boost(2.0f);
+            Criteria descriptionCriteria = new Criteria("description").expression(expression);
+            Criteria textCriteria = titleCriteria.or(descriptionCriteria);
             criteria = criteria.and(textCriteria);
         }
 
-        // Add other filters only if provided:
+        // Ajout des autres filtres si fournis
         if (category != null && !category.trim().isEmpty()) {
             criteria = criteria.and(new Criteria("category.keyword").is(category));
         }
@@ -72,20 +68,35 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
             criteria = criteria.and(new Criteria("price").lessThanEqual(maxPrice));
         }
 
-        // Build the query with pagination
-        CriteriaQuery query = new CriteriaQuery(criteria, pageable);
+        // Définition du tri :
+        // - Si searchText est fourni, on trie d'abord sur _score (pour la pertinence de la recherche),
+        //   puis sur createdAt décroissant pour départager les égalités.
+        // - Sinon, on trie uniquement par createdAt décroissant.
+        Sort sort;
+        if (searchText != null && !searchText.trim().isEmpty()) {
+            sort = Sort.by(Sort.Order.desc("_score"), Sort.Order.desc("createdAt"));
+        } else {
+            sort = Sort.by(Sort.Order.desc("createdAt"));
+        }
 
-        // Execute the search
+        // Créer un Pageable avec le tri personnalisé
+        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+
+        // Création de la requête avec les critères et la pagination triée
+        CriteriaQuery query = new CriteriaQuery(criteria, sortedPageable);
+
+        // Exécution de la recherche
         SearchHits<ProductDoc> searchHits = elasticsearchOperations.search(query, ProductDoc.class);
         List<ProductDoc> productDocs = searchHits.get()
                 .map(SearchHit::getContent)
                 .collect(Collectors.toList());
 
-        return new PageImpl<>(productDocs, pageable, searchHits.getTotalHits());
+        return new PageImpl<>(productDocs, sortedPageable, searchHits.getTotalHits());
     }
 
+
     @Override
-    public List<ProductDoc> findTop10ByTitleOrDescriptionContainingIgnoreCase(String title) {
+    public List<ProductDoc> findTop10ByTitleOrDescription(String title) {
         if (title == null || title.trim().isEmpty()) {
             return Collections.emptyList();
         }
@@ -99,8 +110,10 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
         Criteria descriptionCriteria = new Criteria("description").expression(expression);
         Criteria criteria = new Criteria().or(titleCriteria).or(descriptionCriteria);
 
-        // Create the query and limit the result to 10 items
+        // Create the query
         CriteriaQuery query = new CriteriaQuery(criteria);
+
+        // Limit the result to 10 items
         Pageable pageable = PageRequest.of(0, 10);
         query.setPageable(pageable);
 
@@ -112,6 +125,6 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
     }
 
 
-    
+
 
 }

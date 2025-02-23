@@ -18,6 +18,6 @@ public interface ProductDocRepositoryCustom {
                                            String city,
                                            Pageable pageable);
 
-    List<ProductDoc> findTop10ByTitleOrDescriptionContainingIgnoreCase(String title);
+    List<ProductDoc> findTop10ByTitleOrDescription(String title);
     
 }
