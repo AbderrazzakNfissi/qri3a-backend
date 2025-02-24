@@ -1,5 +1,15 @@
 package my.project.qri3a.services.impl;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.responses.ImageResponseDTO;
@@ -13,18 +23,6 @@ import my.project.qri3a.repositories.ProductRepository;
 import my.project.qri3a.services.ImageService;
 import my.project.qri3a.services.ProductIndexService;
 import my.project.qri3a.services.S3Service;
-import org.springframework.core.io.UrlResource;
-import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +35,7 @@ public class ImageServiceImpl implements ImageService {
     private final S3Service s3Service;
     private final ImageMapper imageMapper;
     private final ProductIndexService productIndexService;
+ 
     /**
      * Récupère toutes les images pour un produit donné.
      *
@@ -205,6 +204,80 @@ public class ImageServiceImpl implements ImageService {
         
         this.productIndexService.indexProduct(product,files.size());
         return uploadedImages;
+    }
+
+
+    @Override
+    public List<ImageResponseDTO> updateImages(UUID productId, List<UUID> existingImageIds, List<MultipartFile> newFiles)
+            throws ResourceNotFoundException, IOException, ResourceNotValidException {
+        log.info("Service: Updating images for product '{}'", productId);
+
+        // Create final safe lists to avoid null and for lambda usage
+        final List<UUID> safeExistingImageIds = (existingImageIds == null) ? new ArrayList<>() : existingImageIds;
+        final List<MultipartFile> safeNewFiles = (newFiles == null) ? new ArrayList<>() : newFiles;
+
+        // Retrieve the product
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + productId));
+
+        // Delete images that are not in the list of existing IDs to keep
+        List<Image> imagesToDelete = product.getImages().stream()
+                .filter(image -> !safeExistingImageIds.contains(image.getId()))
+                .collect(Collectors.toList());
+
+        for (Image image : imagesToDelete) {
+            // Extract the filename from the image URL using the existing extractFileName method
+            String filename = extractFileName(image.getUrl());
+
+            // Delete the image file from Amazon S3
+            s3Service.deleteFile(filename);
+
+            // Remove the image from the product's list of images;
+            // no need to explicitly call imageRepository.delete(image) because orphanRemoval is enabled
+            product.removeImage(image);
+
+            // Log the deletion for auditing purposes
+            log.info("Deleted image with ID: {} from product with ID: {}", image.getId(), productId);
+        }
+
+        // Ensure that the total images count does not exceed the maximum allowed (4)
+        if (product.getImages().size() + safeNewFiles.size() > 4) {
+            throw new ResourceNotValidException("Uploading these images would exceed the maximum of 4 images per product.");
+        }
+
+        // Upload new images and add them to the product
+        List<ImageResponseDTO> uploadedImages = new ArrayList<>();
+        int order = product.getImages().size() + 1;
+        for (MultipartFile file : safeNewFiles) {
+            if (file.isEmpty()) {
+                throw new ResourceNotValidException("One of the files is empty.");
+            }
+            if (!isImageFile(file)) {
+                throw new ResourceNotValidException("Only image files are allowed.");
+            }
+            String filename = generateUniqueFileName(file.getOriginalFilename());
+            String fileUrl = s3Service.uploadFile(file, filename);
+            log.info("Image uploaded successfully and the URL is: {}", fileUrl);
+
+            Image image = Image.builder()
+                    .url(fileUrl)
+                    .product(product)
+                    .order(order)
+                    .build();
+            order++;
+            product.addImage(image);
+            Image savedImage = imageRepository.save(image);
+            uploadedImages.add(imageMapper.toDTO(savedImage));
+        }
+
+        // Save the product with its updated images
+        productRepository.save(product);
+        log.info("Service: Images updated for product '{}'", productId);
+
+        // Return the full updated list of images
+        return product.getImages().stream()
+                .map(imageMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     private boolean isImageFile(MultipartFile file) {

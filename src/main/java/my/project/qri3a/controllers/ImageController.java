@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -97,4 +98,26 @@ public class ImageController {
         );
         return ResponseEntity.ok(response);
     }
+
+
+    // Add this new endpoint to the ImageController
+
+    @PutMapping("/p/{productId}/images")
+    public ResponseEntity<ApiResponse<List<ImageResponseDTO>>> updateImages(
+            @PathVariable UUID productId,
+            @RequestParam(value = "existingImageIds", required = false) List<UUID> existingImageIds,
+            @RequestParam(value = "newImages", required = false) List<MultipartFile> newImages
+    ) throws ResourceNotFoundException, IOException, ResourceNotValidException {
+        log.info("Controller: Updating images for product '{}'", productId);
+
+        List<ImageResponseDTO> updatedImages = imageService.updateImages(productId, existingImageIds, newImages);
+
+        ApiResponse<List<ImageResponseDTO>> response = new ApiResponse<>(
+                updatedImages,
+                "Images updated successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
 }

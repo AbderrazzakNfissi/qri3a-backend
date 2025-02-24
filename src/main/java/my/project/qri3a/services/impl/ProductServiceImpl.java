@@ -1,11 +1,26 @@
 package my.project.qri3a.services.impl;
 
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.documents.ProductDoc;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
+import my.project.qri3a.entities.Image;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
 import my.project.qri3a.enums.ProductCategory;
@@ -19,21 +34,9 @@ import my.project.qri3a.repositories.UserRepository;
 import my.project.qri3a.repositories.search.ProductDocRepository;
 import my.project.qri3a.services.ProductIndexService;
 import my.project.qri3a.services.ProductService;
+import my.project.qri3a.services.S3Service;
 import my.project.qri3a.services.UserService;
 import my.project.qri3a.specifications.ProductSpecifications;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Service;
-
-import jakarta.transaction.Transactional;
-import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -47,6 +50,7 @@ public class ProductServiceImpl implements ProductService {
     private final UserService userService;
     private final ProductIndexService productIndexService;
     private final ProductDocRepository productDocRepository;
+    private final S3Service s3Service;
 
     @Override
     public Page<ProductListingDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice, String city) throws ResourceNotValidException {
@@ -180,7 +184,7 @@ public class ProductServiceImpl implements ProductService {
 
         return productMapper.toDTO(updatedProduct);
     }
-
+    //cette fonction il va etre utiliser par l'administrateur pour supprimer un produit
     @Override
     public void deleteProduct(UUID productId) throws ResourceNotFoundException {
         log.info("Service: Deleting product with ID: {}", productId);
@@ -189,6 +193,11 @@ public class ProductServiceImpl implements ProductService {
                     log.warn("Service: Product not found with ID: {}", productId);
                     return new ResourceNotFoundException("Product not found with ID " + productId);
                 });
+        // Delete all associated images from S3
+        for (Image image : product.getImages()) {
+            String filename = image.getUrl().substring(image.getUrl().lastIndexOf('/') + 1);
+            s3Service.deleteFile(filename);
+        }
         productRepository.delete(product);
         log.info("Service: Product deleted with ID: {}", productId);
         productIndexService.deleteProductIndex(productId);
@@ -221,6 +230,12 @@ public class ProductServiceImpl implements ProductService {
         if (!product.getSeller().getId().equals(seller.getId())) {
             log.warn("Service: Unauthorized attempt to delete product with ID: {}", productId);
             throw new NotAuthorizedException("You are not authorized to delete this product");
+        }
+ 
+        for (Image image : product.getImages()) {
+           
+            String filename = image.getUrl().substring(image.getUrl().lastIndexOf('/') + 1);
+            s3Service.deleteFile(filename);
         }
 
         productRepository.delete(product);

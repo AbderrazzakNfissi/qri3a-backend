@@ -34,4 +34,6 @@ public interface ImageService {
       */
      List<ImageResponseDTO> uploadImages(UUID productId, List<MultipartFile> files) throws ResourceNotFoundException, IOException, ResourceNotValidException;
      void deleteImageById(UUID imageId) throws ResourceNotFoundException;
+     public List<ImageResponseDTO> updateImages(UUID productId, List<UUID> existingImageIds, List<MultipartFile> newFiles)
+        throws ResourceNotFoundException, IOException, ResourceNotValidException;
 }
