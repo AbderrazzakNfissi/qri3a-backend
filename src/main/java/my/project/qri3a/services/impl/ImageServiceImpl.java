@@ -2,6 +2,7 @@ package my.project.qri3a.services.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -207,47 +208,49 @@ public class ImageServiceImpl implements ImageService {
     }
 
 
-    @Override
     public List<ImageResponseDTO> updateImages(UUID productId, List<UUID> existingImageIds, List<MultipartFile> newFiles)
             throws ResourceNotFoundException, IOException, ResourceNotValidException {
         log.info("Service: Updating images for product '{}'", productId);
 
-        // Create final safe lists to avoid null and for lambda usage
+        // Création de listes sécurisées pour éviter les valeurs nulles
         final List<UUID> safeExistingImageIds = (existingImageIds == null) ? new ArrayList<>() : existingImageIds;
         final List<MultipartFile> safeNewFiles = (newFiles == null) ? new ArrayList<>() : newFiles;
 
-        // Retrieve the product
+        // Récupération du produit
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + productId));
 
-        // Delete images that are not in the list of existing IDs to keep
+        // Sélection des images à supprimer (celles dont l'ID n'est pas dans la liste des IDs à conserver)
         List<Image> imagesToDelete = product.getImages().stream()
                 .filter(image -> !safeExistingImageIds.contains(image.getId()))
-                .collect(Collectors.toList());
+                .toList();
 
+        int nbOfImages = product.getImages().size() - imagesToDelete.size() + safeNewFiles.size();
+        log.info("==> images to delete: {}", imagesToDelete.size());
+        log.info("==> number of images: {}", nbOfImages);
+
+        // Suppression physique des images sur S3
         for (Image image : imagesToDelete) {
-            // Extract the filename from the image URL using the existing extractFileName method
             String filename = extractFileName(image.getUrl());
-
-            // Delete the image file from Amazon S3
             s3Service.deleteFile(filename);
-
-            // Remove the image from the product's list of images;
-            // no need to explicitly call imageRepository.delete(image) because orphanRemoval is enabled
-            product.removeImage(image);
-
-            // Log the deletion for auditing purposes
-            log.info("Deleted image with ID: {} from product with ID: {}", image.getId(), productId);
+            log.info("Deleted image with ID: {} and url {}", image.getId(), image.getUrl());
         }
 
-        // Ensure that the total images count does not exceed the maximum allowed (4)
+        // Au lieu de remplacer la collection par une nouvelle instance,
+        // on la modifie in situ pour respecter l'orphan removal
+        List<Image> imagesToKeep = product.getImages().stream()
+                .filter(image -> safeExistingImageIds.contains(image.getId()))
+                .collect(Collectors.toList());
+        product.getImages().clear();
+        product.getImages().addAll(imagesToKeep);
+        product.setImages(product.getImages());
+
+        // Vérifier que l'ajout des nouvelles images ne dépasse pas le maximum autorisé (4)
         if (product.getImages().size() + safeNewFiles.size() > 4) {
             throw new ResourceNotValidException("Uploading these images would exceed the maximum of 4 images per product.");
         }
 
-        // Upload new images and add them to the product
-        List<ImageResponseDTO> uploadedImages = new ArrayList<>();
-        int order = product.getImages().size() + 1;
+        // Upload des nouvelles images et ajout au produit
         for (MultipartFile file : safeNewFiles) {
             if (file.isEmpty()) {
                 throw new ResourceNotValidException("One of the files is empty.");
@@ -255,30 +258,32 @@ public class ImageServiceImpl implements ImageService {
             if (!isImageFile(file)) {
                 throw new ResourceNotValidException("Only image files are allowed.");
             }
-            String filename = generateUniqueFileName(file.getOriginalFilename());
-            String fileUrl = s3Service.uploadFile(file, filename);
+            String uniqueFilename = generateUniqueFileName(file.getOriginalFilename());
+            String fileUrl = s3Service.uploadFile(file, uniqueFilename);
             log.info("Image uploaded successfully and the URL is: {}", fileUrl);
 
             Image image = Image.builder()
                     .url(fileUrl)
                     .product(product)
-                    .order(order)
+                    .order(4)
                     .build();
-            order++;
             product.addImage(image);
-            Image savedImage = imageRepository.save(image);
-            uploadedImages.add(imageMapper.toDTO(savedImage));
+            imageRepository.save(image);
         }
 
-        // Save the product with its updated images
+        List<Image> updatedImages = product.getImages();
+
+        // Sauvegarde du produit mis à jour et re-indexation si nécessaire
         productRepository.save(product);
+        productIndexService.indexProduct(product, nbOfImages);
         log.info("Service: Images updated for product '{}'", productId);
 
-        // Return the full updated list of images
-        return product.getImages().stream()
+        // Retourne la liste complète des images mises à jour sous forme de DTO
+        return updatedImages.stream()
                 .map(imageMapper::toDTO)
                 .collect(Collectors.toList());
     }
+
 
     private boolean isImageFile(MultipartFile file) {
         String contentType = file.getContentType();
