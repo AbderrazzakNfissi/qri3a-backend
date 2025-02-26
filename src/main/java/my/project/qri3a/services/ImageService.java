@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import my.project.qri3a.dtos.requests.ImageOrderDTO;
 import org.springframework.web.multipart.MultipartFile;
 
 import my.project.qri3a.dtos.responses.ImageResponseDTO;
@@ -34,6 +35,6 @@ public interface ImageService {
       */
      List<ImageResponseDTO> uploadImages(UUID productId, List<MultipartFile> files) throws ResourceNotFoundException, IOException, ResourceNotValidException;
      void deleteImageById(UUID imageId) throws ResourceNotFoundException;
-     public List<ImageResponseDTO> updateImages(UUID productId, List<UUID> existingImageIds, List<MultipartFile> newFiles)
+     List<ImageResponseDTO> updateImages(UUID productId, List<UUID> existingImageIds, List<MultipartFile> newFiles, List<ImageOrderDTO> imagesOrder)
         throws ResourceNotFoundException, IOException, ResourceNotValidException;
 }

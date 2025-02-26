@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import my.project.qri3a.dtos.requests.ImageOrderDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -208,7 +209,12 @@ public class ImageServiceImpl implements ImageService {
     }
 
 
-    public List<ImageResponseDTO> updateImages(UUID productId, List<UUID> existingImageIds, List<MultipartFile> newFiles)
+    @Override
+    public List<ImageResponseDTO> updateImages(
+            UUID productId,
+            List<UUID> existingImageIds,
+            List<MultipartFile> newFiles,
+            List<ImageOrderDTO> imagesOrder)
             throws ResourceNotFoundException, IOException, ResourceNotValidException {
         log.info("Service: Updating images for product '{}'", productId);
 
@@ -223,7 +229,7 @@ public class ImageServiceImpl implements ImageService {
         // Sélection des images à supprimer (celles dont l'ID n'est pas dans la liste des IDs à conserver)
         List<Image> imagesToDelete = product.getImages().stream()
                 .filter(image -> !safeExistingImageIds.contains(image.getId()))
-                .toList();
+                .collect(Collectors.toList());
 
         int nbOfImages = product.getImages().size() - imagesToDelete.size() + safeNewFiles.size();
         log.info("==> images to delete: {}", imagesToDelete.size());
@@ -236,8 +242,7 @@ public class ImageServiceImpl implements ImageService {
             log.info("Deleted image with ID: {} and url {}", image.getId(), image.getUrl());
         }
 
-        // Au lieu de remplacer la collection par une nouvelle instance,
-        // on la modifie in situ pour respecter l'orphan removal
+        // Conserver les images existantes dont l'ID est dans la liste safeExistingImageIds
         List<Image> imagesToKeep = product.getImages().stream()
                 .filter(image -> safeExistingImageIds.contains(image.getId()))
                 .collect(Collectors.toList());
@@ -262,16 +267,42 @@ public class ImageServiceImpl implements ImageService {
             String fileUrl = s3Service.uploadFile(file, uniqueFilename);
             log.info("Image uploaded successfully and the URL is: {}", fileUrl);
 
+            // Créer une entité Image avec un ordre temporaire (sera mis à jour ensuite)
             Image image = Image.builder()
                     .url(fileUrl)
                     .product(product)
-                    .order(4)
+                    .order(0)
                     .build();
             product.addImage(image);
             imageRepository.save(image);
         }
 
-        List<Image> updatedImages = product.getImages();
+        // Mise à jour de l'ordre des images en fonction du tableau imagesOrder
+        if (imagesOrder != null && !imagesOrder.isEmpty()) {
+            // Pour chaque image actuellement associée au produit,
+            // on recherche l'entrée correspondante dans imagesOrder
+            for (Image image : product.getImages()) {
+                // Pour les images existantes, on utilise leur ID (converti en String)
+                // Pour les nouvelles images, on extrait l'ID depuis le nom de fichier dans l'URL
+                String imageIdentifier = "";
+                if (image.getId() != null) {
+                    imageIdentifier = image.getId().toString();
+                } else {
+                    String filename = extractFileName(image.getUrl());
+                    int dotIndex = filename.lastIndexOf('.');
+                    imageIdentifier = dotIndex != -1 ? filename.substring(0, dotIndex) : filename;
+                }
+                // Recherche dans imagesOrder
+                for (ImageOrderDTO orderDTO : imagesOrder) {
+                    if (orderDTO.getId().equals(imageIdentifier)) {
+                        image.setOrder(orderDTO.getOrder());
+                        break;
+                    }
+                }
+            }
+            // Optionnel : trier les images selon leur ordre mis à jour
+            product.getImages().sort(Comparator.comparingInt(Image::getOrder));
+        }
 
         // Sauvegarde du produit mis à jour et re-indexation si nécessaire
         productRepository.save(product);
@@ -279,7 +310,7 @@ public class ImageServiceImpl implements ImageService {
         log.info("Service: Images updated for product '{}'", productId);
 
         // Retourne la liste complète des images mises à jour sous forme de DTO
-        return updatedImages.stream()
+        return product.getImages().stream()
                 .map(imageMapper::toDTO)
                 .collect(Collectors.toList());
     }

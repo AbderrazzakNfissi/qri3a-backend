@@ -4,16 +4,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import my.project.qri3a.dtos.requests.ImageOrderDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.AllArgsConstructor;
@@ -106,11 +100,12 @@ public class ImageController {
     public ResponseEntity<ApiResponse<List<ImageResponseDTO>>> updateImages(
             @PathVariable UUID productId,
             @RequestParam(value = "existingImageIds", required = false) List<UUID> existingImageIds,
-            @RequestParam(value = "newImages", required = false) List<MultipartFile> newImages
+            @RequestParam(value = "newImages", required = false) List<MultipartFile> newImages,
+            @RequestPart(value = "imagesOrder", required = false) List<ImageOrderDTO> imagesOrder
     ) throws ResourceNotFoundException, IOException, ResourceNotValidException {
         log.info("Controller: Updating images for product '{}'", productId);
 
-        List<ImageResponseDTO> updatedImages = imageService.updateImages(productId, existingImageIds, newImages);
+        List<ImageResponseDTO> updatedImages = imageService.updateImages(productId, existingImageIds, newImages, imagesOrder);
 
         ApiResponse<List<ImageResponseDTO>> response = new ApiResponse<>(
                 updatedImages,
@@ -119,5 +114,6 @@ public class ImageController {
         );
         return ResponseEntity.ok(response);
     }
+
 
 }
