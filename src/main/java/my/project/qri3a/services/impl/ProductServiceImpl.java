@@ -209,7 +209,7 @@ public class ProductServiceImpl implements ProductService {
         String email = authentication.getName();
         User seller = userService.getUserByEmail(email);
         log.info("=> seller email: {}", seller.getEmail());
-        Page<Product> productsPage = productRepository.findBySeller(seller, pageable);
+        Page<Product> productsPage = productRepository.findBySellerOrderByCreatedAtDesc(seller, pageable);
         return productsPage.map(productMapper::toProductListingDTO);
     }
 

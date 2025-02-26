@@ -18,6 +18,8 @@ import java.util.UUID;
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
 
     Page<Product> findBySeller(User seller, Pageable pageable);
+    Page<Product> findBySellerOrderByCreatedAtDesc(User seller, Pageable pageable);
+
     Page<Product> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     @Query("SELECT p FROM User u JOIN u.wishlist p WHERE u.id = :userId")
