@@ -318,11 +318,12 @@ public class ImageServiceImpl implements ImageService {
 
     private boolean isImageFile(MultipartFile file) {
         String contentType = file.getContentType();
-        return (
+        return contentType != null && (
                 contentType.equals("image/png") ||
                         contentType.equals("image/jpeg") ||
                         contentType.equals("image/jpg") ||
-                        contentType.equals("image/gif")
+                        contentType.equals("image/gif") ||
+                        contentType.equals("image/webp")
         );
     }
 

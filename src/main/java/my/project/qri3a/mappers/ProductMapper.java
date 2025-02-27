@@ -4,10 +4,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
+import my.project.qri3a.entities.Image;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -35,8 +37,8 @@ public class ProductMapper {
 
         ProductResponseDTO dto = new ProductResponseDTO();
 
-        // Copy basic properties
-        BeanUtils.copyProperties(product, dto, "seller", "images","createdAt");
+        // Copie des propriétés de base
+        BeanUtils.copyProperties(product, dto, "seller", "images", "createdAt");
 
         // Map seller information
         User seller = product.getSeller();
@@ -45,8 +47,9 @@ public class ProductMapper {
             dto.setUser(userDTO);
         }
 
-        // Map images
+        // Map images en les triant par le champ order
         List<ImageResponseDTO> imageDTOs = product.getImages().stream()
+                .sorted(Comparator.comparingInt(Image::getOrder))
                 .map(imageMapper::toDTO)
                 .collect(Collectors.toList());
         dto.setImages(imageDTOs);
@@ -76,6 +79,7 @@ public class ProductMapper {
 
         // Map images from Product to ImageResponseDTO
         List<ImageResponseDTO> imageDTOs = product.getImages().stream()
+                .sorted(Comparator.comparingInt(Image::getOrder))
                 .map(imageMapper::toDTO)
                 .toList();
 
@@ -151,8 +155,10 @@ public class ProductMapper {
             // Apply format and set in DTO
             createdAtStr = utcDateTime.format(formatter);
         }
+
         // Map images from Product to ImageResponseDTO
         List<ImageResponseDTO> imageDTOs = product.getImages().stream()
+                .sorted(Comparator.comparingInt(Image::getOrder))
                 .map(imageMapper::toDTO)
                 .toList();
 
@@ -166,8 +172,8 @@ public class ProductMapper {
                 .category(product.getCategory().name())
                 .condition(product.getCondition().name())
                 .createdAt(createdAtStr)
-                .firstImageUrl(product.getImages().isEmpty() ? null : product.getImages().get(0).getUrl())
-                .numberOfImages(nbOfImages == 0 ? product.getImages().size() : nbOfImages)
+                .firstImageUrl(imageDTOs.isEmpty() ? null : imageDTOs.get(0).getUrl())
+                .numberOfImages(nbOfImages == 0 ? imageDTOs.size() : nbOfImages)
                 .build();
     }
 
