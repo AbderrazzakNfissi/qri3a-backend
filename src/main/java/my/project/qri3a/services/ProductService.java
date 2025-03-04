@@ -2,8 +2,10 @@ package my.project.qri3a.services;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import my.project.qri3a.enums.ProductStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -44,4 +46,110 @@ public interface ProductService {
     Page<ProductDoc> findAll(Pageable pageable);
 
     List<ProductDoc> searchProductSuggestionsElastic(String query);
+
+    /**
+     * Approves a product, changing its status to ACTIVE
+     * @param productId The ID of the product to approve
+     * @return The updated product details
+     * @throws ResourceNotFoundException if the product is not found
+     * @throws NotAuthorizedException if the user is not authorized to approve products
+     */
+    ProductResponseDTO approveProduct(UUID productId) throws ResourceNotFoundException, NotAuthorizedException;
+
+    /**
+     * Rejects a product, changing its status to REJECTED
+     * @param productId The ID of the product to reject
+     * @return The updated product details
+     * @throws ResourceNotFoundException if the product is not found
+     * @throws NotAuthorizedException if the user is not authorized to reject products
+     */
+    ProductResponseDTO rejectProduct(UUID productId) throws ResourceNotFoundException, NotAuthorizedException;
+
+    /**
+     * Get products filtered by status with pagination
+     * @param status The status to filter by
+     * @param pageable Pagination information
+     * @return Page of products with the specified status
+     */
+    Page<ProductListingDTO> getProductsByStatus(ProductStatus status, Pageable pageable);
+
+    /**
+     * Get products that are in ACTIVE status
+     * @param pageable Pagination information
+     * @return Page of active products
+     */
+    Page<ProductListingDTO> getActiveProducts(Pageable pageable);
+
+    /**
+     * Get products that are in MODERATION status
+     * @param pageable Pagination information
+     * @return Page of products in moderation
+     */
+    Page<ProductListingDTO> getModerationProducts(Pageable pageable);
+
+    /**
+     * Get products that are in REJECTED status
+     * @param pageable Pagination information
+     * @return Page of rejected products
+     */
+    Page<ProductListingDTO> getRejectedProducts(Pageable pageable);
+
+    /**
+     * Get authenticated user's products filtered by ACTIVE status
+     * @param authentication Authentication details of the user
+     * @param pageable Pagination information
+     * @return Page of active products belonging to the authenticated user
+     * @throws ResourceNotFoundException if the user is not found
+     */
+    Page<ProductListingDTO> getMyActiveProducts(Authentication authentication, Pageable pageable) throws ResourceNotFoundException;
+
+    /**
+     * Get authenticated user's products filtered by MODERATION status
+     * @param authentication Authentication details of the user
+     * @param pageable Pagination information
+     * @return Page of products in moderation belonging to the authenticated user
+     * @throws ResourceNotFoundException if the user is not found
+     */
+    Page<ProductListingDTO> getMyModerationProducts(Authentication authentication, Pageable pageable) throws ResourceNotFoundException;
+
+    /**
+     * Get authenticated user's products filtered by REJECTED status
+     * @param authentication Authentication details of the user
+     * @param pageable Pagination information
+     * @return Page of rejected products belonging to the authenticated user
+     * @throws ResourceNotFoundException if the user is not found
+     */
+    Page<ProductListingDTO> getMyRejectedProducts(Authentication authentication, Pageable pageable) throws ResourceNotFoundException;
+
+    /**
+     * Get counts of products by status for the authenticated user
+     * @param authentication Authentication details of the user
+     * @return Map of product status to count
+     * @throws ResourceNotFoundException if the user is not found
+     */
+    Map<ProductStatus, Long> getMyProductCounts(Authentication authentication) throws ResourceNotFoundException;
+
+    /**
+     * Get authenticated user's products filtered by DEACTIVATED status
+     * @param authentication Authentication details of the user
+     * @param pageable Pagination information
+     * @return Page of deactivated products belonging to the authenticated user
+     * @throws ResourceNotFoundException if the user is not found
+     */
+    Page<ProductListingDTO> getMyDeactivatedProducts(Authentication authentication, Pageable pageable) throws ResourceNotFoundException;
+
+    /**
+     * Deactivate a product (change status to DEACTIVATED)
+     * @param productId The ID of the product to deactivate
+     * @param authentication Authentication details of the user
+     * @return The updated product details
+     * @throws ResourceNotFoundException if the product is not found
+     * @throws NotAuthorizedException if the user is not authorized to deactivate the product
+     */
+    ProductResponseDTO deactivateProduct(UUID productId, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException;
+
+
+     ProductResponseDTO activateProduct(UUID productId, Authentication authentication)
+            throws ResourceNotFoundException, NotAuthorizedException;
+
 }

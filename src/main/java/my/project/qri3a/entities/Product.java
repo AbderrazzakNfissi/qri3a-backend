@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductCondition;
+import my.project.qri3a.enums.ProductStatus;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
@@ -53,6 +54,10 @@ public class Product {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductCondition condition;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private ProductStatus status = ProductStatus.MODERATION;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id")

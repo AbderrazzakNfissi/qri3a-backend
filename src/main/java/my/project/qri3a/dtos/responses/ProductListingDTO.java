@@ -2,6 +2,8 @@ package my.project.qri3a.dtos.responses;
 import lombok.Data;
 import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductCondition;
+import my.project.qri3a.enums.ProductStatus;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +17,7 @@ public class ProductListingDTO {
     private String location;
     private ProductCategory category;
     private String city;
+    private ProductStatus status;
     //private String phone;
     private ProductCondition condition;
     //private UserDTO user;

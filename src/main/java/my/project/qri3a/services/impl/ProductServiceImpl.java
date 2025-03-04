@@ -1,11 +1,10 @@
 package my.project.qri3a.services.impl;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import my.project.qri3a.enums.ProductStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -356,4 +355,220 @@ public class ProductServiceImpl implements ProductService {
         return products;
     }
 
+
+    @Override
+    public ProductResponseDTO approveProduct(UUID productId) throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Service: Approving product with ID: {}", productId);
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> {
+                    log.warn("Service: Product not found with ID: {}", productId);
+                    return new ResourceNotFoundException("Product not found with ID " + productId);
+                });
+
+        // Change product status to ACTIVE
+        product.setStatus(ProductStatus.ACTIVE);
+        Product updatedProduct = productRepository.save(product);
+        log.info("Service: Product approved with ID: {}", updatedProduct.getId());
+
+        // Update the Elasticsearch index
+        productIndexService.indexProduct(updatedProduct, 0);
+
+        return productMapper.toDTO(updatedProduct);
+    }
+
+    @Override
+    public ProductResponseDTO rejectProduct(UUID productId) throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Service: Rejecting product with ID: {}", productId);
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> {
+                    log.warn("Service: Product not found with ID: {}", productId);
+                    return new ResourceNotFoundException("Product not found with ID " + productId);
+                });
+
+        // Change product status to REJECTED
+        product.setStatus(ProductStatus.REJECTED);
+        Product updatedProduct = productRepository.save(product);
+        log.info("Service: Product rejected with ID: {}", updatedProduct.getId());
+
+        // Update the Elasticsearch index
+        productIndexService.indexProduct(updatedProduct, 0);
+
+        return productMapper.toDTO(updatedProduct);
+    }
+
+    @Override
+    public Page<ProductListingDTO> getProductsByStatus(ProductStatus status, Pageable pageable) {
+        log.info("Service: Fetching products with status: {}", status);
+
+        Page<Product> productsPage = productRepository.findByStatusOrderByCreatedAtDesc(status, pageable);
+        log.info("Service: Found {} products with status {}", productsPage.getTotalElements(), status);
+
+        return productsPage.map(productMapper::toProductListingDTO);
+    }
+
+    @Override
+    public Page<ProductListingDTO> getActiveProducts(Pageable pageable) {
+        log.info("Service: Fetching active products");
+        return getProductsByStatus(ProductStatus.ACTIVE, pageable);
+    }
+
+    @Override
+    public Page<ProductListingDTO> getModerationProducts(Pageable pageable) {
+        log.info("Service: Fetching products in moderation");
+        return getProductsByStatus(ProductStatus.MODERATION, pageable);
+    }
+
+    @Override
+    public Page<ProductListingDTO> getRejectedProducts(Pageable pageable) {
+        log.info("Service: Fetching rejected products");
+        return getProductsByStatus(ProductStatus.REJECTED, pageable);
+    }
+
+    @Override
+    public Page<ProductListingDTO> getMyActiveProducts(Authentication authentication, Pageable pageable) throws ResourceNotFoundException {
+        log.info("Service: Fetching authenticated user's active products");
+        String email = authentication.getName();
+        User seller = userService.getUserByEmail(email);
+
+        Page<Product> productsPage = productRepository.findBySellerAndStatusOrderByCreatedAtDesc(seller, ProductStatus.ACTIVE, pageable);
+        log.info("Service: Found {} active products for user {}", productsPage.getTotalElements(), seller.getEmail());
+
+        return productsPage.map(productMapper::toProductListingDTO);
+    }
+
+    @Override
+    public Page<ProductListingDTO> getMyModerationProducts(Authentication authentication, Pageable pageable) throws ResourceNotFoundException {
+        log.info("Service: Fetching authenticated user's products in moderation");
+        String email = authentication.getName();
+        User seller = userService.getUserByEmail(email);
+
+        Page<Product> productsPage = productRepository.findBySellerAndStatusOrderByCreatedAtDesc(seller, ProductStatus.MODERATION, pageable);
+        log.info("Service: Found {} products in moderation for user {}", productsPage.getTotalElements(), seller.getEmail());
+
+        return productsPage.map(productMapper::toProductListingDTO);
+    }
+
+    @Override
+    public Page<ProductListingDTO> getMyRejectedProducts(Authentication authentication, Pageable pageable) throws ResourceNotFoundException {
+        log.info("Service: Fetching authenticated user's rejected products");
+        String email = authentication.getName();
+        User seller = userService.getUserByEmail(email);
+
+        Page<Product> productsPage = productRepository.findBySellerAndStatusOrderByCreatedAtDesc(seller, ProductStatus.REJECTED, pageable);
+        log.info("Service: Found {} rejected products for user {}", productsPage.getTotalElements(), seller.getEmail());
+
+        return productsPage.map(productMapper::toProductListingDTO);
+    }
+
+    @Override
+    public Map<ProductStatus, Long> getMyProductCounts(Authentication authentication) throws ResourceNotFoundException {
+        log.info("Service: Getting product counts by status for authenticated user");
+        String email = authentication.getName();
+        User seller = userService.getUserByEmail(email);
+
+        Map<ProductStatus, Long> statusCounts = new EnumMap<>(ProductStatus.class);
+
+        // Initialize all statuses with zero count
+        for (ProductStatus status : ProductStatus.values()) {
+            statusCounts.put(status, 0L);
+        }
+
+        // Get the counts from the repository
+        List<Object[]> countResults = productRepository.countBySellerAndGroupByStatus(seller.getId());
+
+        // Update the map with actual counts
+        for (Object[] result : countResults) {
+            ProductStatus status = (ProductStatus) result[0];
+            Long count = (Long) result[1];
+            statusCounts.put(status, count);
+        }
+
+        log.info("Service: Product counts by status retrieved for user {}: {}", seller.getEmail(), statusCounts);
+
+        return statusCounts;
+    }
+
+
+    @Override
+    public Page<ProductListingDTO> getMyDeactivatedProducts(Authentication authentication, Pageable pageable) throws ResourceNotFoundException {
+        log.info("Service: Fetching authenticated user's deactivated products");
+        String email = authentication.getName();
+        User seller = userService.getUserByEmail(email);
+
+        Page<Product> productsPage = productRepository.findBySellerAndStatusOrderByCreatedAtDesc(seller, ProductStatus.DEACTIVATED, pageable);
+        log.info("Service: Found {} deactivated products for user {}", productsPage.getTotalElements(), seller.getEmail());
+
+        return productsPage.map(productMapper::toProductListingDTO);
+    }
+
+    @Override
+    public ProductResponseDTO deactivateProduct(UUID productId, Authentication authentication)
+            throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Service: Deactivating product with ID: {}", productId);
+
+        String email = authentication.getName();
+        User seller = userService.getUserByEmail(email);
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> {
+                    log.warn("Service: Product not found with ID: {}", productId);
+                    return new ResourceNotFoundException("Product not found with ID " + productId);
+                });
+
+        // Check if the authenticated user is the owner of the product
+        if (!product.getSeller().getId().equals(seller.getId())) {
+            log.warn("Service: Unauthorized attempt to deactivate product with ID: {}", productId);
+            throw new NotAuthorizedException("You are not authorized to deactivate this product");
+        }
+
+        // Change product status to DEACTIVATED
+        product.setStatus(ProductStatus.DEACTIVATED);
+        Product updatedProduct = productRepository.save(product);
+        log.info("Service: Product deactivated with ID: {}", updatedProduct.getId());
+
+        // Update the Elasticsearch index
+        productIndexService.indexProduct(updatedProduct, 0);
+
+        return productMapper.toDTO(updatedProduct);
+    }
+
+
+    @Override
+    public ProductResponseDTO activateProduct(UUID productId, Authentication authentication)
+            throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Service: Activating product with ID: {}", productId);
+
+        String email = authentication.getName();
+        User seller = userService.getUserByEmail(email);
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> {
+                    log.warn("Service: Product not found with ID: {}", productId);
+                    return new ResourceNotFoundException("Product not found with ID " + productId);
+                });
+
+        // Check if the authenticated user is the owner of the product
+        if (!product.getSeller().getId().equals(seller.getId())) {
+            log.warn("Service: Unauthorized attempt to activate product with ID: {}", productId);
+            throw new NotAuthorizedException("You are not authorized to activate this product");
+        }
+
+        // Check if the product is in DEACTIVATED status
+        if (product.getStatus() != ProductStatus.DEACTIVATED) {
+            log.warn("Service: Cannot activate product that is not DEACTIVATED, current status: {}", product.getStatus());
+            throw new ResourceNotValidException("Only deactivated products can be activated");
+        }
+
+        // Change product status to ACTIVE
+        product.setStatus(ProductStatus.ACTIVE);
+        Product updatedProduct = productRepository.save(product);
+        log.info("Service: Product activated with ID: {}", updatedProduct.getId());
+
+        // Update the Elasticsearch index
+        productIndexService.indexProduct(updatedProduct, 0);
+
+        return productMapper.toDTO(updatedProduct);
+    }
 }

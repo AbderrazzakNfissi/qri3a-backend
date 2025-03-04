@@ -3,6 +3,7 @@ package my.project.qri3a.repositories;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
 import my.project.qri3a.enums.ProductCategory;
+import my.project.qri3a.enums.ProductStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -49,4 +50,29 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     );
 
     long countBySellerId(UUID sellerId);
+
+    /**
+     * Find products by status, ordered by creation date (newest first)
+     * @param status The product status to filter by
+     * @param pageable Pagination information
+     * @return Page of products with the specified status
+     */
+    Page<Product> findByStatusOrderByCreatedAtDesc(ProductStatus status, Pageable pageable);
+
+    /**
+     * Find products by seller and status, ordered by creation date (newest first)
+     * @param seller The seller/owner of the products
+     * @param status The product status to filter by
+     * @param pageable Pagination information
+     * @return Page of products with the specified seller and status
+     */
+    Page<Product> findBySellerAndStatusOrderByCreatedAtDesc(User seller, ProductStatus status, Pageable pageable);
+
+    /**
+     * Count products by seller and group by status
+     * @param sellerId The ID of the seller/owner
+     * @return List of Object arrays containing status and count
+     */
+    @Query("SELECT p.status, COUNT(p) FROM Product p WHERE p.seller.id = :sellerId GROUP BY p.status")
+    List<Object[]> countBySellerAndGroupByStatus(@Param("sellerId") UUID sellerId);
 }

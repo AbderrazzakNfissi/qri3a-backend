@@ -52,10 +52,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Autoriser les requêtes non authentifiées
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/{id}").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/{id}/recommended").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/search-suggestions").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/seller-profile/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/my").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/my/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/favorites/**").permitAll()
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/swagger-ui/**",

@@ -2,15 +2,18 @@ package my.project.qri3a.controllers;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import my.project.qri3a.enums.ProductStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -304,6 +307,248 @@ public class ProductController {
 
         return ResponseEntity.ok(response);
     }
+
+
+    /**
+     * Approve a product (change status to ACTIVE)
+     * POST /api/v1/products/{id}/approve
+     */
+    @PostMapping("/{id}/approve")
+    //@PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ProductResponseDTO>> approveProduct(@PathVariable UUID id)
+            throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Controller: Approving product with ID: {}", id);
+        ProductResponseDTO approvedProduct = productService.approveProduct(id);
+        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
+                approvedProduct,
+                "Product approved successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Reject a product (change status to REJECTED)
+     * POST /api/v1/products/{id}/reject
+     */
+    @PostMapping("/{id}/reject")
+    //@PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ProductResponseDTO>> rejectProduct(@PathVariable UUID id)
+            throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Controller: Rejecting product with ID: {}", id);
+        ProductResponseDTO rejectedProduct = productService.rejectProduct(id);
+        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
+                rejectedProduct,
+                "Product rejected successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Activate a product (change status from DEACTIVATED to ACTIVE)
+     * POST /api/v1/products/{id}/activate
+     */
+    @PostMapping("/{id}/activate")
+    public ResponseEntity<ApiResponse<ProductResponseDTO>> activateProduct(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Controller: Activating product with ID: {}", id);
+
+        ProductResponseDTO activatedProduct = productService.activateProduct(id, authentication);
+        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
+                activatedProduct,
+                "Product activated successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+
+    /**
+     * Deactivate a product (change status to DEACTIVATED)
+     * POST /api/v1/products/{id}/deactivate
+     */
+    @PostMapping("/{id}/deactivate")
+    public ResponseEntity<ApiResponse<ProductResponseDTO>> deactivateProduct(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Controller: Deactivating product with ID: {}", id);
+
+        ProductResponseDTO deactivatedProduct = productService.deactivateProduct(id, authentication);
+        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
+                deactivatedProduct,
+                "Product deactivated successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+
+    /**
+     * Get products with ACTIVE status
+     * GET /api/v1/products/active
+     */
+    @GetMapping("/active")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getActiveProducts(Pageable pageable) {
+        log.info("Controller: Fetching active products with pagination: page={}, size={}, sort={}",
+                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+
+        Page<ProductListingDTO> productsPage = productService.getActiveProducts(pageable);
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                productsPage,
+                "Active products fetched successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get products with MODERATION status
+     * GET /api/v1/products/moderation
+     */
+    @GetMapping("/moderation")
+    //@PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getModerationProducts(Pageable pageable) {
+        log.info("Controller: Fetching products in moderation with pagination: page={}, size={}, sort={}",
+                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+
+        Page<ProductListingDTO> productsPage = productService.getModerationProducts(pageable);
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                productsPage,
+                "Products in moderation fetched successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get products with REJECTED status
+     * GET /api/v1/products/rejected
+     */
+    @GetMapping("/rejected")
+    //@PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getRejectedProducts(Pageable pageable) {
+        log.info("Controller: Fetching rejected products with pagination: page={}, size={}, sort={}",
+                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+
+        Page<ProductListingDTO> productsPage = productService.getRejectedProducts(pageable);
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                productsPage,
+                "Rejected products fetched successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get authenticated user's products with ACTIVE status
+     * GET /api/v1/products/my/active
+     */
+    @GetMapping("/my/active")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getMyActiveProducts(
+            Pageable pageable,
+            Authentication authentication
+    ) throws ResourceNotFoundException {
+        log.info("Controller: Fetching authenticated user's active products with pagination: page={}, size={}, sort={}",
+                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+
+        Page<ProductListingDTO> productsPage = productService.getMyActiveProducts(authentication, pageable);
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                productsPage,
+                "Your active products fetched successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get authenticated user's products with MODERATION status
+     * GET /api/v1/products/my/moderation
+     */
+    @GetMapping("/my/moderation")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getMyModerationProducts(
+            Pageable pageable,
+            Authentication authentication
+    ) throws ResourceNotFoundException {
+        log.info("Controller: Fetching authenticated user's products in moderation with pagination: page={}, size={}, sort={}",
+                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+
+        Page<ProductListingDTO> productsPage = productService.getMyModerationProducts(authentication, pageable);
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                productsPage,
+                "Your products in moderation fetched successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get authenticated user's products with REJECTED status
+     * GET /api/v1/products/my/rejected
+     */
+    @GetMapping("/my/rejected")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getMyRejectedProducts(
+            Pageable pageable,
+            Authentication authentication
+    ) throws ResourceNotFoundException {
+        log.info("Controller: Fetching authenticated user's rejected products with pagination: page={}, size={}, sort={}",
+                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+
+        Page<ProductListingDTO> productsPage = productService.getMyRejectedProducts(authentication, pageable);
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                productsPage,
+                "Your rejected products fetched successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+
+    /**
+     * Get counts of products by status for the authenticated user
+     * GET /api/v1/products/my/counts
+     */
+    @GetMapping("/my/counts")
+    public ResponseEntity<ApiResponse<Map<ProductStatus, Long>>> getMyProductCounts(
+            Authentication authentication) throws ResourceNotFoundException {
+        log.info("Controller: Fetching product counts by status for authenticated user");
+
+        Map<ProductStatus, Long> statusCounts = productService.getMyProductCounts(authentication);
+
+        ApiResponse<Map<ProductStatus, Long>> response = new ApiResponse<>(
+                statusCounts,
+                "Product counts fetched successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get authenticated user's products with DEACTIVATED status
+     * GET /api/v1/products/my/deactivated
+     */
+    @GetMapping("/my/deactivated")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getMyDeactivatedProducts(
+            Pageable pageable,
+            Authentication authentication
+    ) throws ResourceNotFoundException {
+        log.info("Controller: Fetching authenticated user's deactivated products with pagination: page={}, size={}, sort={}",
+                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+
+        Page<ProductListingDTO> productsPage = productService.getMyDeactivatedProducts(authentication, pageable);
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                productsPage,
+                "Your deactivated products fetched successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+
+
 
 
 }
