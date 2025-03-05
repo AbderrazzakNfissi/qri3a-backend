@@ -104,6 +104,10 @@ public class User implements UserDetails {
     @JsonIgnore
     private Set<Report> reportsReceived = new HashSet<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<NotificationPreference> notificationPreferences = new HashSet<>();
+
     @CreationTimestamp
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime createdAt;
@@ -192,6 +196,16 @@ public class User implements UserDetails {
     public void removeReportReceived(Report report) {
         reportsReceived.remove(report);
         report.setReportedUser(null);
+    }
+
+    public void addNotificationPreference(NotificationPreference preference) {
+        notificationPreferences.add(preference);
+        preference.setUser(this);
+    }
+
+    public void removeNotificationPreference(NotificationPreference preference) {
+        notificationPreferences.remove(preference);
+        preference.setUser(null);
     }
 
 }

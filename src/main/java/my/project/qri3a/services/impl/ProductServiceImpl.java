@@ -56,7 +56,7 @@ public class ProductServiceImpl implements ProductService {
         log.info("Service: Fetching all products with filters - category: {}, location: {}, condition: {}, sellerId: {}, minPrice: {}, maxPrice: {}, city{}",
                 category, location, condition, sellerId, minPrice, maxPrice,city);
 
-        Page<Product> productsPage = productRepository.findAllByOrderByCreatedAtDesc(pageable);
+        Page<Product> productsPage = productRepository.findByStatusOrderByCreatedAtDesc(ProductStatus.ACTIVE,pageable);
         log.info("Service: Found {} products", productsPage.getTotalElements());
 
         return productsPage.map(productMapper::toProductListingDTO);

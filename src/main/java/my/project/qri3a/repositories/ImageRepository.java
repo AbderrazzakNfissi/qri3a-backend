@@ -7,7 +7,9 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import my.project.qri3a.entities.Image;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface ImageRepository extends JpaRepository<Image, UUID> {
     /**
      * Find an image by Product ID and Image ID.
