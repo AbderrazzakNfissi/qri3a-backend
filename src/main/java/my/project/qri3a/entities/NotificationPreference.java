@@ -36,6 +36,8 @@ public class NotificationPreference {
     @Enumerated(EnumType.STRING)
     private ProductCategory productCategory;
 
+    @Enumerated(EnumType.STRING)
+    private ProductCondition productState;
 
     private BigDecimal minPrice;
 
@@ -43,6 +45,8 @@ public class NotificationPreference {
 
     private String city;
 
+    // Option pour recevoir des emails
+    private boolean receiveEmails = false;
 
     // Timestamps
     @CreationTimestamp

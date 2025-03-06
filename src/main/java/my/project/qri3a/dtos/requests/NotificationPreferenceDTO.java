@@ -9,13 +9,14 @@ import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductCondition;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class NotificationPreferenceDTO {
-
+    private UUID id;
     private ProductCategory productCategory;
 
     private ProductCondition productState;

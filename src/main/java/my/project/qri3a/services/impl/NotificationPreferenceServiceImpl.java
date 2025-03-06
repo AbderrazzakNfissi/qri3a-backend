@@ -59,6 +59,7 @@ public class NotificationPreferenceServiceImpl implements NotificationPreference
 
         // Mettre à jour les champs
         existingPreference.setProductCategory(notificationPreference.getProductCategory());
+        existingPreference.setProductState(notificationPreference.getProductState());
         existingPreference.setMinPrice(notificationPreference.getMinPrice());
         existingPreference.setMaxPrice(notificationPreference.getMaxPrice());
         existingPreference.setCity(notificationPreference.getCity());

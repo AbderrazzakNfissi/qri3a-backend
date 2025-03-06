@@ -17,7 +17,7 @@ public class NotificationPreferenceMapper {
             return null;
         }
         NotificationPreference notificationPreference = new NotificationPreference();
-        BeanUtils.copyProperties(dto, notificationPreference);
+        BeanUtils.copyProperties(dto, notificationPreference,"id");
         return notificationPreference;
     }
 
