@@ -30,13 +30,20 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public Notification createNotification(Notification notification) {
-        // Persist the notification (ID generation and createdAt handled automatically, if applicable)
+        // Persist the notification
         Notification savedNotification = notificationRepository.save(notification);
 
-        // Use the mapper to convert to a DTO including the first product image if available
+        // Use the mapper to convert to a DTO
         NotificationResponseDTO dto = notificationMapper.toDTO(savedNotification);
-        // Publish the notification via WebSocket (it will be converted to JSON)
-        messagingTemplate.convertAndSend("/topic/notifications", dto);
+
+        // Envoyer la notification à l'utilisateur spécifique en utilisant son ID comme identifiant
+        String userId = notification.getUser().getId().toString();
+        messagingTemplate.convertAndSendToUser(
+                userId,
+                "/notifications",
+                dto
+        );
+
         return savedNotification;
     }
 

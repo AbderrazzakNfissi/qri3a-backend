@@ -20,7 +20,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // Préfixe pour les messages adressés aux méthodes @MessageMapping (si besoin)
         registry.setApplicationDestinationPrefixes("/app");
-        // Activation d'un broker simple pour diffuser sur les topics (ici "/topic")
-        registry.enableSimpleBroker("/topic");
+        // Activation d'un broker simple pour diffuser sur les topics généraux et personnels
+        registry.enableSimpleBroker("/topic", "/user");
+        // Préfixe pour les topics spécifiques aux utilisateurs
+        registry.setUserDestinationPrefix("/user");
     }
 }

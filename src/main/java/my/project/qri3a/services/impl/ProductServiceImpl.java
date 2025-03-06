@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import my.project.qri3a.enums.ProductStatus;
+import my.project.qri3a.services.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,10 +32,6 @@ import my.project.qri3a.mappers.ProductMapper;
 import my.project.qri3a.repositories.ProductRepository;
 import my.project.qri3a.repositories.UserRepository;
 import my.project.qri3a.repositories.search.ProductDocRepository;
-import my.project.qri3a.services.ProductIndexService;
-import my.project.qri3a.services.ProductService;
-import my.project.qri3a.services.S3Service;
-import my.project.qri3a.services.UserService;
 import my.project.qri3a.specifications.ProductSpecifications;
 
 @Service
@@ -50,6 +47,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductIndexService productIndexService;
     private final ProductDocRepository productDocRepository;
     private final S3Service s3Service;
+    private final ProductMatchingService productMatchingService;
 
     @Override
     public Page<ProductListingDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice, String city) throws ResourceNotValidException {
@@ -373,6 +371,9 @@ public class ProductServiceImpl implements ProductService {
 
         // Update the Elasticsearch index
         productIndexService.indexProduct(updatedProduct, 0);
+
+        // Notifier les utilisateurs intéressés
+        productMatchingService.notifyInterestedUsers(updatedProduct);
 
         return productMapper.toDTO(updatedProduct);
     }
