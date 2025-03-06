@@ -48,18 +48,31 @@ public class ProductMatchingServiceImpl implements ProductMatchingService {
 
         for (User user : interestedUsers) {
             try {
-                // Vérifier si l'utilisateur a activé les notifications par email
-                // Cette information pourrait être récupérée avec une requête jointe,
-                // mais pour plus de clarté, on la garde séparée ici
-                //boolean shouldSendEmail = notificationPreferenceRepository.findByUser(user).stream()
-                //         .anyMatch(NotificationPreference::isReceiveEmails);
+                // Récupérer les préférences de l'utilisateur pour construire le message
+                List<NotificationPreference> userPreferences = notificationPreferenceRepository.findByUser(user);
+                NotificationPreference preference = userPreferences.isEmpty() ? null : userPreferences.get(0);
+
+                // Construire le message de notification avec le format demandé
+                String categoryName = getCategoryDisplayName(product.getCategory());
+                String notificationMessage = String.format(
+                        "Une nouvelle annonce correspondant à vos critères a été publiée: %s correspond à votre recherche (%s",
+                        product.getTitle(), categoryName);
+
+                // Ajouter les détails de prix si disponibles
+                if (preference != null && preference.getMinPrice() != null && preference.getMaxPrice() != null) {
+                    notificationMessage += String.format(", prix entre %d MAD et %d MAD",
+                            preference.getMinPrice().intValue(),
+                            preference.getMaxPrice().intValue());
+                }
+
+                notificationMessage += ")";
 
                 // Créer une nouvelle notification
                 Notification notification = Notification.builder()
                         .user(user)
                         .product(product)
                         .category(product.getCategory())
-                        .body("Une nouvelle annonce correspondant à vos critères a été publiée: " + product.getTitle())
+                        .body(notificationMessage)
                         .read(false)
                         .build();
 
@@ -70,8 +83,6 @@ public class ProductMatchingServiceImpl implements ProductMatchingService {
                 log.info("Notification envoyée à l'utilisateur {} pour le produit {}",
                         user.getId(), product.getId());
 
-                // Ici, vous pourriez aussi envoyer un email si shouldSendEmail est true
-
             } catch (Exception e) {
                 log.error("Erreur lors de l'envoi de la notification à l'utilisateur {} pour le produit {}: {}",
                         user.getId(), product.getId(), e.getMessage());
@@ -81,5 +92,51 @@ public class ProductMatchingServiceImpl implements ProductMatchingService {
         log.info("{} notifications envoyées avec succès pour le produit {}",
                 notificationCount, product.getId());
         return notificationCount;
+    }
+
+    /**
+     * Convertit la catégorie en nom d'affichage plus lisible
+     */
+    private String getCategoryDisplayName(Enum<?> category) {
+        String categoryString = category.toString();
+
+        switch (categoryString) {
+            case "SMARTPHONES_AND_TELEPHONES":
+                return "Smartphones et Téléphones";
+            case "TABLETS_AND_E_BOOKS":
+                return "Tablettes et E-books";
+            case "LAPTOPS":
+                return "Ordinateurs Portables";
+            case "DESKTOP_COMPUTERS":
+                return "Ordinateurs de Bureau";
+            case "TELEVISIONS":
+                return "Télévisions";
+            case "ELECTRO_MENAGE":
+                return "Électroménager";
+            case "ACCESSORIES_FOR_SMARTPHONES_AND_TABLETS":
+                return "Accessoires pour Smartphones et Tablettes";
+            case "SMARTWATCHES_AND_ACCESSORIES":
+                return "Smartwatches et Accessoires";
+            case "AUDIO_AND_HIFI":
+                return "Audio et Hi-Fi";
+            case "COMPUTER_COMPONENTS":
+                return "Composants Informatiques";
+            case "STORAGE_AND_PERIPHERALS":
+                return "Stockage et Périphériques";
+            case "PRINTERS_AND_SCANNERS":
+                return "Imprimantes et Scanners";
+            case "DRONES_AND_ACCESSORIES":
+                return "Drones et Accessoires";
+            case "NETWORK_EQUIPMENT":
+                return "Équipement Réseau";
+            case "SMART_HOME_DEVICES":
+                return "Appareils de Maison Intelligente";
+            case "GAMING_ACCESSORIES":
+                return "Accessoires de Jeu";
+            case "PHOTO_AND_VIDEO_EQUIPMENT":
+                return "Équipement Photo et Vidéo";
+            default:
+                return categoryString.replace("_", " ");
+        }
     }
 }

@@ -23,10 +23,9 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
 
     boolean existsByIdAndUser(UUID id, User user);
 
-    // Nouvelle méthode pour trouver les utilisateurs intéressés par un produit spécifique
     @Query("SELECT DISTINCT np.user FROM NotificationPreference np WHERE " +
             "(np.productCategory IS NULL OR np.productCategory = :category) AND " +
-            "(np.productState IS NULL OR np.productState = :condition) AND " +
+            "(np.productState = 'BOTH' OR np.productState IS NULL OR np.productState = :condition) AND " +
             "(np.city IS NULL OR np.city = '' OR LOWER(np.city) = LOWER(:city)) AND " +
             "(np.minPrice IS NULL OR np.minPrice <= :price) AND " +
             "(np.maxPrice IS NULL OR np.maxPrice >= :price)")
