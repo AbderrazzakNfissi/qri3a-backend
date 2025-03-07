@@ -120,13 +120,34 @@ public class ProductServiceImpl implements ProductService {
 
 
     @Override
-    public ProductResponseDTO getProductById(UUID productId) throws ResourceNotFoundException {
+    public ProductResponseDTO getProductById(UUID productId, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException {
         log.info("Service: Fetching product with ID: {}", productId);
+
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> {
                     log.warn("Service: Product not found with ID: {}", productId);
                     return new ResourceNotFoundException("Product not found with ID " + productId);
                 });
+
+        // Si le produit n'est pas actif, vérifier si l'authentification existe
+        if (product.getStatus() != ProductStatus.ACTIVE) {
+            // Si l'utilisateur n'est pas authentifié, on rejette l'accès
+            if (authentication == null) {
+                log.warn("Service: Unauthenticated access attempt to non-active product with ID: {}", productId);
+                throw new NotAuthorizedException("You must be logged in to view this product");
+            }
+
+            // Obtenir l'utilisateur authentifié
+            String email = authentication.getName();
+            User currentUser = userService.getUserByEmail(email);
+
+            // Vérifier si l'utilisateur est le propriétaire du produit
+            if (!product.getSeller().getId().equals(currentUser.getId())) {
+                log.warn("Service: Unauthorized access to non-active product with ID: {}", productId);
+                throw new NotAuthorizedException("You are not authorized to view this product");
+            }
+        }
+
         return productMapper.toDTO(product);
     }
 

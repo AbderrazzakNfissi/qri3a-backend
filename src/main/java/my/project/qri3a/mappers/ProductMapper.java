@@ -169,6 +169,7 @@ public class ProductMapper {
                 .price(product.getPrice())
                 .location(product.getLocation())
                 .city(product.getCity())
+                .status(product.getStatus())
                 .category(product.getCategory().name())
                 .condition(product.getCondition().name())
                 .createdAt(createdAtStr)

@@ -76,9 +76,9 @@ public class ProductController {
      * GET /api/v1/products/{id}
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductResponseDTO>> getProductById(@PathVariable UUID id) throws ResourceNotFoundException {
+    public ResponseEntity<ApiResponse<ProductResponseDTO>> getProductById(@PathVariable UUID id, Authentication authentication) throws ResourceNotFoundException {
         log.info("Controller: Fetching product with ID: {}", id);
-        ProductResponseDTO productResponseDTO = productService.getProductById(id);
+        ProductResponseDTO productResponseDTO = productService.getProductById(id, authentication);
         ApiResponse<ProductResponseDTO> response = new ApiResponse<>(productResponseDTO, "Product fetched successfully.", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }

@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import my.project.qri3a.enums.ProductStatus;
 import org.springframework.data.domain.*;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
@@ -35,6 +36,8 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
 
         // Démarrer avec un critère vide
         Criteria criteria = new Criteria();
+
+        criteria = criteria.and(new Criteria("status").is(ProductStatus.ACTIVE.toString()));
 
         // Construction du critère de recherche sur le texte avec boost sur le titre
         if (searchText != null && !searchText.trim().isEmpty()) {
@@ -110,6 +113,8 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
         Criteria descriptionCriteria = new Criteria("description").expression(expression);
         Criteria criteria = new Criteria().or(titleCriteria).or(descriptionCriteria);
 
+        criteria = criteria.and(new Criteria("status").is(ProductStatus.ACTIVE.toString()));
+
         // Create the query
         CriteriaQuery query = new CriteriaQuery(criteria);
 
@@ -123,6 +128,7 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
                 .map(SearchHit::getContent)
                 .collect(Collectors.toList());
     }
+
 
 
 

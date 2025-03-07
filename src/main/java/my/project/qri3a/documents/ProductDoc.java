@@ -2,6 +2,8 @@ package my.project.qri3a.documents;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+
+import my.project.qri3a.enums.ProductStatus;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.CompletionField;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -38,5 +40,7 @@ public class ProductDoc {
     // Nouveaux champs
     private String firstImageUrl;
     private int numberOfImages;
+
+    private ProductStatus status;
 
 }

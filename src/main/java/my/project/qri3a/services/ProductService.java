@@ -20,7 +20,7 @@ import my.project.qri3a.exceptions.ResourceNotValidException;
 
 public interface ProductService {
     Page<ProductListingDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice, String city) throws ResourceNotValidException;
-    ProductResponseDTO getProductById(UUID productId) throws ResourceNotFoundException;
+    ProductResponseDTO getProductById(UUID productId, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException;
     ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO, Authentication authentication) throws ResourceNotFoundException, ResourceNotValidException;
     ProductResponseDTO updateProduct(UUID productId, ProductRequestDTO productRequestDTO) throws ResourceNotFoundException, ResourceNotValidException;
     void deleteProduct(UUID productId) throws ResourceNotFoundException;

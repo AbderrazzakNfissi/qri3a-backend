@@ -2,10 +2,17 @@ FROM openjdk:21-oracle
 LABEL authors="a.nfissi"
 WORKDIR /app
 
+# Installation de curl et PostgreSQL client pour les health checks
+RUN microdnf install -y curl postgresql
+
 # Copier le jar de l'application
 COPY target/*.jar app.jar
 
-EXPOSE 8080
+# Ajouter un script de démarrage
+COPY wait-for-services.sh .
+RUN chmod +x wait-for-services.sh
 
-# Attendre que PostgreSQL et Elasticsearch soient disponibles, puis lancer l'application
-ENTRYPOINT ["sh", "-c", "until echo > /dev/tcp/postgres/5432; do echo 'Waiting for PostgreSQL'; sleep 1; done; until echo > /dev/tcp/elasticsearch/9200; do echo 'Waiting for Elasticsearch'; sleep 1; done; java -jar app.jar"]
+EXPOSE 8081
+
+# Utiliser le script pour attendre que les services soient disponibles
+ENTRYPOINT ["./wait-for-services.sh"]
