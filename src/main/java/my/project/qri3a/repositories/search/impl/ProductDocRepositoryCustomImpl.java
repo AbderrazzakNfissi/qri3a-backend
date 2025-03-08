@@ -37,7 +37,8 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
         // Démarrer avec un critère vide
         Criteria criteria = new Criteria();
 
-        criteria = criteria.and(new Criteria("status").is(ProductStatus.ACTIVE.toString()));
+        criteria = criteria.and(new Criteria("status").is("ACTIVE"));
+
 
         // Construction du critère de recherche sur le texte avec boost sur le titre
         if (searchText != null && !searchText.trim().isEmpty()) {
@@ -70,6 +71,8 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
         if (maxPrice != null) {
             criteria = criteria.and(new Criteria("price").lessThanEqual(maxPrice));
         }
+
+
 
         // Définition du tri :
         // - Si searchText est fourni, on trie d'abord sur _score (pour la pertinence de la recherche),

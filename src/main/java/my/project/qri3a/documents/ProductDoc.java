@@ -36,11 +36,10 @@ public class ProductDoc {
     private String city;
     private String category;
     private String condition;
+    private String status;
     private String createdAt;
     // Nouveaux champs
     private String firstImageUrl;
     private int numberOfImages;
-
-    private ProductStatus status;
 
 }

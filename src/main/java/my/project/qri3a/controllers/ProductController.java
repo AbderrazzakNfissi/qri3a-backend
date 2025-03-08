@@ -345,25 +345,7 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Activate a product (change status from DEACTIVATED to ACTIVE)
-     * POST /api/v1/products/{id}/activate
-     */
-    @PostMapping("/{id}/activate")
-    public ResponseEntity<ApiResponse<ProductResponseDTO>> activateProduct(
-            @PathVariable UUID id,
-            Authentication authentication
-    ) throws ResourceNotFoundException, NotAuthorizedException {
-        log.info("Controller: Activating product with ID: {}", id);
 
-        ProductResponseDTO activatedProduct = productService.activateProduct(id, authentication);
-        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
-                activatedProduct,
-                "Product activated successfully.",
-                HttpStatus.OK.value()
-        );
-        return ResponseEntity.ok(response);
-    }
 
 
     /**

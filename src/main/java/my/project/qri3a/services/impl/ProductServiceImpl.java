@@ -358,7 +358,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Page<ProductDoc> findAll(Pageable pageable) {
-        Page<ProductDoc> productDocs = productDocRepository.findAllByOrderByCreatedAtDesc(pageable);
+        Page<ProductDoc> productDocs = productDocRepository.findByStatusOrderByCreatedAtDesc(ProductStatus.ACTIVE.toString(),pageable);
         return productDocs;
     }
 
@@ -556,41 +556,4 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toDTO(updatedProduct);
     }
 
-
-    @Override
-    public ProductResponseDTO activateProduct(UUID productId, Authentication authentication)
-            throws ResourceNotFoundException, NotAuthorizedException {
-        log.info("Service: Activating product with ID: {}", productId);
-
-        String email = authentication.getName();
-        User seller = userService.getUserByEmail(email);
-
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> {
-                    log.warn("Service: Product not found with ID: {}", productId);
-                    return new ResourceNotFoundException("Product not found with ID " + productId);
-                });
-
-        // Check if the authenticated user is the owner of the product
-        if (!product.getSeller().getId().equals(seller.getId())) {
-            log.warn("Service: Unauthorized attempt to activate product with ID: {}", productId);
-            throw new NotAuthorizedException("You are not authorized to activate this product");
-        }
-
-        // Check if the product is in DEACTIVATED status
-        if (product.getStatus() != ProductStatus.DEACTIVATED) {
-            log.warn("Service: Cannot activate product that is not DEACTIVATED, current status: {}", product.getStatus());
-            throw new ResourceNotValidException("Only deactivated products can be activated");
-        }
-
-        // Change product status to ACTIVE
-        product.setStatus(ProductStatus.ACTIVE);
-        Product updatedProduct = productRepository.save(product);
-        log.info("Service: Product activated with ID: {}", updatedProduct.getId());
-
-        // Update the Elasticsearch index
-        productIndexService.indexProduct(updatedProduct, 0);
-
-        return productMapper.toDTO(updatedProduct);
-    }
 }

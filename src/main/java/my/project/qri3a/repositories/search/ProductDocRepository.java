@@ -10,7 +10,7 @@ import my.project.qri3a.documents.ProductDoc;
 
 public interface ProductDocRepository extends ElasticsearchRepository<ProductDoc, UUID> , ProductDocRepositoryCustom{
 
-    Page<ProductDoc> findAllByOrderByCreatedAtDesc(Pageable pageable);
+    Page<ProductDoc> findByStatusOrderByCreatedAtDesc(String status, Pageable pageable);
     Page<ProductDoc> findProductDocByTitleOrDescription(String title,String description, Pageable pageable);
     List<ProductDoc> findTop10ByTitleOrDescription(String title);
 
