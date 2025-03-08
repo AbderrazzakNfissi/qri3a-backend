@@ -25,4 +25,8 @@ public class ProductListingDTO {
     private ImageResponseDTO image;
     //private List<ImageResponseDTO> images;
     private String createdAt;
+
+    private String longitude;
+
+    private String latitude;
 }

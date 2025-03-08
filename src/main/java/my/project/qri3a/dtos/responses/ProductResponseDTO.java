@@ -21,6 +21,8 @@ public class ProductResponseDTO {
     private ProductCondition condition;
     private ProductStatus status;
     private UserDTO user;
+    private String longitude;
+    private String latitude;
     private List<ImageResponseDTO> images;
     private String createdAt;
 }

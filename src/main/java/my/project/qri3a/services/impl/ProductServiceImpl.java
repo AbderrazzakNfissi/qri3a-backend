@@ -157,7 +157,6 @@ public class ProductServiceImpl implements ProductService {
 
         String email = authentication.getName();
         User seller = userService.getUserByEmail(email);
-        productRequestDTO.setSellerId(seller.getId());
 
         Product product = productMapper.toEntity(productRequestDTO);
         product.setSeller(seller);
@@ -171,8 +170,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponseDTO updateProduct(UUID productId, ProductRequestDTO productRequestDTO) throws ResourceNotFoundException, ResourceNotValidException {
+    public ProductResponseDTO updateProduct(UUID productId, ProductRequestDTO productRequestDTO, Authentication authentication) throws ResourceNotFoundException, ResourceNotValidException {
         log.info("Service: Updating product with ID: {}", productId);
+
+        // Récupérer l'utilisateur à partir de l'authentification
+        String email = authentication.getName();
+        User currentUser = userService.getUserByEmail(email);
 
         Product existingProduct = productRepository.findById(productId)
                 .orElseThrow(() -> {
@@ -180,14 +183,10 @@ public class ProductServiceImpl implements ProductService {
                     return new ResourceNotFoundException("Product not found with ID " + productId);
                 });
 
-        // Si le sellerId est mis à jour, vérifier que le nouveau vendeur existe
-        if (!existingProduct.getSeller().getId().equals(productRequestDTO.getSellerId())) {
-            User newSeller = userRepository.findById(productRequestDTO.getSellerId())
-                    .orElseThrow(() -> {
-                        log.warn("Service: New seller not found with ID: {}", productRequestDTO.getSellerId());
-                        return new ResourceNotFoundException("Seller not found with ID " + productRequestDTO.getSellerId());
-                    });
-            existingProduct.setSeller(newSeller);
+        // Vérifier que l'utilisateur actuel est le propriétaire du produit
+        if (!existingProduct.getSeller().getId().equals(currentUser.getId())) {
+            log.warn("Service: User {} is not authorized to update product {}", currentUser.getId(), productId);
+            throw new ResourceNotValidException("You are not authorized to update this product");
         }
 
         // Mettre à jour les champs de l'entité à partir du DTO
@@ -198,10 +197,13 @@ public class ProductServiceImpl implements ProductService {
         log.info("Service: Product updated with ID: {}", updatedProduct.getId());
 
         // Mettre à jour l'index Elasticsearch
-        productIndexService.indexProduct(updatedProduct,0);
+        productIndexService.indexProduct(updatedProduct, 0);
 
         return productMapper.toDTO(updatedProduct);
     }
+
+
+
     //cette fonction il va etre utiliser par l'administrateur pour supprimer un produit
     @Override
     public void deleteProduct(UUID productId) throws ResourceNotFoundException {

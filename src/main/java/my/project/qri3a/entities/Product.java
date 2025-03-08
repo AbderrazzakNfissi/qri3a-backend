@@ -58,6 +58,10 @@ public class Product {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private ProductStatus status = ProductStatus.MODERATION;
+    @Column(nullable = true)
+    private String longitude;
+    @Column(nullable = true)
+    private String latitude;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id")

@@ -110,10 +110,11 @@ public class ProductController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> updateProduct(@PathVariable UUID id,
-                                                                         @Valid @RequestBody ProductRequestDTO productRequestDTO)
+                                                                         @Valid @RequestBody ProductRequestDTO productRequestDTO,
+                                                                         Authentication authentication)
             throws ResourceNotFoundException, ResourceNotValidException {
         log.info("Controller: Updating product with ID: {}", id);
-        ProductResponseDTO updatedProduct = productService.updateProduct(id, productRequestDTO);
+        ProductResponseDTO updatedProduct = productService.updateProduct(id, productRequestDTO,authentication);
         ApiResponse<ProductResponseDTO> response = new ApiResponse<>(updatedProduct, "Product updated successfully.", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }

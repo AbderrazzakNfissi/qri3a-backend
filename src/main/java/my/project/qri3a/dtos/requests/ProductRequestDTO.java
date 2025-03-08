@@ -40,6 +40,10 @@ public class ProductRequestDTO {
     @NotNull(message = "Condition is mandatory")
     private ProductCondition condition;
 
-    @NotNull(message = "Seller ID is mandatory")
-    private UUID sellerId;
+    private String longitude;
+
+    private String latitude;
+
+    //@NotNull(message = "Seller ID is mandatory")
+    // private UUID sellerId;
 }
