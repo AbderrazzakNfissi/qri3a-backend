@@ -76,6 +76,9 @@ public class User implements UserDetails {
     @Column(nullable = true, length = 500)
     private String aboutMe;
 
+    @Column(nullable = true)
+    private String profileImage;
+
     @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private Set<Product> products = new HashSet<>();

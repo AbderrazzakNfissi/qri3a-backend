@@ -27,6 +27,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -87,11 +90,11 @@ public class UserServiceImpl implements UserService {
         return createdUser;
     }
 
+    @Override
     public User updateUser(UserSettingsInfosDTO dto, Authentication authentication)
-            throws ResourceNotFoundException, BadCredentialsException {
+            throws ResourceNotFoundException, BadCredentialsException, IOException, ResourceNotValidException {
 
-        // Vérifier si l'utilisateur authentifié a le droit de mettre à jour cet utilisateur
-        // Ceci est un exemple, ajustez selon vos besoins
+        // Vérifier si l'utilisateur authentifié existe
         User currentUser = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
 
@@ -105,9 +108,33 @@ public class UserServiceImpl implements UserService {
         userToUpdate.setAboutMe(dto.getAboutMe());
         userToUpdate.setWebsite(dto.getWebsite());
 
+        // Gestion de la photo de profil
+        if (dto.getProfileImage() != null && !dto.getProfileImage().isEmpty()) {
+            // Validation du type de fichier
+            if (!isImageFile(dto.getProfileImage())) {
+                throw new ResourceNotValidException("Only image files are allowed for profile picture.");
+            }
+
+            // Si l'utilisateur a déjà une photo de profil, supprimer l'ancienne
+            if (userToUpdate.getProfileImage() != null && !userToUpdate.getProfileImage().isEmpty()) {
+                String filename = extractFileName(userToUpdate.getProfileImage());
+                s3Service.deleteFile(filename);
+                log.info("Old profile image deleted: {}", filename);
+            }
+
+            // Générer un nom unique pour la nouvelle photo
+            String filename = generateUniqueFileName(dto.getProfileImage().getOriginalFilename());
+
+            // Télécharger la nouvelle photo sur S3
+            String fileUrl = s3Service.uploadFile(dto.getProfileImage(), filename);
+            log.info("New profile image uploaded with URL: {}", fileUrl);
+
+            // Mettre à jour l'URL de la photo de profil
+            userToUpdate.setProfileImage(fileUrl);
+        }
+
         return userRepository.save(userToUpdate);
     }
-
 
     @Override
     public void deleteUser(UUID userID) throws ResourceNotFoundException {
@@ -120,6 +147,7 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
         log.info("Service: User deleted with ID: {}", userID);
     }
+
 
 
 
@@ -356,5 +384,27 @@ public class UserServiceImpl implements UserService {
         log.info("Service: Seller profile fetched for user ID: {}", userId);
         return sellerProfileDTO;
     }
+
+    // Ajouter ces méthodes utilitaires
+    private boolean isImageFile(MultipartFile file) {
+        String contentType = file.getContentType();
+        return contentType != null && (
+                contentType.equals("image/png") ||
+                        contentType.equals("image/jpeg") ||
+                        contentType.equals("image/jpg") ||
+                        contentType.equals("image/gif") ||
+                        contentType.equals("image/webp")
+        );
+    }
+
+    private String generateUniqueFileName(String originalFilename) {
+        String fileExtension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            fileExtension = originalFilename.substring(originalFilename.lastIndexOf('.'));
+        }
+        return "profile-" + UUID.randomUUID().toString() + fileExtension;
+    }
+
+
 
 }

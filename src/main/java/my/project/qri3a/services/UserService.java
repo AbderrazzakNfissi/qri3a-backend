@@ -1,5 +1,6 @@
 package my.project.qri3a.services;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,7 +24,7 @@ public interface UserService {
     Page<User> getAllUsers(Pageable pageable) throws ResourceNotValidException ;
     Optional<User> getUserById(UUID userID) throws ResourceNotFoundException;
     User createUser(User user) throws ResourceAlreadyExistsException, ResourceNotValidException;
-    User updateUser(UserSettingsInfosDTO userSettingsInfosDTO, Authentication authentication) throws ResourceNotFoundException, ResourceNotValidException;
+    User updateUser(UserSettingsInfosDTO userSettingsInfosDTO, Authentication authentication) throws ResourceNotFoundException, IOException, ResourceNotValidException;
     void deleteUser(UUID userID) throws ResourceNotFoundException;
     void addProductToWishlist(UUID userId, UUID productId) throws ResourceNotFoundException;
     void removeProductFromWishlist(UUID userId, UUID productId) throws ResourceNotFoundException;

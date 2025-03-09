@@ -1,5 +1,6 @@
 package my.project.qri3a.controllers;
 
+import java.io.IOException;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -8,14 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +26,7 @@ import my.project.qri3a.exceptions.ResourceNotValidException;
 import my.project.qri3a.mappers.UserMapper;
 import my.project.qri3a.responses.ApiResponse;
 import my.project.qri3a.services.UserService;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -150,9 +145,15 @@ public class UserController {
      */
     @PutMapping("/update/personal-info")
     public ResponseEntity<ApiResponse<UserResponseDTO>> updateUserInfo(
-            @Valid @RequestBody UserSettingsInfosDTO userSettingsInfosDTO,
+            @Valid @RequestPart("userData") UserSettingsInfosDTO userSettingsInfosDTO,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage,
             Authentication authentication)
-            throws ResourceNotFoundException, ResourceNotValidException {
+            throws ResourceNotFoundException, ResourceNotValidException, IOException {
+
+        // Associer l'image de profil au DTO
+        if (profileImage != null && !profileImage.isEmpty()) {
+            userSettingsInfosDTO.setProfileImage(profileImage);
+        }
 
         User updatedUser = userService.updateUser(userSettingsInfosDTO, authentication);
         UserResponseDTO responseDTO = userMapper.toDTO(updatedUser);

@@ -47,6 +47,7 @@ public class Product {
     @Column(nullable = true)
     private String phone;
 
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductCategory category;
