@@ -132,9 +132,22 @@ public class UserServiceImpl implements UserService {
             // Mettre à jour l'URL de la photo de profil
             userToUpdate.setProfileImage(fileUrl);
         }
+        // Nouveau cas: si removeProfileImage est true, supprimer l'image existante sans la remplacer
+        else if (dto.isRemoveProfileImage()) {
+            // Vérifier si l'utilisateur a une image de profil à supprimer
+            if (userToUpdate.getProfileImage() != null && !userToUpdate.getProfileImage().isEmpty()) {
+                String filename = extractFileName(userToUpdate.getProfileImage());
+                s3Service.deleteFile(filename);
+                log.info("Profile image deleted without replacement: {}", filename);
+
+                // Réinitialiser l'URL de l'image de profil
+                userToUpdate.setProfileImage(null);
+            }
+        }
 
         return userRepository.save(userToUpdate);
     }
+
 
     @Override
     public void deleteUser(UUID userID) throws ResourceNotFoundException {

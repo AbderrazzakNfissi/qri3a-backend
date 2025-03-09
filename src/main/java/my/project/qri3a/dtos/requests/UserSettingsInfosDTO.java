@@ -38,4 +38,6 @@ public class UserSettingsInfosDTO {
     private MultipartFile multipartFile;
 
     private String profileImage;
+
+    private boolean removeProfileImage;
 }
