@@ -152,7 +152,7 @@ public class UserController {
 
         // Associer l'image de profil au DTO
         if (profileImage != null && !profileImage.isEmpty()) {
-            userSettingsInfosDTO.setProfileImage(profileImage);
+            userSettingsInfosDTO.setMultipartFile(profileImage);
         }
 
         User updatedUser = userService.updateUser(userSettingsInfosDTO, authentication);

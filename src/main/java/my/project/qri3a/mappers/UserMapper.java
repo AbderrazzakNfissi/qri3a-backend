@@ -83,7 +83,7 @@ public class UserMapper {
         ReviewerResponseDTO dto = new ReviewerResponseDTO();
         dto.setId(user.getId());
         dto.setName(user.getName());
-
+        dto.setProfileImage(user.getProfileImage());
         return dto;
     }
 

@@ -10,7 +10,7 @@ import java.util.UUID;
 public class ReviewerResponseDTO {
     private UUID id;
     private String name;
-    //Photo de profile a ajoute par la suite ...
+    private String profileImage;
 }
 
 

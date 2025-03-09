@@ -35,5 +35,7 @@ public class UserSettingsInfosDTO {
 
     private String website;
 
-    private MultipartFile profileImage;
+    private MultipartFile multipartFile;
+
+    private String profileImage;
 }

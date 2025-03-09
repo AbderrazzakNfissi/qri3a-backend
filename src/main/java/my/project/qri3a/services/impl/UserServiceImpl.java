@@ -109,9 +109,9 @@ public class UserServiceImpl implements UserService {
         userToUpdate.setWebsite(dto.getWebsite());
 
         // Gestion de la photo de profil
-        if (dto.getProfileImage() != null && !dto.getProfileImage().isEmpty()) {
+        if (dto.getMultipartFile() != null && !dto.getMultipartFile().isEmpty()) {
             // Validation du type de fichier
-            if (!isImageFile(dto.getProfileImage())) {
+            if (!isImageFile(dto.getMultipartFile())) {
                 throw new ResourceNotValidException("Only image files are allowed for profile picture.");
             }
 
@@ -123,10 +123,10 @@ public class UserServiceImpl implements UserService {
             }
 
             // Générer un nom unique pour la nouvelle photo
-            String filename = generateUniqueFileName(dto.getProfileImage().getOriginalFilename());
+            String filename = generateUniqueFileName(dto.getMultipartFile().getOriginalFilename());
 
             // Télécharger la nouvelle photo sur S3
-            String fileUrl = s3Service.uploadFile(dto.getProfileImage(), filename);
+            String fileUrl = s3Service.uploadFile(dto.getMultipartFile(), filename);
             log.info("New profile image uploaded with URL: {}", fileUrl);
 
             // Mettre à jour l'URL de la photo de profil
