@@ -46,7 +46,16 @@ public class ProductMatchingServiceImpl implements ProductMatchingService {
         List<User> interestedUsers = findInterestedUsers(product);
         int notificationCount = 0;
 
+        // Récupérer le vendeur du produit
+        User seller = product.getSeller();
+
         for (User user : interestedUsers) {
+            // Vérifier si l'utilisateur n'est pas le vendeur du produit
+            if (seller != null && seller.getId().equals(user.getId())) {
+                log.info("Utilisateur {} est le vendeur du produit, notification ignorée", user.getId());
+                continue; // Passer à l'utilisateur suivant
+            }
+
             try {
                 // Récupérer les préférences de l'utilisateur pour construire le message
                 List<NotificationPreference> userPreferences = notificationPreferenceRepository.findByUser(user);
@@ -93,7 +102,6 @@ public class ProductMatchingServiceImpl implements ProductMatchingService {
                 notificationCount, product.getId());
         return notificationCount;
     }
-
     /**
      * Convertit la catégorie en nom d'affichage plus lisible
      */
