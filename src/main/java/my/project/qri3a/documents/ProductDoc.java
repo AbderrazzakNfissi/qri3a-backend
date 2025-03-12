@@ -42,4 +42,10 @@ public class ProductDoc {
     private String firstImageUrl;
     private int numberOfImages;
 
+    private String delivery;
+    private BigDecimal deliveryFee;
+    private Boolean deliveryAllMorocco;
+    private String deliveryZones;
+    private String deliveryTime;
+
 }

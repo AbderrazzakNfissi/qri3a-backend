@@ -92,6 +92,22 @@ public class Product {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    // Livraison
+    @Column(nullable = true)
+    private String delivery; // "YES" ou "NO"
+
+    @Column(nullable = true)
+    private BigDecimal deliveryFee;
+
+    @Column(nullable = true)
+    private Boolean deliveryAllMorocco;
+
+    @Column(nullable = true, length = 2000)
+    private String deliveryZones; // Stocké comme JSON ou liste séparée par des virgules
+
+    @Column(nullable = true)
+    private String deliveryTime; // "1", "3", "7", "14" jours
+
 
     @Override
     public boolean equals(Object o) {

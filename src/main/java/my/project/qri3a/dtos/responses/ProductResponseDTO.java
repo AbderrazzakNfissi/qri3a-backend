@@ -25,4 +25,10 @@ public class ProductResponseDTO {
     private String latitude;
     private List<ImageResponseDTO> images;
     private String createdAt;
+
+    private String delivery;
+    private BigDecimal deliveryFee;
+    private Boolean deliveryAllMorocco;
+    private List<String> deliveryZones;
+    private String deliveryTime;
 }

@@ -1,6 +1,7 @@
 package my.project.qri3a.dtos.requests;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.constraints.DecimalMin;
@@ -46,4 +47,10 @@ public class ProductRequestDTO {
 
     //@NotNull(message = "Seller ID is mandatory")
     // private UUID sellerId;
+
+    private String delivery;
+    private BigDecimal deliveryFee;
+    private Boolean deliveryAllMorocco;
+    private List<String> deliveryZones;
+    private String deliveryTime;
 }

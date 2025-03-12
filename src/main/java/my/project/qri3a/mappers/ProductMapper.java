@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -62,6 +63,10 @@ public class ProductMapper {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
             // Appliquer le format et définir dans le DTO
             dto.setCreatedAt(utcDateTime.format(formatter));
+        }
+
+        if (product.getDeliveryZones() != null && !product.getDeliveryZones().isEmpty()) {
+            dto.setDeliveryZones(Arrays.asList(product.getDeliveryZones().split(",")));
         }
 
         return dto;
@@ -133,7 +138,11 @@ public class ProductMapper {
 
     public Product toEntity(ProductRequestDTO productRequestDTO) {
         Product product = new Product();
+
         BeanUtils.copyProperties(productRequestDTO, product);
+        if (productRequestDTO.getDeliveryZones() != null && !productRequestDTO.getDeliveryZones().isEmpty()) {
+            product.setDeliveryZones(String.join(",", productRequestDTO.getDeliveryZones()));
+        }
         return product;
     }
 
