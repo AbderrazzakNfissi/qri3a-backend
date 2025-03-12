@@ -82,6 +82,9 @@ public class ProductMapper {
         // Copy basic properties, excluding "seller", "images", and "createdAt"
         BeanUtils.copyProperties(product, dto, "seller", "images", "createdAt");
 
+        if (product.getDeliveryZones() != null && !product.getDeliveryZones().isEmpty()) {
+            dto.setDeliveryZones(Arrays.asList(product.getDeliveryZones().split(",")));
+        }
         // Map images from Product to ImageResponseDTO
         List<ImageResponseDTO> imageDTOs = product.getImages().stream()
                 .sorted(Comparator.comparingInt(Image::getOrder))

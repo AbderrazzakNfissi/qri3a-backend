@@ -29,4 +29,10 @@ public class ProductListingDTO {
     private String longitude;
 
     private String latitude;
+
+    private String delivery;
+    private BigDecimal deliveryFee;
+    private Boolean deliveryAllMorocco;
+    private List<String> deliveryZones;
+    private String deliveryTime;
 }
