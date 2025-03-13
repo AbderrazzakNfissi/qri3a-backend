@@ -150,9 +150,16 @@ public class ProductMapper {
     }
 
     public void updateEntityFromDTO(ProductRequestDTO dto, Product entity) {
-        BeanUtils.copyProperties(dto, entity, "id", "createdAt", "updatedAt", "seller","images");
-    }
+        // Copie des propriétés de base en excluant certaines
+        BeanUtils.copyProperties(dto, entity, "id", "createdAt", "updatedAt", "seller", "images", "deliveryZones");
 
+        // Gestion spéciale pour les zones de livraison (conversion de List<String> en String)
+        if (dto.getDeliveryZones() != null && !dto.getDeliveryZones().isEmpty()) {
+            entity.setDeliveryZones(String.join(",", dto.getDeliveryZones()));
+        } else {
+            entity.setDeliveryZones(null); // Assurez-vous que c'est null si la liste est vide
+        }
+    }
 
     public ProductDoc toProductDoc(Product product, int nbOfImages) {
 
