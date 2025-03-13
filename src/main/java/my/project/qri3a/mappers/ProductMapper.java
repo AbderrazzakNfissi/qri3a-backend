@@ -162,7 +162,6 @@ public class ProductMapper {
     }
 
     public ProductDoc toProductDoc(Product product, int nbOfImages) {
-
         LocalDateTime createdAt = product.getCreatedAt();
         String createdAtStr = "";
         if (createdAt != null) {
@@ -194,8 +193,13 @@ public class ProductMapper {
                 .createdAt(createdAtStr)
                 .firstImageUrl(imageDTOs.isEmpty() ? null : imageDTOs.get(0).getUrl())
                 .numberOfImages(nbOfImages == 0 ? imageDTOs.size() : nbOfImages)
+                // Ajout des informations de livraison
+                .delivery(product.getDelivery())
+                .deliveryFee(product.getDeliveryFee())
+                .deliveryAllMorocco(product.getDeliveryAllMorocco())
+                .deliveryZones(product.getDeliveryZones())
+                .deliveryTime(product.getDeliveryTime())
                 .build();
     }
-
 
 }

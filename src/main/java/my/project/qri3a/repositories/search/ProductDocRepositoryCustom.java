@@ -16,6 +16,7 @@ public interface ProductDocRepositoryCustom {
                                            BigDecimal minPrice,
                                            BigDecimal maxPrice,
                                            String city,
+                                           String delivery,
                                            Pageable pageable);
 
     List<ProductDoc> findTop10ByTitleOrDescription(String title);

@@ -349,12 +349,13 @@ public class ProductServiceImpl implements ProductService {
 
     }
     */
+    // Interface
     @Override
-    public Page<ProductDoc> searchProductsElastic(String query, Pageable pageable, String category, String location, String condition, BigDecimal minPrice, BigDecimal maxPrice, String city) {
-        log.info("Service: Elasticsearch search with query: {} and filters - category: {}, location: {}, condition: {}, minPrice: {}, maxPrice: {}, city: {}",
-                query, category, location, condition, minPrice, maxPrice, city);
+    public Page<ProductDoc> searchProductsElastic(String query, Pageable pageable, String category, String location, String condition, BigDecimal minPrice, BigDecimal maxPrice, String city, String delivery) {
+        log.info("Service: Elasticsearch search with query: {} and filters - category: {}, location: {}, condition: {}, minPrice: {}, maxPrice: {}, city: {}, delivery: {}",
+                query, category, location, condition, minPrice, maxPrice, city, delivery);
 
-        return productDocRepository.searchProductsElastic(query, category, location, condition, minPrice, maxPrice, city, pageable);
+        return productDocRepository.searchProductsElastic(query, category, location, condition, minPrice, maxPrice, city, delivery, pageable);
     }
 
 

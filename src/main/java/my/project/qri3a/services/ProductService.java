@@ -41,7 +41,7 @@ public interface ProductService {
     );
     Page<ProductListingDTO> getProductsByUserId(UUID userId, Pageable pageable) throws ResourceNotFoundException;
 
-    Page<ProductDoc> searchProductsElastic(String query, Pageable pageable, String category, String location, String condition, BigDecimal minPrice, BigDecimal maxPrice, String city) ;
+    Page<ProductDoc> searchProductsElastic(String query, Pageable pageable, String category, String location, String condition, BigDecimal minPrice, BigDecimal maxPrice, String city,  String delivery) ;
 
     Page<ProductDoc> findAll(Pageable pageable);
 
