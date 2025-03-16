@@ -60,6 +60,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/favorites/**").permitAll()
                         .requestMatchers(
                                 "/api/v1/auth/**",
+                                "/api/v1/auth/password/forgot",
+                                "/api/v1/auth/password/reset",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
@@ -67,8 +69,7 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/docs",
                                 "/api-docs/swagger-config",
-                                "/api-docs",
-                                "/ws/**"
+                                "/api-docs"
                         ).permitAll()
 
                         // Toutes les autres requêtes nécessitent une authentification
