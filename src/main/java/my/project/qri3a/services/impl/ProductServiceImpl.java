@@ -559,4 +559,35 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toDTO(updatedProduct);
     }
 
+    @Override
+    public ProductResponseDTO activateProduct(UUID productId, Authentication authentication)
+            throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Service: activating product with ID: {}", productId);
+
+        String email = authentication.getName();
+        User seller = userService.getUserByEmail(email);
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> {
+                    log.warn("Service: Product not found with ID : {}", productId);
+                    return new ResourceNotFoundException("Product not found with ID " + productId);
+                });
+
+        // Check if the authenticated user is the owner of the product
+        if (!product.getSeller().getId().equals(seller.getId())) {
+            log.warn("Service: Unauthorized attempt to activate product with ID: {}", productId);
+            throw new NotAuthorizedException("You are not authorized to deactivate this product");
+        }
+
+        // Change product status to DEACTIVATED
+        product.setStatus(ProductStatus.ACTIVE);
+        Product updatedProduct = productRepository.save(product);
+        log.info("Service: Product activated with ID: {}", updatedProduct.getId());
+
+        // Update the Elasticsearch index
+        productIndexService.indexProduct(updatedProduct, 0);
+
+        return productMapper.toDTO(updatedProduct);
+    }
+
 }

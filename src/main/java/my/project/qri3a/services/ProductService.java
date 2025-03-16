@@ -148,5 +148,8 @@ public interface ProductService {
      */
     ProductResponseDTO deactivateProduct(UUID productId, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException;
 
+    ProductResponseDTO activateProduct(UUID productId, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException;
+
+
 
 }
