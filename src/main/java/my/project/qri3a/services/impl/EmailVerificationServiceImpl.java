@@ -1,7 +1,10 @@
 package my.project.qri3a.services.impl;
 
 import my.project.qri3a.entities.VerificationCode;
+import my.project.qri3a.exceptions.EmailVerificationException;
 import my.project.qri3a.exceptions.TooManyAttemptsException;
+import my.project.qri3a.exceptions.VerificationCodeExpiredException;
+import my.project.qri3a.exceptions.VerificationCodeInvalidException;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,8 +43,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
      */
     @Override
     @Transactional
-    public void sendVerificationCode(User user) throws TooManyAttemptsException {
-
+    public void sendVerificationCode(User user) throws EmailVerificationException,  TooManyAttemptsException, VerificationCodeExpiredException, VerificationCodeInvalidException {
         // Vérifier si l'utilisateur est bloqué pour trop de tentatives
         String cacheKey = "verification_attempts:" + user.getId();
         Cache attemptsCache = cacheManager.getCache("verificationAttempts");
@@ -72,7 +74,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             log.info("Code de vérification envoyé à l'utilisateur ID: {}", user.getId());
         } catch (Exception e) {
             log.error("Erreur lors de l'envoi de l'email de vérification à l'utilisateur ID: {}", user.getId(), e);
-            throw new RuntimeException("Erreur lors de l'envoi de l'email de vérification: " + e.getMessage());
+            throw new EmailVerificationException("Erreur lors de l'envoi de l'email de vérification: " + e.getMessage());
         }
     }
 
@@ -81,7 +83,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
      */
     @Override
     @Transactional
-    public boolean verifyCode(String code, UUID userId) throws TooManyAttemptsException {
+    public boolean verifyCode(String code, UUID userId) throws VerificationCodeInvalidException, VerificationCodeExpiredException, TooManyAttemptsException{
         // Vérifier le nombre de tentatives
         String cacheKey = "verification_attempts:" + userId;
         Cache attemptsCache = cacheManager.getCache("verificationAttempts");
@@ -93,13 +95,13 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             throw new TooManyAttemptsException("Trop de tentatives. Veuillez réessayer plus tard ou demandez un nouveau code.");
         }
 
-        try {
+
             VerificationCode verificationCode = verificationCodeRepository.findByCodeAndUserId(code, userId)
                     .orElseThrow(() -> {
                         // Incrémenter le compteur de tentatives
                         incrementAttempts(attemptsCache, cacheKey, attempts);
                         log.warn("Tentative de vérification avec un code invalide. Code: {}, UserId: {}", code, userId);
-                        return new IllegalArgumentException("Code de vérification invalide");
+                        return new VerificationCodeInvalidException("Code de vérification invalide");
                     });
 
             if (verificationCode.isExpired()) {
@@ -107,7 +109,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
                 incrementAttempts(attemptsCache, cacheKey, attempts);
                 verificationCodeRepository.delete(verificationCode);
                 log.warn("Tentative de vérification avec un code expiré. UserId: {}", userId);
-                throw new IllegalArgumentException("Code de vérification expiré");
+                throw new VerificationCodeExpiredException("Code de vérification expiré");
             }
 
             User user = verificationCode.getUser();
@@ -126,9 +128,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             attemptsCache.evict(cacheKey);
             log.info("Email vérifié avec succès pour l'utilisateur ID: {}", userId);
             return true;
-        } catch (IllegalArgumentException e) {
-            throw e;
-        }
+
     }
 
     /**
@@ -143,7 +143,6 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             log.warn("Nombre maximal de tentatives atteint pour {}: {}", cacheKey, newAttempts);
         }
     }
-
 
     /**
      * Génère un code aléatoire à 6 chiffres

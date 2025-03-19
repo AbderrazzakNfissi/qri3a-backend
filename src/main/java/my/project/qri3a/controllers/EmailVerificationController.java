@@ -23,8 +23,8 @@ public class EmailVerificationController {
     private final UserService userService;
 
     @PostMapping("/send-code")
-    public ResponseEntity<ApiResponse<Void>> sendVerificationCode(Authentication authentication) throws TooManyAttemptsException {
-        try {
+    public ResponseEntity<ApiResponse<Void>> sendVerificationCode(Authentication authentication)  {
+
             User user = userService.getUserMe(authentication);
 
             if (user.isEmailVerified()) {
@@ -34,16 +34,12 @@ public class EmailVerificationController {
             emailVerificationService.sendVerificationCode(user);
 
             return ResponseEntity.ok(new ApiResponse<>(null, "Un code de vérification a été envoyé à votre adresse email.", HttpStatus.OK.value()));
-        } catch (Exception e) {
-            log.error("Erreur lors de l'envoi du code de vérification", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(null, "Une erreur s'est produite lors de l'envoi du code de vérification.", HttpStatus.INTERNAL_SERVER_ERROR.value()));
-        }
+
     }
 
     @PostMapping("/verify-code")
-    public ResponseEntity<ApiResponse<Void>> verifyCode(@RequestBody VerificationRequest request) throws TooManyAttemptsException{
-        try {
+    public ResponseEntity<ApiResponse<Void>> verifyCode(@RequestBody VerificationRequest request){
+
             boolean verified = emailVerificationService.verifyCode(request.getCode(), request.getUserId());
 
             if (verified) {
@@ -52,18 +48,11 @@ public class EmailVerificationController {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse<>(null, "Code de vérification invalide.", HttpStatus.BAD_REQUEST.value()));
             }
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(null, e.getMessage(), HttpStatus.BAD_REQUEST.value()));
-        } catch (Exception e) {
-            log.error("Erreur lors de la vérification du code", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(null, "Une erreur s'est produite lors de la vérification du code.", HttpStatus.INTERNAL_SERVER_ERROR.value()));
-        }
+
     }
 
     @PostMapping("/resend")
-    public ResponseEntity<ApiResponse<Void>> resendVerificationCode(Authentication authentication) throws TooManyAttemptsException {
+    public ResponseEntity<ApiResponse<Void>> resendVerificationCode(Authentication authentication){
         return sendVerificationCode(authentication);
     }
 }

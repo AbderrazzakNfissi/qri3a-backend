@@ -152,5 +152,40 @@ public class ExceptionHandlingController {
     }
 
 
+    @ExceptionHandler(VerificationCodeExpiredException.class)
+    public ResponseEntity<ApiError> handleVerificationCodeExpiredException(VerificationCodeExpiredException ex, WebRequest request) {
+        log.error("Verification code expired exception: {}", ex.getMessage());
+        ApiError error = new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(VerificationCodeInvalidException.class)
+    public ResponseEntity<ApiError> handleVerificationCodeInvalidException(VerificationCodeInvalidException ex, WebRequest request) {
+        log.error("Verification code invalid exception: {}", ex.getMessage());
+        ApiError error = new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(EmailVerificationException.class)
+    public ResponseEntity<ApiError> handleEmailVerificationException(EmailVerificationException ex, WebRequest request) {
+        log.error("Email verification exception: {}", ex.getMessage());
+        ApiError error = new ApiError(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
 }
