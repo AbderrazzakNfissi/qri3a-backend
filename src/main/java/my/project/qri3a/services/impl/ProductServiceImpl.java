@@ -234,6 +234,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
 
+    @Transactional
     @Override
     public void deleteMyProduct(UUID productId, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException {
         log.info("Service: Deleting my product with ID: {}", productId);
@@ -241,17 +242,20 @@ public class ProductServiceImpl implements ProductService {
         String email = authentication.getName();
         User seller = userService.getUserByEmail(email);
 
+
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> {
                     log.warn("Service: Product not found with ID: {}", productId);
                     return new ResourceNotFoundException("Product not found with ID " + productId);
                 });
 
+
         if (!product.getSeller().getId().equals(seller.getId())) {
             log.warn("Service: Unauthorized attempt to delete product with ID: {}", productId);
             throw new NotAuthorizedException("You are not authorized to delete this product");
         }
- 
+
+        productRepository.removeProductFromAllWishlists(productId);
         for (Image image : product.getImages()) {
            
             String filename = image.getUrl().substring(image.getUrl().lastIndexOf('/') + 1);

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Vérification de votre adresse email</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .verification-code {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e8f4fe;
+            border-radius: 5px;
+            color: #166534;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>qri3a.ma</h1>
+</div>
+
+<div class="content">
+    <h2>Vérification de votre adresse email</h2>
+
+    <p>Bonjour <span th:text="${username}">utilisateur</span>,</p>
+
+    <p>Merci pour votre inscription sur qri3a.ma. Pour activer votre compte, veuillez utiliser le code de vérification ci-dessous :</p>
+
+    <div class="verification-code" th:text="${code}">123456</div>
+
+    <p>Ce code est valable pendant 15 minutes. Si vous n'avez pas demandé cette vérification, vous pouvez ignorer cet email.</p>
+</div>
+
+<div class="footer">
+    <p>© 2025 qri3a.ma - Tous droits réservés</p>
+    <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
+</div>
+</body>
+</html>

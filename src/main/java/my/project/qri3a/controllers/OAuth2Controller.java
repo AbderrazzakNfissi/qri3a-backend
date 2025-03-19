@@ -90,7 +90,7 @@ public class OAuth2Controller {
                 newUser.setCity("");
                 newUser.setPhoneNumber("");
                 newUser.setName(name);
-
+                newUser.setEmailVerified(true);
                 // Generate a random password and encode it using BCrypt
                 String randomPassword = generateRandomPassword(12);
                 newUser.setPassword(passwordEncoder.encode(randomPassword));

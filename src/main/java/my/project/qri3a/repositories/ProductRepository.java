@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -76,4 +77,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
      */
     @Query("SELECT p.status, COUNT(p) FROM Product p WHERE p.seller.id = :sellerId GROUP BY p.status")
     List<Object[]> countBySellerAndGroupByStatus(@Param("sellerId") UUID sellerId);
+
+    @Modifying
+    @Query(value = "DELETE FROM user_wishlist WHERE product_id = :productId", nativeQuery = true)
+    void removeProductFromAllWishlists(@Param("productId") UUID productId);
 }

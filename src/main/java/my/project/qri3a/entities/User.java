@@ -79,6 +79,9 @@ public class User implements UserDetails {
     @Column(nullable = true)
     private String profileImage;
 
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
+
     @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private Set<Product> products = new HashSet<>();

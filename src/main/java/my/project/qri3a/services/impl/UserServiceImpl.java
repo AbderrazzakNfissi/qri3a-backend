@@ -18,6 +18,7 @@ import my.project.qri3a.mappers.UserMapper;
 import my.project.qri3a.repositories.ImageRepository;
 import my.project.qri3a.repositories.ProductRepository;
 import my.project.qri3a.repositories.UserRepository;
+import my.project.qri3a.repositories.VerificationCodeRepository;
 import my.project.qri3a.services.ImageService;
 import my.project.qri3a.services.S3Service;
 import my.project.qri3a.services.UserService;
@@ -52,6 +53,7 @@ public class UserServiceImpl implements UserService {
     private final ImageService imageService;
     private final ImageRepository imageRepository;
     private final ImageMapper imageMapper;
+    private final VerificationCodeRepository verificationCodeRepository;
 
     @Override
     public Page<User> getAllUsers(Pageable pageable) throws ResourceNotValidException {
@@ -327,6 +329,7 @@ public class UserServiceImpl implements UserService {
         user.getWishlist().clear();
         log.info("Service: Cleared wishlist for user ID: {}", user.getId());
 
+        verificationCodeRepository.deleteByUserId(user.getId());
         // Supprimer l'utilisateur de la base de données
         userRepository.delete(user);
         log.info("Service: User deleted with ID: {}", user.getId());

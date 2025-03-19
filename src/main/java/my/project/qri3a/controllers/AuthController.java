@@ -9,9 +9,11 @@ import my.project.qri3a.dtos.requests.AuthenticationRequest;
 import my.project.qri3a.dtos.requests.EmailAndPasswordDTO;
 import my.project.qri3a.dtos.responses.ApiResponseDto;
 import my.project.qri3a.dtos.responses.AuthenticationResponse;
+import my.project.qri3a.responses.ApiResponse;
 import my.project.qri3a.services.AuthenticationService;
 import my.project.qri3a.services.JwtService;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,7 +40,7 @@ public class AuthController {
      * @throws IOException En cas d'erreur d'entrée/sortie.
      */
     @PostMapping("/register")
-    public ResponseEntity<ApiResponseDto> registerUserByEmailAndPassword(
+    public ResponseEntity<ApiResponse<AuthenticationResponse>> registerUserByEmailAndPassword(
             @Valid @RequestBody EmailAndPasswordDTO request,
             HttpServletResponse response
     ) throws IOException {
@@ -46,30 +48,13 @@ public class AuthController {
         request.setPassword(passwordEncoder.encode(request.getPassword()));
         AuthenticationResponse authResponse = authenticationService.registerUser(request);
 
-        // Définir le token d'accès comme cookie HttpOnly
-        ResponseCookie accessTokenCookie = ResponseCookie.from("access_token", authResponse.getAccessToken())
-                .httpOnly(true)
-                .secure(false) // Mettre à true en production
-                .path("/")
-                .maxAge(jwtService.getJwtExpiration() / 1000) // Expiration du token d'accès
-                .sameSite("Lax") // Options : "Strict", "Lax", "None"
-                .build();
+        // Construire la réponse JSON qui inclut l'AuthenticationResponse
+        ApiResponse<AuthenticationResponse> apiResponse = new ApiResponse<>(
+                authResponse,
+                "Utilisateur enregistré avec succès.",
+                HttpStatus.OK.value()
+        );
 
-        response.addHeader(HttpHeaders.SET_COOKIE, accessTokenCookie.toString());
-
-        // Définir le token de rafraîchissement comme cookie HttpOnly
-        ResponseCookie refreshTokenCookie = ResponseCookie.from("refresh_token", authResponse.getRefreshToken())
-                .httpOnly(true)
-                .secure(false) // Mettre à true en production
-                .path("/")
-                .maxAge(jwtService.getRefreshExpiration() / 1000) // Convertir les millisecondes en secondes
-                .sameSite("Strict") // Utiliser "Strict" ou "Lax"
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
-
-        // Construire la réponse JSON
-        ApiResponseDto apiResponse = new ApiResponseDto("SUCCESS", "Utilisateur enregistré avec succès.");
         return ResponseEntity.ok(apiResponse);
     }
 

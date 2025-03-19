@@ -22,5 +22,7 @@ public class AuthenticationResponse {
     @JsonProperty(namespace = "refresh_token")
     private String refreshToken;
 
+    private boolean emailVerified;
+
     private String role;
 }

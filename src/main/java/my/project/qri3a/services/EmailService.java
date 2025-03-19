@@ -38,4 +38,22 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    public void sendVerificationEmail(String to, String code, String username) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setFrom(fromEmail);
+        helper.setTo(to);
+        helper.setSubject("Vérification de votre adresse email - qri3a.ma");
+
+        Context context = new Context();
+        context.setVariable("code", code);
+        context.setVariable("username", username);
+
+        String htmlContent = templateEngine.process("email-verification", context);
+        helper.setText(htmlContent, true);
+
+        mailSender.send(message);
+    }
 }

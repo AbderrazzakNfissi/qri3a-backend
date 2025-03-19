@@ -45,6 +45,18 @@ public class ExceptionHandlingController {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(TooManyAttemptsException.class)
+    public ResponseEntity<ApiError> handleTooManyAttemptsException(TooManyAttemptsException ex, WebRequest request) {
+        log.error("Too Many Attempts Exception : {}", ex.getMessage());
+        ApiError error = new ApiError(
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ApiError> handleUnauthorizedException(UnauthorizedException ex, WebRequest request) {
         log.error("Unauthorized Exception : {}", ex.getMessage());

@@ -9,6 +9,7 @@ import my.project.qri3a.enums.Role;
 import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
 import my.project.qri3a.repositories.UserRepository;
 import my.project.qri3a.services.AuthenticationService;
+import my.project.qri3a.services.EmailVerificationService;
 import my.project.qri3a.services.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,6 +26,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final EmailVerificationService emailVerificationService;
 
     @Override
     public AuthenticationResponse registerUser(EmailAndPasswordDTO request) throws ResourceAlreadyExistsException {
@@ -33,7 +35,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         });
 
         User userToRegister = getUser(request);
+        userToRegister.setEmailVerified(false);
         User savedUser = userRepository.save(userToRegister);
+
+        emailVerificationService.sendVerificationCode(savedUser);
 
         // Generate tokens
         String accessToken = jwtService.generateToken(savedUser);
@@ -45,6 +50,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .refreshToken(refreshToken)
                 .role("SELLER")
                 .id(userToRegister.getId())
+                .emailVerified(false)
                 .build();
     }
 
