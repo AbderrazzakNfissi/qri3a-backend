@@ -73,4 +73,12 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     @Modifying
     @Query(value = "DELETE FROM user_wishlist WHERE product_id = :productId", nativeQuery = true)
     void removeProductFromAllWishlists(@Param("productId") UUID productId);
+
+    /**
+     * Récupère tous les identifiants des produits pour un vendeur spécifique
+     * @param sellerId L'identifiant du vendeur
+     * @return Liste des UUIDs des produits appartenant au vendeur
+     */
+    @Query("SELECT p.id FROM Product p WHERE p.seller.id = :sellerId")
+    List<UUID> findProductIdsBySellerId(@Param("sellerId") UUID sellerId);
 }

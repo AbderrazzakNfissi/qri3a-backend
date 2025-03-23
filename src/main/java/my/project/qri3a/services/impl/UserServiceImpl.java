@@ -22,7 +22,9 @@ import my.project.qri3a.repositories.ImageRepository;
 import my.project.qri3a.repositories.ProductRepository;
 import my.project.qri3a.repositories.UserRepository;
 import my.project.qri3a.repositories.VerificationCodeRepository;
+import my.project.qri3a.repositories.search.ProductDocRepository;
 import my.project.qri3a.services.ImageService;
+import my.project.qri3a.services.ProductIndexService;
 import my.project.qri3a.services.S3Service;
 import my.project.qri3a.services.UserService;
 import org.springframework.data.domain.*;
@@ -59,6 +61,7 @@ public class UserServiceImpl implements UserService {
     private final VerificationCodeRepository verificationCodeRepository;
     @PersistenceContext
     private EntityManager entityManager;
+    private final ProductDocRepository productDocRepository;
 
     @Override
     public Page<User> getAllUsers(Pageable pageable) throws ResourceNotValidException {
@@ -314,6 +317,7 @@ public class UserServiceImpl implements UserService {
         log.info("Service: Deleting current authenticated user");
         User user = getUserMe(authentication);
         UUID userId = user.getId();
+        List<UUID> ids = productRepository.findProductIdsBySellerId(userId);
 
         // 1. Collecter les URLs des images à supprimer de S3 avant la suppression
         List<String> s3ImageUrls = entityManager.createQuery(
@@ -328,6 +332,7 @@ public class UserServiceImpl implements UserService {
         // a. Supprimer les entrées de wishlist
         userRepository.deleteWishlistEntriesForSellerProducts(userId);
         userRepository.deleteAllUserWishlistEntries(userId);
+
 
         // b. Supprimer les notifications
         entityManager.createQuery("DELETE FROM Notification n WHERE n.user.id = :userId")
@@ -374,7 +379,13 @@ public class UserServiceImpl implements UserService {
                 .setParameter("userId", userId)
                 .executeUpdate();
 
-        log.info("Service: User deleted with ID: {}", userId);
+
+
+        log.info("**** Service: Deleting user with IDs: {}", ids);
+
+        productDocRepository.deleteByIdIn(ids);
+
+        log.info("Service : User deleted with ID: {}", userId);
 
         // 4. Supprimer les fichiers S3
         for (String imageUrl : s3ImageUrls) {
