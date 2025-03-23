@@ -1,5 +1,6 @@
 package my.project.qri3a.repositories;
 
+import java.awt.print.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -7,6 +8,8 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import my.project.qri3a.entities.Image;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -28,6 +31,10 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
      */
     long countByProductId(UUID productId);
 
+
+    @Query("SELECT i.url FROM Image i JOIN i.product p WHERE p.seller.id = :userId")
+    List<String> findImageUrlsBySellerId(@Param("userId") UUID userId);
+
     /**
      * Find all images associated with a product.
      *
@@ -36,5 +43,6 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
      */
     List<Image> findByProductId(UUID productId);
 
-    List<Image> findTop3ByProductSellerIdOrderByCreatedAtDesc(UUID sellerId);
+    @Query("SELECT i FROM Image i JOIN i.product p WHERE p.seller.id = :sellerId AND p.status = 'ACTIVE' ORDER BY i.createdAt DESC")
+    List<Image> findTop3ByProductSellerIdOrderByCreatedAtDesc(@Param("sellerId") UUID sellerId);
 }

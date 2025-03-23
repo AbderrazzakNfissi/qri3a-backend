@@ -21,27 +21,28 @@ import java.util.UUID;
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
 
     Page<Product> findBySeller(User seller, Pageable pageable);
-    Page<Product> findBySellerOrderByCreatedAtDesc(User seller, Pageable pageable);
+    Page<Product> findBySellerAndStatusOrderByCreatedAtDesc(User seller, ProductStatus status, Pageable pageable);
 
     Page<Product> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     @Query("SELECT p FROM User u JOIN u.wishlist p WHERE u.id = :userId")
     Page<Product> findWishlistByUserId(@Param("userId") UUID userId, Pageable pageable);
 
-     @Query(
-                value = "SELECT p FROM Product p " +
-                        "WHERE p.id <> :productId " +
-                        "ORDER BY " +
-                        "CASE WHEN p.category = :category THEN 0 ELSE 1 END, " +
-                        "ABS(p.price - :price)",
-                countQuery = "SELECT COUNT(p) FROM Product p WHERE p.id <> :productId"
-        )
-        Page<Product> findRecommendedProducts(
-                @Param("category") ProductCategory category,
-                @Param("price") BigDecimal price,
-                @Param("productId") UUID productId,
-                Pageable pageable
-        );
+    @Query(
+            value = "SELECT p FROM Product p " +
+                    "WHERE p.id <> :productId " +
+                    "AND p.status = 'ACTIVE' " +
+                    "ORDER BY " +
+                    "CASE WHEN p.category = :category THEN 0 ELSE 1 END, " +
+                    "ABS(p.price - :price)",
+            countQuery = "SELECT COUNT(p) FROM Product p WHERE p.id <> :productId AND p.status = 'ACTIVE'"
+    )
+    Page<Product> findRecommendedProducts(
+            @Param("category") ProductCategory category,
+            @Param("price") BigDecimal price,
+            @Param("productId") UUID productId,
+            Pageable pageable
+    );
 
     List<Product> findTop10ByTitleContainingIgnoreCase(String query, Pageable pageable);
 
@@ -51,7 +52,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
             Pageable pageable
     );
 
-    long countBySellerId(UUID sellerId);
+    long countBySellerIdAndStatus(UUID sellerId, ProductStatus status);
 
     /**
      * Find products by status, ordered by creation date (newest first)
@@ -60,15 +61,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
      * @return Page of products with the specified status
      */
     Page<Product> findByStatusOrderByCreatedAtDesc(ProductStatus status, Pageable pageable);
-
-    /**
-     * Find products by seller and status, ordered by creation date (newest first)
-     * @param seller The seller/owner of the products
-     * @param status The product status to filter by
-     * @param pageable Pagination information
-     * @return Page of products with the specified seller and status
-     */
-    Page<Product> findBySellerAndStatusOrderByCreatedAtDesc(User seller, ProductStatus status, Pageable pageable);
 
     /**
      * Count products by seller and group by status

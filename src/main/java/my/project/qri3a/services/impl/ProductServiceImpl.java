@@ -219,7 +219,7 @@ public class ProductServiceImpl implements ProductService {
             s3Service.deleteFile(filename);
         }
         productRepository.delete(product);
-        log.info("Service: Product deleted with ID: {}", productId);
+        log.info("Service : Product deleted with ID: {}", productId);
         productIndexService.deleteProductIndex(productId);
     }
 
@@ -229,7 +229,7 @@ public class ProductServiceImpl implements ProductService {
         String email = authentication.getName();
         User seller = userService.getUserByEmail(email);
         log.info("=> seller email: {}", seller.getEmail());
-        Page<Product> productsPage = productRepository.findBySellerOrderByCreatedAtDesc(seller, pageable);
+        Page<Product> productsPage = productRepository.findBySellerAndStatusOrderByCreatedAtDesc(seller, ProductStatus.ACTIVE, pageable);
         return productsPage.map(productMapper::toProductListingDTO);
     }
 
@@ -245,7 +245,7 @@ public class ProductServiceImpl implements ProductService {
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> {
-                    log.warn("Service: Product not found with ID: {}", productId);
+                    log.warn("Service : Product not found with ID: {}", productId);
                     return new ResourceNotFoundException("Product not found with ID " + productId);
                 });
 
@@ -326,7 +326,7 @@ public class ProductServiceImpl implements ProductService {
                 });
 
         // Fetch products by the seller (user)
-        Page<Product> productsPage = productRepository.findBySeller(user, pageable);
+        Page<Product> productsPage = productRepository.findBySellerAndStatusOrderByCreatedAtDesc(user, ProductStatus.ACTIVE, pageable);
         log.info("Service: Found {} products for user ID: {}", productsPage.getTotalElements(), userId);
 
         // Convert entities to DTOs

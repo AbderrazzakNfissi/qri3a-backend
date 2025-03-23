@@ -7,6 +7,8 @@ import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductCondition;
 import my.project.qri3a.enums.ProductStatus;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -47,7 +49,6 @@ public class Product {
     @Column(nullable = true)
     private String phone;
 
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductCategory category;
@@ -59,21 +60,22 @@ public class Product {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private ProductStatus status = ProductStatus.MODERATION;
+
     @Column(nullable = true)
     private String longitude;
+
     @Column(nullable = true)
     private String latitude;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonIgnore
     private User seller;
 
-
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private List<Image> images = new ArrayList<>();
-
-
 
     // Méthodes pour ajouter et retirer des images
     public void addImage(Image image) {
@@ -107,7 +109,6 @@ public class Product {
 
     @Column(nullable = true)
     private String deliveryTime; // "1", "3", "7", "14" jours
-
 
     @Override
     public boolean equals(Object o) {

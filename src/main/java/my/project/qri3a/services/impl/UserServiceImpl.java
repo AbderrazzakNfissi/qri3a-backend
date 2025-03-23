@@ -1,4 +1,6 @@
 package my.project.qri3a.services.impl;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.ChangePasswordRequestDTO;
@@ -9,6 +11,7 @@ import my.project.qri3a.dtos.responses.SellerProfileDTO;
 import my.project.qri3a.entities.Image;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.entities.User;
+import my.project.qri3a.enums.ProductStatus;
 import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
@@ -54,6 +57,8 @@ public class UserServiceImpl implements UserService {
     private final ImageRepository imageRepository;
     private final ImageMapper imageMapper;
     private final VerificationCodeRepository verificationCodeRepository;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public Page<User> getAllUsers(Pageable pageable) throws ResourceNotValidException {
@@ -302,37 +307,85 @@ public class UserServiceImpl implements UserService {
                 });
     }
 
+
     @Override
     @Transactional
     public void deleteUserMe(Authentication authentication) throws ResourceNotFoundException {
         log.info("Service: Deleting current authenticated user");
         User user = getUserMe(authentication);
+        UUID userId = user.getId();
 
-        // Supprimer toutes les images des produits de l'utilisateur depuis S3 et la base de données
-        for (Product product : user.getProducts()) {
-            for (Image image : product.getImages()) {
-                // Extraire le nom du fichier depuis l'URL
-                String filename = extractFileName(image.getUrl());
-                // Supprimer le fichier de S3
+        // 1. Collecter les URLs des images à supprimer de S3 avant la suppression
+        List<String> s3ImageUrls = entityManager.createQuery(
+                        "SELECT i.url FROM Image i JOIN i.product p WHERE p.seller.id = :userId", String.class)
+                .setParameter("userId", userId)
+                .getResultList();
+
+        // 2. Détacher l'utilisateur de la session pour éviter les problèmes de collections
+        entityManager.detach(user);
+
+        // 3. Supprimer manuellement tous les enregistrements liés dans le bon ordre
+        // a. Supprimer les entrées de wishlist
+        userRepository.deleteWishlistEntriesForSellerProducts(userId);
+        userRepository.deleteAllUserWishlistEntries(userId);
+
+        // b. Supprimer les notifications
+        entityManager.createQuery("DELETE FROM Notification n WHERE n.user.id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        // c. Supprimer les préférences de notification
+        entityManager.createQuery("DELETE FROM NotificationPreference np WHERE np.user.id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        // d. Supprimer les rapports
+        entityManager.createQuery("DELETE FROM Report r WHERE r.reporter.id = :userId OR r.reportedUser.id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        // e. Supprimer les reviews
+        entityManager.createQuery("DELETE FROM Review r WHERE r.user.id = :userId OR r.reviewer.id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        // f. Supprimer les images des produits
+        entityManager.createQuery("DELETE FROM Image i WHERE i.product.seller.id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        // g. Supprimer les produits
+        entityManager.createQuery("DELETE FROM Product p WHERE p.seller.id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        // h. Supprimer les codes de vérification
+        entityManager.createQuery("DELETE FROM VerificationCode vc WHERE vc.user.id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        // i. Supprimer les tokens de réinitialisation de mot de passe
+        entityManager.createQuery("DELETE FROM PasswordResetToken prt WHERE prt.user.id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        // j. Finalement, supprimer l'utilisateur
+        entityManager.createQuery("DELETE FROM User u WHERE u.id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        log.info("Service: User deleted with ID: {}", userId);
+
+        // 4. Supprimer les fichiers S3
+        for (String imageUrl : s3ImageUrls) {
+            try {
+                String filename = extractFileName(imageUrl);
                 s3Service.deleteFile(filename);
                 log.info("Service: Deleted image from S3 with filename: {}", filename);
-                // Supprimer l'image de la base de données
-                imageService.deleteImageById(image.getId());
-                log.info("Service: Deleted image from DB with ID: {}", image.getId());
+            } catch (Exception e) {
+                log.error("Failed to delete S3 file: {}", imageUrl, e);
             }
-            // Supprimer le produit de la base de données
-            productRepository.delete(product);
-            log.info("Service: Deleted product with ID: {}", product.getId());
         }
-
-        // Vider la wishlist de l'utilisateur
-        user.getWishlist().clear();
-        log.info("Service: Cleared wishlist for user ID: {}", user.getId());
-
-        verificationCodeRepository.deleteByUserId(user.getId());
-        // Supprimer l'utilisateur de la base de données
-        userRepository.delete(user);
-        log.info("Service: User deleted with ID: {}", user.getId());
     }
 
     private String extractFileName(String imageUrl) {
@@ -385,8 +438,9 @@ public class UserServiceImpl implements UserService {
         // Fetch top 3 images for the seller's products
         List<Image> images = imageRepository.findTop3ByProductSellerIdOrderByCreatedAtDesc(userId);
 
-        // Map Image entities to ImageResponseDTOs
+        // Map Image entities to ImageResponseDTOs (limited to first 3)
         List<ImageResponseDTO> imageDTOs = images.stream()
+                .limit(3)
                 .map(imageMapper::toDTO)
                 .collect(Collectors.toList());
 
@@ -394,7 +448,7 @@ public class UserServiceImpl implements UserService {
         sellerProfileDTO.setImages(imageDTOs);
 
 
-        long totalProducts = productRepository.countBySellerId(userId);
+        long totalProducts = productRepository.countBySellerIdAndStatus(userId, ProductStatus.ACTIVE);
         sellerProfileDTO.setTotalProducts(totalProducts);
 
         log.info("Service: Seller profile fetched for user ID: {}", userId);

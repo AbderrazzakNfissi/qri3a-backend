@@ -58,7 +58,6 @@ public class User implements UserDetails {
     @Column(nullable = true)
     private String address;
 
-
     @Column(nullable = true)
     private String city;
 
@@ -83,36 +82,46 @@ public class User implements UserDetails {
     private boolean emailVerified = false;
 
     @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonIgnore
     private Set<Product> products = new HashSet<>();
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "user_wishlist",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "product_id")
     )
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonIgnore
     private List<Product> wishlist = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonManagedReference
     private Set<Review> reviews = new HashSet<>();
 
-
     // Signalements faits par cet utilisateur
     @OneToMany(mappedBy = "reporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonIgnore
     private Set<Report> reportsMade = new HashSet<>();
 
     // Signalements reçus par cet utilisateur
     @OneToMany(mappedBy = "reportedUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonIgnore
     private Set<Report> reportsReceived = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonIgnore
     private Set<NotificationPreference> notificationPreferences = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JsonIgnore
+    private Set<Notification> notifications = new HashSet<>();
 
     @CreationTimestamp
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
@@ -121,6 +130,16 @@ public class User implements UserDetails {
     @UpdateTimestamp
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime updatedAt;
+
+    public void addNotification(Notification notification) {
+        notifications.add(notification);
+        notification.setUser(this);
+    }
+
+    public void removeNotification(Notification notification) {
+        notifications.remove(notification);
+        notification.setUser(null);
+    }
 
     public void addToWishlist(Product product) {
         wishlist.add(product);
@@ -140,7 +159,6 @@ public class User implements UserDetails {
         return null;
     }
 
-
     @Override
     public String getUsername() {
         return email;
@@ -156,7 +174,6 @@ public class User implements UserDetails {
         return true;
     }
 
-
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
@@ -166,7 +183,6 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
-
 
     @Override
     public String getPassword() {
@@ -213,5 +229,4 @@ public class User implements UserDetails {
         notificationPreferences.remove(preference);
         preference.setUser(null);
     }
-
 }

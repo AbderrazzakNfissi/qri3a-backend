@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductCondition;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -30,6 +32,7 @@ public class NotificationPreference {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
     // Critères de notification
