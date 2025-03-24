@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import my.project.qri3a.entities.Notification;
 import my.project.qri3a.enums.ProductStatus;
 import my.project.qri3a.services.*;
 import org.springframework.data.domain.Page;
@@ -48,6 +49,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductDocRepository productDocRepository;
     private final S3Service s3Service;
     private final ProductMatchingService productMatchingService;
+    private final NotificationService notificationService;
 
     @Override
     public Page<ProductListingDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice, String city) throws ResourceNotValidException {
@@ -210,7 +212,7 @@ public class ProductServiceImpl implements ProductService {
         log.info("Service: Deleting product with ID: {}", productId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> {
-                    log.warn("Service: Product not found with ID: {}", productId);
+                    log.warn("Service : Product not found with ID: {}", productId);
                     return new ResourceNotFoundException("Product not found with ID " + productId);
                 });
         // Delete all associated images from S3
@@ -400,10 +402,47 @@ public class ProductServiceImpl implements ProductService {
         // Update the Elasticsearch index
         productIndexService.indexProduct(updatedProduct, 0);
 
+        notifyUser(updatedProduct);
+
         // Notifier les utilisateurs intéressés
         productMatchingService.notifyInterestedUsers(updatedProduct);
 
         return productMapper.toDTO(updatedProduct);
+    }
+
+    private void notifyUser(Product product) {
+        log.info("Service: Notifying seller about product approval, product ID: {}", product.getId());
+
+        User seller = product.getSeller();
+        if (seller == null) {
+            log.warn("Service: Cannot notify seller, seller not found for product ID: {}", product.getId());
+            return;
+        }
+
+        try {
+            // Construire le message de notification
+            String notificationMessage = String.format(
+                    "Votre annonce \"%s\" a été approuvée et est maintenant visible par tous les utilisateurs.",
+                    product.getTitle());
+
+            // Créer une nouvelle notification
+            Notification notification = Notification.builder()
+                    .user(seller)
+                    .product(product)
+                    .category(product.getCategory())
+                    .body(notificationMessage)
+                    .read(false)
+                    .build();
+
+            // Enregistrer et envoyer la notification
+            notificationService.createNotification(notification);
+
+            log.info("Service: Notification sent to seller ID: {} for approved product ID: {}",
+                    seller.getId(), product.getId());
+        } catch (Exception e) {
+            log.error("Service: Error while sending notification to seller ID: {} for product ID: {}: {}",
+                    seller.getId(), product.getId(), e.getMessage());
+        }
     }
 
     @Override
