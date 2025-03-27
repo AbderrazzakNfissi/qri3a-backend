@@ -131,6 +131,10 @@ public class User implements UserDetails {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime updatedAt;
 
+    // Après les autres champs, ajoutez :
+    @Column(name = "blocked", nullable = false)
+    private boolean blocked = false;
+
     public void addNotification(Notification notification) {
         notifications.add(notification);
         notification.setUser(this);
@@ -155,8 +159,8 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        //return role.getAuthorities(); //ADDED THIS
-        return null;
+
+        return role.getAuthorities();
     }
 
     @Override
@@ -181,7 +185,8 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        // Un utilisateur est actif si son email est vérifié ET s'il n'est pas bloqué
+        return emailVerified && !blocked;
     }
 
     @Override

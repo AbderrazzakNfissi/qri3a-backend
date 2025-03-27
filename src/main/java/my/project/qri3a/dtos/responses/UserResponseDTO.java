@@ -12,5 +12,6 @@ public class UserResponseDTO {
     private String phoneNumber;
     private String address;
     private Role role;
-    private LocalDateTime createdAt;
+    private Long totalProducts;
+    private String createdAt;
 }

@@ -28,7 +28,7 @@ import java.util.Arrays;
 public class AuthController {
 
     private final AuthenticationService authenticationService;
-    private final PasswordEncoder passwordEncoder;
+
     private final JwtService jwtService;
 
     /**
@@ -45,7 +45,7 @@ public class AuthController {
             HttpServletResponse response
     ) throws IOException {
         // Encoder le mot de passe avant l'inscription
-        request.setPassword(passwordEncoder.encode(request.getPassword()));
+
         AuthenticationResponse authResponse = authenticationService.registerUser(request);
 
         // Construire la réponse JSON qui inclut l'AuthenticationResponse

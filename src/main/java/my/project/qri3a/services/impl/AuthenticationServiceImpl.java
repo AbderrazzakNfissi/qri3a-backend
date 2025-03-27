@@ -14,6 +14,7 @@ import my.project.qri3a.services.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
@@ -27,6 +28,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordEncoder passwordEncoder;
+
 
     @Override
     public AuthenticationResponse registerUser(EmailAndPasswordDTO request) throws ResourceAlreadyExistsException {
@@ -34,6 +37,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new ResourceAlreadyExistsException("User with email: " + request.getEmail() + " already exists.");
         });
 
+        request.setPassword(passwordEncoder.encode(request.getPassword()));
         User userToRegister = getUser(request);
         userToRegister.setEmailVerified(false);
         User savedUser = userRepository.save(userToRegister);
@@ -41,13 +45,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         emailVerificationService.sendVerificationCode(savedUser);
 
         // Generate tokens
-        String accessToken = jwtService.generateToken(savedUser);
-        String refreshToken = jwtService.generateRefreshToken(savedUser);
+       // String accessToken = jwtService.generateToken(savedUser);
+       // String refreshToken = jwtService.generateRefreshToken(savedUser);
 
         // Return both tokens (caller will set them in HttpOnly cookies and remove from body)
         return AuthenticationResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
+                .accessToken(null)
+                .refreshToken(null)
                 .role("SELLER")
                 .id(userToRegister.getId())
                 .emailVerified(false)

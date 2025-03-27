@@ -3,9 +3,11 @@ package my.project.qri3a.controllers.common;
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.controllers.common.error.ApiError;
 import my.project.qri3a.exceptions.*;
+import my.project.qri3a.responses.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -186,6 +188,18 @@ public class ExceptionHandlingController {
                 null
         );
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDisabledException(DisabledException ex) {
+        log.error("Account disabled: {}", ex.getMessage());
+
+        ApiResponse<Void> response = new ApiResponse<>(
+                null,
+                "Your account has been blocked. Please contact the administrator.",
+                HttpStatus.FORBIDDEN.value()
+        );
+        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
 
 }
