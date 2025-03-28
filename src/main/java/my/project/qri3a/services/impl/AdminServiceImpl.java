@@ -20,9 +20,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -48,6 +53,25 @@ public class AdminServiceImpl implements AdminService {
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Arrays.stream(User.class.getDeclaredFields())
             .map(Field::getName)
             .collect(Collectors.toSet());
+
+    /**
+     * Vérifie si l'utilisateur connecté essaie d'agir sur son propre compte
+     *
+     * @param targetUserId L'ID de l'utilisateur cible
+     * @return true si c'est le même utilisateur, false sinon
+     */
+    private boolean isSelfAction(UUID targetUserId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            User currentUser = userRepository.findByEmail(authentication.getName())
+                    .orElse(null);
+
+            if (currentUser != null && currentUser.getId().equals(targetUserId)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     @Override
     public Page<User> getPaginatedUsers(Pageable pageable) throws ResourceNotValidException {
@@ -139,8 +163,13 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     @Transactional
-    public void deleteUser(UUID userID) throws ResourceNotFoundException {
+    public void deleteUser(UUID userID) throws ResourceNotFoundException, AccessDeniedException {
         log.info("Admin Service: Deleting user with ID: {}", userID);
+
+        // Vérifier si l'admin essaie de se supprimer lui-même
+        if (isSelfAction(userID)) {
+            throw new AccessDeniedException("Administrateurs ne peuvent pas supprimer leur propre compte");
+        }
 
         User user = userRepository.findById(userID)
                 .orElseThrow(() -> {
@@ -229,8 +258,13 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public User blockUser(UUID userID, boolean blocked) throws ResourceNotFoundException {
+    public User blockUser(UUID userID, boolean blocked) throws ResourceNotFoundException, AccessDeniedException {
         log.info("Admin Service: {} user with ID: {}", blocked ? "Blocking" : "Unblocking", userID);
+
+        // Vérifier si l'admin essaie de se bloquer lui-même
+        if (isSelfAction(userID)) {
+            throw new AccessDeniedException("Administrateurs ne peuvent pas bloquer leur propre compte");
+        }
 
         User user = userRepository.findById(userID)
                 .orElseThrow(() -> {
@@ -239,7 +273,6 @@ public class AdminServiceImpl implements AdminService {
                 });
 
         // Mettre à jour l'état de blocage de l'utilisateur
-        // Nous avons besoin d'ajouter un champ "blocked" à l'entité User
         user.setBlocked(blocked);
 
         User updatedUser = userRepository.save(user);
@@ -261,6 +294,82 @@ public class AdminServiceImpl implements AdminService {
                 }
             });
         }
+    }
+
+
+
+    @Override
+    public User resetPassword(UUID userID, String newPassword) throws ResourceNotFoundException {
+        log.info("Admin Service: Resetting password for user with ID: {}", userID);
+
+        User user = userRepository.findById(userID)
+                .orElseThrow(() -> {
+                    log.warn("Admin Service: User not found with ID: {}", userID);
+                    return new ResourceNotFoundException("User not found with ID " + userID);
+                });
+
+        // Encoder et mettre à jour le mot de passe
+        user.setPassword(passwordEncoder.encode(newPassword));
+        User updatedUser = userRepository.save(user);
+
+        log.info("Admin Service: Password reset successfully for user with ID: {}", userID);
+        return updatedUser;
+    }
+
+    @Override
+    public Page<User> searchUsers(
+            String name,
+            String email,
+            String phone,
+            String role,
+            Boolean status,
+            LocalDateTime dateFrom,
+            LocalDateTime dateTo,
+            Pageable pageable) throws ResourceNotValidException {
+
+        log.info("Admin Service: Searching users with filters - name: {}, email: {}, phone: {}, role: {}, status: {}, dateFrom: {}, dateTo: {}",
+                name, email, phone, role, status, dateFrom, dateTo);
+
+        validateSortParameters(pageable);
+
+        Specification<User> spec = Specification.where(null);
+
+        if (name != null && !name.isEmpty()) {
+            spec = spec.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("name").as(String.class)), "%" + name.toLowerCase() + "%"));
+        }
+
+        if (email != null && !email.isEmpty()) {
+            spec = spec.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("email").as(String.class)), "%" + email.toLowerCase() + "%"));
+        }
+
+        if (phone != null && !phone.isEmpty()) {
+            spec = spec.and((root, query, cb) ->
+                    cb.like(root.get("phoneNumber"), "%" + phone + "%"));
+        }
+
+        if (role != null && !role.isEmpty()) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("role"), role));
+        }
+
+        if (status != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("blocked"), status));
+        }
+
+        if (dateFrom != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.greaterThanOrEqualTo(root.get("createdAt"), dateFrom));
+        }
+
+        if (dateTo != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.lessThanOrEqualTo(root.get("createdAt"), dateTo));
+        }
+
+        return userRepository.findAll(spec, pageable);
     }
 
     private String extractFileName(String imageUrl) {

@@ -13,5 +13,11 @@ public class UserResponseDTO {
     private String address;
     private Role role;
     private Long totalProducts;
+    private String profileImage;
     private String createdAt;
+    private boolean blocked;
+    private String city;
+    private String aboutMe;
+    private String website;
+    private String description;
 }

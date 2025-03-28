@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -197,6 +198,18 @@ public class ExceptionHandlingController {
         ApiResponse<Void> response = new ApiResponse<>(
                 null,
                 "Your account has been blocked. Please contact the administrator.",
+                HttpStatus.FORBIDDEN.value()
+        );
+        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException ex) {
+        log.error("Access denied: {}", ex.getMessage());
+
+        ApiResponse<Void> response = new ApiResponse<>(
+                null,
+                "Accès refusé: " + ex.getMessage(),
                 HttpStatus.FORBIDDEN.value()
         );
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
