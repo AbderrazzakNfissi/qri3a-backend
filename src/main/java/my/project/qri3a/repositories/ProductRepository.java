@@ -81,4 +81,15 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
      */
     @Query("SELECT p.id FROM Product p WHERE p.seller.id = :sellerId")
     List<UUID> findProductIdsBySellerId(@Param("sellerId") UUID sellerId);
+
+    /**
+     * Compte le nombre de produits pour un statut spécifique
+     */
+    long countByStatus(ProductStatus status);
+
+    /**
+     * Compte le nombre de produits groupés par statut
+     */
+    @Query("SELECT p.status, COUNT(p) FROM Product p GROUP BY p.status")
+    List<Object[]> countGroupByStatus();
 }

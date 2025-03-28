@@ -316,7 +316,6 @@ public class ProductController {
      * POST /api/v1/products/{id}/approve
      */
     @PostMapping("/{id}/approve")
-    //@PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> approveProduct(@PathVariable UUID id)
             throws ResourceNotFoundException, NotAuthorizedException {
         log.info("Controller: Approving product with ID: {}", id);

@@ -151,5 +151,14 @@ public interface ProductService {
     ProductResponseDTO activateProduct(UUID productId, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException;
 
 
+    /**
+     * Récupère le nombre de produits pour un statut donné
+     */
+    long getProductCountByStatus(ProductStatus status);
+
+    /**
+     * Récupère le nombre de produits pour chaque statut
+     */
+    Map<ProductStatus, Long> getAllProductCounts();
 
 }

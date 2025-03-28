@@ -390,7 +390,7 @@ public class ProductServiceImpl implements ProductService {
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> {
-                    log.warn("Service: Product not found with ID: {}", productId);
+                    log.warn("Service  : Product not found with ID: {}", productId);
                     return new ResourceNotFoundException("Product not found with ID " + productId);
                 });
 
@@ -631,6 +631,38 @@ public class ProductServiceImpl implements ProductService {
         productIndexService.indexProduct(updatedProduct, 0);
 
         return productMapper.toDTO(updatedProduct);
+    }
+
+    @Override
+    public long getProductCountByStatus(ProductStatus status) {
+        log.info("Service: Getting count of products with status: {}", status);
+        return productRepository.countByStatus(status);
+    }
+
+    @Override
+    public Map<ProductStatus, Long> getAllProductCounts() {
+        log.info("Service: Getting counts of products by status");
+
+        Map<ProductStatus, Long> statusCounts = new EnumMap<>(ProductStatus.class);
+
+        // Initialize all statuses with zero count
+        for (ProductStatus status : ProductStatus.values()) {
+            statusCounts.put(status, 0L);
+        }
+
+        // Get the counts from the repository
+        List<Object[]> countResults = productRepository.countGroupByStatus();
+
+        // Update the map with actual counts
+        for (Object[] result : countResults) {
+            ProductStatus status = (ProductStatus) result[0];
+            Long count = (Long) result[1];
+            statusCounts.put(status, count);
+        }
+
+        log.info("Service: Product counts by status: {}", statusCounts);
+
+        return statusCounts;
     }
 
 }

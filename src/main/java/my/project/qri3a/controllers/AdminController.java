@@ -6,14 +6,19 @@ import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.dtos.requests.BlockUserRequestDTO;
 import my.project.qri3a.dtos.requests.UserRequestDTO;
 import my.project.qri3a.dtos.requests.UserUpdateRequestDTO;
+import my.project.qri3a.dtos.responses.ProductListingDTO;
+import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.dtos.responses.UserResponseDTO;
 import my.project.qri3a.entities.User;
+import my.project.qri3a.enums.ProductStatus;
+import my.project.qri3a.exceptions.NotAuthorizedException;
 import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
 import my.project.qri3a.mappers.UserMapper;
 import my.project.qri3a.responses.ApiResponse;
 import my.project.qri3a.services.AdminService;
+import my.project.qri3a.services.ProductService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -33,6 +38,7 @@ public class AdminController {
 
     private final AdminService adminService;
     private final UserMapper userMapper;
+    private final ProductService productService;
 
     /**
      * GET /api/v1/admin/users?page=0&size=10&sort=name,asc
@@ -245,5 +251,90 @@ public class AdminController {
             );
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
         }
+    }
+
+    @PostMapping("/products/{id}/approve")
+    public ResponseEntity<ApiResponse<ProductResponseDTO>> approveProduct(@PathVariable UUID id)
+            throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Controller: Approving product with ID: {}", id);
+        ProductResponseDTO approvedProduct = productService.approveProduct(id);
+        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
+                approvedProduct,
+                "Product approved successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/products/{id}/reject")
+    public ResponseEntity<ApiResponse<ProductResponseDTO>> rejectProduct(@PathVariable UUID id)
+            throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Controller: Rejecting product with ID: {}", id);
+        ProductResponseDTO rejectedProduct = productService.rejectProduct(id);
+        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
+                rejectedProduct,
+                "Product rejected successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+
+    /**
+     * GET /api/v1/admin/products/moderation
+     * Liste tous les produits en attente de modération (admin only)
+     */
+    @GetMapping("/products/moderation")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getProductsInModeration(Pageable pageable) {
+        log.info("Admin Controller: Fetching products in moderation with pagination: page={}, size={}, sort={}",
+                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+
+        Page<ProductListingDTO> productsPage = productService.getModerationProducts(pageable);
+
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                productsPage,
+                "Products in moderation fetched successfully.",
+                HttpStatus.OK.value()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /api/v1/admin/products/pending-count
+     * Obtient le nombre de produits en attente de modération
+     */
+    @GetMapping("/products/pending-count")
+    public ResponseEntity<ApiResponse<Long>> getPendingProductsCount() {
+        log.info("Admin Controller: Getting count of products pending moderation");
+
+        long pendingCount = productService.getProductCountByStatus(ProductStatus.MODERATION);
+
+        ApiResponse<Long> response = new ApiResponse<>(
+                pendingCount,
+                "Pending products count fetched successfully.",
+                HttpStatus.OK.value()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /api/v1/admin/products/status-counts
+     * Obtient le nombre de produits par statut
+     */
+    @GetMapping("/products/status-counts")
+    public ResponseEntity<ApiResponse<Map<ProductStatus, Long>>> getProductStatusCounts() {
+        log.info("Admin Controller: Getting product counts by status");
+
+        Map<ProductStatus, Long> statusCounts = productService.getAllProductCounts();
+
+        ApiResponse<Map<ProductStatus, Long>> response = new ApiResponse<>(
+                statusCounts,
+                "Product status counts fetched successfully.",
+                HttpStatus.OK.value()
+        );
+
+        return ResponseEntity.ok(response);
     }
 }
