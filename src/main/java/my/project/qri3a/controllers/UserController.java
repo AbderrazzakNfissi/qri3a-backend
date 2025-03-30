@@ -1,7 +1,11 @@
 package my.project.qri3a.controllers;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -190,6 +194,31 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * GET /api/v1/users/roles
+     * Endpoint pour vérifier les rôles de l'utilisateur authentifié
+     */
+    @GetMapping("/roles")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getUserRoles(Authentication authentication) {
+        log.info("Controller: Fetching roles for authenticated user: {}", authentication.getName());
 
+        User user = userService.getUserMe(authentication);
 
+        Map<String, Object> roleInfo = new HashMap<>();
+        roleInfo.put("role", user.getRole().name());
+
+        // Convertir les autorités en liste de chaînes
+        List<String> authorities = user.getAuthorities().stream()
+                .map(auth -> auth.getAuthority())
+                .collect(Collectors.toList());
+        roleInfo.put("authorities", authorities);
+
+        ApiResponse<Map<String, Object>> response = new ApiResponse<>(
+                roleInfo,
+                "User roles fetched successfully.",
+                HttpStatus.OK.value()
+        );
+
+        return ResponseEntity.ok(response);
+    }
 }
