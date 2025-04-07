@@ -4,8 +4,9 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import my.project.qri3a.entities.Notification;
+import my.project.qri3a.entities.*;
 import my.project.qri3a.enums.ProductStatus;
+import my.project.qri3a.repositories.UserPreferenceRepository;
 import my.project.qri3a.services.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,9 +22,6 @@ import my.project.qri3a.documents.ProductDoc;
 import my.project.qri3a.dtos.requests.ProductRequestDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
-import my.project.qri3a.entities.Image;
-import my.project.qri3a.entities.Product;
-import my.project.qri3a.entities.User;
 import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductCondition;
 import my.project.qri3a.exceptions.NotAuthorizedException;
@@ -50,6 +48,7 @@ public class ProductServiceImpl implements ProductService {
     private final S3Service s3Service;
     private final ProductMatchingService productMatchingService;
     private final NotificationService notificationService;
+    private final UserPreferenceRepository userPreferenceRepository;
 
     @Override
     public Page<ProductListingDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice, String city) throws ResourceNotValidException {
@@ -420,10 +419,30 @@ public class ProductServiceImpl implements ProductService {
         }
 
         try {
-            // Construire le message de notification
-            String notificationMessage = String.format(
-                    "Votre annonce \"%s\" a été approuvée et est maintenant visible par tous les utilisateurs.",
-                    product.getTitle());
+            // Récupérer la préférence de langue de l'utilisateur
+            String userLang = getUserLanguagePreference(seller);
+
+            // Construire le message de notification en fonction de la langue
+            String notificationMessage;
+
+            switch (userLang) {
+                case "en":
+                    notificationMessage = String.format(
+                            "Your listing \"%s\" has been approved and is now visible to all users.",
+                            product.getTitle());
+                    break;
+                case "arm":
+                    notificationMessage = String.format(
+                            "تم الموافقة على إعلانك \"%s\" وهو الآن مرئي لجميع المستخدمين.",
+                            product.getTitle());
+                    break;
+                case "fr":
+                default:
+                    notificationMessage = String.format(
+                            "Votre annonce \"%s\" a été approuvée et est maintenant visible par tous les utilisateurs.",
+                            product.getTitle());
+                    break;
+            }
 
             // Créer une nouvelle notification
             Notification notification = Notification.builder()
@@ -437,14 +456,26 @@ public class ProductServiceImpl implements ProductService {
             // Enregistrer et envoyer la notification
             notificationService.createNotification(notification);
 
-            log.info("Service: Notification sent to seller ID: {} for approved product ID: {}",
-                    seller.getId(), product.getId());
+            log.info("Service: Notification sent to seller ID: {} for approved product ID: {} in language: {}",
+                    seller.getId(), product.getId(), userLang);
         } catch (Exception e) {
             log.error("Service: Error while sending notification to seller ID: {} for product ID: {}: {}",
                     seller.getId(), product.getId(), e.getMessage());
         }
     }
 
+    /**
+     * Récupère la préférence de langue de l'utilisateur, ou retourne la valeur par défaut (fr)
+     */
+    private String getUserLanguagePreference(User user) {
+        try {
+            Optional<UserPreference> langPref = userPreferenceRepository.findByUserIdAndKey(user.getId(), "lang");
+            return langPref.map(UserPreference::getValue).orElse("fr"); // français par défaut
+        } catch (Exception e) {
+            log.warn("Service: Error retrieving language preference for user ID: {}, defaulting to French", user.getId());
+            return "fr";
+        }
+    }
     @Override
     public ProductResponseDTO rejectProduct(UUID productId) throws ResourceNotFoundException, NotAuthorizedException {
         log.info("Service: Rejecting product with ID: {}", productId);
