@@ -123,6 +123,12 @@ public class User implements UserDetails {
     @JsonIgnore
     private Set<Notification> notifications = new HashSet<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JsonIgnore
+    private Set<UserPreference> preferences = new HashSet<>();
+
+
     @CreationTimestamp
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime createdAt;
@@ -233,5 +239,39 @@ public class User implements UserDetails {
     public void removeNotificationPreference(NotificationPreference preference) {
         notificationPreferences.remove(preference);
         preference.setUser(null);
+    }
+
+    public void addPreference(UserPreference preference) {
+        preferences.add(preference);
+        preference.setUser(this);
+    }
+
+    public void removePreference(UserPreference preference) {
+        preferences.remove(preference);
+        preference.setUser(null);
+    }
+
+    public Optional<UserPreference> getPreferenceByKey(String key) {
+        return preferences.stream()
+                .filter(p -> p.getKey().equals(key))
+                .findFirst();
+    }
+
+    public String getPreferenceValue(String key, String defaultValue) {
+        return getPreferenceByKey(key)
+                .map(UserPreference::getValue)
+                .orElse(defaultValue);
+    }
+
+    public void setPreference(String key, String value) {
+        Optional<UserPreference> existingPref = getPreferenceByKey(key);
+        if (existingPref.isPresent()) {
+            existingPref.get().setValue(value);
+        } else {
+            UserPreference newPref = new UserPreference();
+            newPref.setKey(key);
+            newPref.setValue(value);
+            addPreference(newPref);
+        }
     }
 }
