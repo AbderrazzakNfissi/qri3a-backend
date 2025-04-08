@@ -54,13 +54,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Autoriser les requêtes non authentifiées
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/public/contact").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/seller-profile/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/my").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/my/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**").permitAll()
+                        .requestMatchers("/ws/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/favorites/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/contacts/**").hasRole("ADMIN")
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/api/v1/auth/verify/**",

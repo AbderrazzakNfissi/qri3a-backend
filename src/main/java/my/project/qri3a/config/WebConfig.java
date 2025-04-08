@@ -37,7 +37,8 @@ public class WebConfig {
                 HttpMethod.POST.name(),
                 HttpMethod.PUT.name(),
                 HttpMethod.DELETE.name(),
-                HttpMethod.OPTIONS.name()
+                HttpMethod.OPTIONS.name(),
+                HttpMethod.PATCH.name()
         ));
 
         // Set how long the response from a pre-flight request can be cached by clients

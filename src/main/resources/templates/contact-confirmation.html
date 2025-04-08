@@ -1,0 +1,207 @@
+<!-- 1. Template pour la confirmation envoyée à l'utilisateur -->
+<!-- src/main/resources/templates/contact-confirmation.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmation de votre message</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(to right, #4caf50, #2196f3);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+        .footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 12px;
+            color: #666;
+            background-color: #f5f5f5;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid #ddd;
+            border-top: none;
+        }
+        .message-box {
+            background-color: white;
+            border: 1px solid #eee;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(to right, #4caf50, #2196f3);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>Confirmation de réception</h1>
+</div>
+<div class="content">
+    <p>Bonjour <span th:text="${name}">prénom</span>,</p>
+
+    <p>Nous avons bien reçu votre message et nous vous remercions de nous avoir contactés.</p>
+
+    <p>Un membre de notre équipe va examiner votre demande et vous répondra dans les plus brefs délais.</p>
+
+    <h3>Récapitulatif de votre message:</h3>
+    <div class="message-box">
+        <p><strong>Raison:</strong> <span th:text="${reason}">raison</span></p>
+        <p><strong>Message:</strong> <span th:text="${message}">message</span></p>
+    </div>
+
+    <p>Si vous avez d'autres questions, n'hésitez pas à consulter notre <a href="https://qri3a.ma/faq">FAQ</a> ou à nous contacter à nouveau.</p>
+
+    <a href="https://qri3a.ma/annonces" class="cta-button">Découvrir nos annonces</a>
+</div>
+<div class="footer">
+    <p>© 2024 Qri3a.ma - Tous droits réservés</p>
+    <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre directement.</p>
+</div>
+</body>
+</html>
+
+<!-- 2. Template pour la notification envoyée à l'administrateur -->
+<!-- src/main/resources/templates/contact-notification-admin.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouveau message de contact</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(to right, #ff9800, #f44336);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+        .footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 12px;
+            color: #666;
+            background-color: #f5f5f5;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid #ddd;
+            border-top: none;
+        }
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .detail-table th, .detail-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .detail-table th {
+            background-color: #f2f2f2;
+            width: 30%;
+        }
+        .message-box {
+            background-color: white;
+            border: 1px solid #eee;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(to right, #ff9800, #f44336);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>Nouveau message de contact</h1>
+</div>
+<div class="content">
+    <p>Un nouveau message de contact a été soumis sur Qri3a.ma.</p>
+
+    <table class="detail-table">
+        <tr>
+            <th>Nom</th>
+            <td th:text="${contact.name}">Nom du contact</td>
+        </tr>
+        <tr>
+            <th>Email</th>
+            <td><a th:href="'mailto:' + ${contact.email}" th:text="${contact.email}">email@exemple.com</a></td>
+        </tr>
+        <tr>
+            <th>Téléphone</th>
+            <td th:text="${contact.phone != null ? contact.phone : 'Non renseigné'}">+212 600 000 000</td>
+        </tr>
+        <tr>
+            <th>Raison</th>
+            <td th:text="${contact.reason}">Raison du contact</td>
+        </tr>
+        <tr>
+            <th>Date</th>
+            <td th:text="${#temporals.format(contact.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2023 12:00</td>
+        </tr>
+        <tr th:if="${contact.user != null}">
+            <th>Utilisateur</th>
+            <td th:text="${contact.user.name + ' (ID: ' + contact.user.id + ')'}">Nom (ID: 123)</td>
+        </tr>
+        <tr>
+            <th>IP</th>
+            <td th:text="${contact.ipAddress}">127.0.0.1</td>
+        </tr>
+    </table>
+
+    <h3>Message:</h3>
+    <div class="message-box">
+        <p th:text="${contact.message}">Contenu du message...</p>
+    </div>
+
+    <a th:href="${adminUrl}" class="cta-button">Gérer ce message</a>
+</div>
+<div class="footer">
+    <p>© 2024 Qri3a.ma - Administration</p>
+    <p>Cet email a été envoyé automatiquement pour vous informer d'un nouveau message de contact.</p>
+</div>
+</body>
+</html>
