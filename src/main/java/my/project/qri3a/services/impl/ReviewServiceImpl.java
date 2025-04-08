@@ -48,7 +48,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public ReviewResponseDTO addReview(Authentication authentication, ReviewRequestDTO reviewRequestDTO) throws ResourceNotFoundException, BadRequestException {
         UUID reviewedUserId = reviewRequestDTO.getUserId();
-        log.debug("Adding review for userId: {}", reviewedUserId);
+        log.debug("Adding/updating review for userId: {}", reviewedUserId);
 
         // Récupérer l'utilisateur qui est évalué
         User reviewedUser = userRepository.findById(reviewedUserId)
@@ -62,26 +62,37 @@ public class ReviewServiceImpl implements ReviewService {
         if (reviewer.getId().equals(reviewedUser.getId())) {
             log.warn("User {} attempted to review themselves.", reviewer.getId());
             throw new BadRequestException("Vous ne pouvez pas vous évaluer vous-même.");
-            // Vous pouvez également créer une exception personnalisée si nécessaire
-            // throw new BadRequestException("Vous ne pouvez pas vous évaluer vous-même.");
         }
 
-        // Mapper le DTO en entité Review
-        Review review = reviewMapper.toEntity(reviewRequestDTO);
-        review.setUser(reviewedUser);
-        review.setReviewer(reviewer);
+        // Vérifier si une review existe déjà pour ce reviewer et cet utilisateur
+        Review existingReview = reviewRepository.findByReviewerIdAndUserId(reviewer.getId(), reviewedUserId);
 
-        // Gérer éventuellement les relations bidirectionnelles si applicable
-        reviewedUser.addReview(review);
+        if (existingReview != null) {
+            // Mettre à jour la review existante au lieu d'en créer une nouvelle
+            existingReview.setComment(reviewRequestDTO.getComment());
+            existingReview.setRating(reviewRequestDTO.getRating());
 
-        // Sauvegarder l'évaluation dans le repository
-        Review savedReview = reviewRepository.save(review);
+            Review updatedReview = reviewRepository.save(existingReview);
+            log.debug("Review updated with id: {}", updatedReview.getId());
 
-        log.debug("Review added with id: {}", savedReview.getId());
+            return reviewMapper.toDTO(updatedReview);
+        } else {
+            // Créer une nouvelle review si elle n'existe pas
+            Review review = reviewMapper.toEntity(reviewRequestDTO);
+            review.setUser(reviewedUser);
+            review.setReviewer(reviewer);
 
-        return reviewMapper.toDTO(savedReview);
+            // Gérer éventuellement les relations bidirectionnelles si applicable
+            reviewedUser.addReview(review);
+
+            // Sauvegarder l'évaluation dans le repository
+            Review savedReview = reviewRepository.save(review);
+
+            log.debug("New review added with id: {}", savedReview.getId());
+
+            return reviewMapper.toDTO(savedReview);
+        }
     }
-
 
     /**
      * Removes a review authored by the authenticated user.

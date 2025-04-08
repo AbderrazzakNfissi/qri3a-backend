@@ -60,7 +60,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/my/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**").permitAll()
-                        .requestMatchers("/ws/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/favorites/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/contacts/**").hasRole("ADMIN")

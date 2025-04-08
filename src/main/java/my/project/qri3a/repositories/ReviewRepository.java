@@ -24,4 +24,6 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
             "FROM Review r " +
             "WHERE r.user.id = :userId")
     ReviewStatisticsProjection getReviewStatisticsByUserId(UUID userId);
+
+    Review findByReviewerIdAndUserId(UUID reviewerId, UUID userId);
 }

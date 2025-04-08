@@ -22,7 +22,7 @@ public class WebConfig {
         corsConfig.setAllowCredentials(true);
 
         // Specify allowed origins. You can add more origins or use patterns if needed
-        corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+        corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:4200","http://localhost:53538/"));
 
         // Specify allowed headers
         corsConfig.setAllowedHeaders(Arrays.asList(
