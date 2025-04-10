@@ -77,6 +77,11 @@ public class Product {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private List<Image> images = new ArrayList<>();
 
+    @OneToMany(mappedBy = "reportedProduct", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JsonIgnore
+    private Set<Scam> scamReports = new HashSet<>();
+
     // Méthodes pour ajouter et retirer des images
     public void addImage(Image image) {
         images.add(image);
@@ -109,6 +114,16 @@ public class Product {
 
     @Column(nullable = true)
     private String deliveryTime; // "1", "3", "7", "14" jours
+
+    public void addScamReport(Scam scam) {
+        scamReports.add(scam);
+        scam.setReportedProduct(this);
+    }
+
+    public void removeScamReport(Scam scam) {
+        scamReports.remove(scam);
+        scam.setReportedProduct(null);
+    }
 
     @Override
     public boolean equals(Object o) {

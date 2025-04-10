@@ -101,7 +101,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        log.info("skipping filter ...");
         String path = request.getServletPath();
         return path.startsWith("/api/v1/auth/") &&
                 !path.equals("/api/v1/auth/refresh-token") &&
