@@ -9,6 +9,9 @@ import my.project.qri3a.exceptions.BadRequestException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.UnauthorizedException;
 import my.project.qri3a.services.ReviewService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -63,18 +66,19 @@ public class ReviewController {
         return new ResponseEntity<>(updatedReview, HttpStatus.OK);
     }
 
+
     /**
      * Get all reviews for a specific user.
      * @param userId The ID of the user.
      * @return A list of reviews as ReviewResponseDTO.
      */
     @GetMapping("{userId}")
-    public ResponseEntity<List<ReviewResponseDTO>> getAllReviews(
-            @PathVariable UUID userId) throws ResourceNotFoundException {
-        List<ReviewResponseDTO> reviews = reviewService.getAllReviews(userId);
+    public ResponseEntity<Page<ReviewResponseDTO>> getAllReviews(
+            @PathVariable UUID userId,
+            @PageableDefault(size = 10, page = 0) Pageable pageable) throws ResourceNotFoundException {
+        Page<ReviewResponseDTO> reviews = reviewService.getAllReviews(userId, pageable);
         return new ResponseEntity<>(reviews, HttpStatus.OK);
     }
-
 
     /**
      * Get review statistics for a specific user.

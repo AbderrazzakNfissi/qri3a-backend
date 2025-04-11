@@ -103,6 +103,7 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
         return baseCriteria;
     }
 
+
     private void addFilterCriteria(Criteria criteria,
                                    String category,
                                    String location,
@@ -155,7 +156,43 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
         return new PageImpl<>(productDocs, pageable, searchHits.getTotalHits());
     }
 
+    /**
+     * Nettoie et prépare le texte de recherche pour Elasticsearch en :
+     * 1. Échappant les caractères spéciaux
+     * 2. Normalisant les espaces multiples
+     * 3. Limitant la longueur maximale de la requête
+     * 4. Convertissant en minuscules pour une recherche insensible à la casse
+     * 5. Traitant les termes vides ou null
+     *
+     * @param text Le texte de recherche brut
+     * @return Le texte nettoyé et préparé pour Elasticsearch
+     */
     private String cleanSearchText(String text) {
-        return text.replace("\"", "").trim();
+        // Vérification des entrées nulles ou vides
+        if (text == null || text.trim().isEmpty()) {
+            return "";
+        }
+
+        // Limiter la longueur maximale de la recherche (évite les attaques par injection de requêtes très longues)
+        final int MAX_QUERY_LENGTH = 100;
+        if (text.length() > MAX_QUERY_LENGTH) {
+            text = text.substring(0, MAX_QUERY_LENGTH);
+        }
+
+        // Convertir en minuscules pour une recherche insensible à la casse
+        text = text.toLowerCase();
+
+        // Échapper les caractères spéciaux d'Elasticsearch
+        // + - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ / et autres caractères pouvant causer des problèmes
+        String escaped = text.replaceAll("([+\\-=&|><!(){}\\[\\]^\"~*?:/\\\\])", "\\\\$1");
+
+        // Supprimer les caractères de contrôle qui peuvent causer des problèmes dans ES
+        escaped = escaped.replaceAll("[\\p{Cntrl}]", "");
+
+        // Normaliser les espaces multiples en un seul espace
+        escaped = escaped.replaceAll("\\s+", " ");
+
+        // Enlever les espaces de début et de fin
+        return escaped.trim();
     }
 }

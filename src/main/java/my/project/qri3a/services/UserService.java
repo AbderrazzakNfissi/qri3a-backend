@@ -21,11 +21,11 @@ import my.project.qri3a.exceptions.ResourceNotValidException;
 
 
 public interface UserService {
-    Page<User> getAllUsers(Pageable pageable) throws ResourceNotValidException ;
-    Optional<User> getUserById(UUID userID) throws ResourceNotFoundException;
-    User createUser(User user) throws ResourceAlreadyExistsException, ResourceNotValidException;
+//    Page<User> getAllUsers(Pageable pageable) throws ResourceNotValidException ;
+//    Optional<User> getUserById(UUID userID) throws ResourceNotFoundException;
+//    User createUser(User user) throws ResourceAlreadyExistsException, ResourceNotValidException;
     User updateUser(UserSettingsInfosDTO userSettingsInfosDTO, Authentication authentication) throws ResourceNotFoundException, IOException, ResourceNotValidException;
-    void deleteUser(UUID userID) throws ResourceNotFoundException;
+//    void deleteUser(UUID userID) throws ResourceNotFoundException;
     void addProductToWishlist(UUID userId, UUID productId) throws ResourceNotFoundException;
     void removeProductFromWishlist(UUID userId, UUID productId) throws ResourceNotFoundException;
     void clearWishlist(UUID userId) throws ResourceNotFoundException;

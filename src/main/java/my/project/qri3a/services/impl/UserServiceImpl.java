@@ -63,42 +63,42 @@ public class UserServiceImpl implements UserService {
     private EntityManager entityManager;
     private final ProductDocRepository productDocRepository;
 
-    @Override
-    public Page<User> getAllUsers(Pageable pageable) throws ResourceNotValidException {
-        log.info("Service: Fetching all users with pagination: page={}, size={}, sort={}", pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
-        validateSortParameters(pageable);
-        return userRepository.findAll(pageable);
-    }
+//    @Override
+//    public Page<User> getAllUsers(Pageable pageable) throws ResourceNotValidException {
+//        log.info("Service: Fetching all users with pagination: page={}, size={}, sort={}", pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+//        validateSortParameters(pageable);
+//        return userRepository.findAll(pageable);
+//    }
 
-    @Override
-    public Optional<User> getUserById(UUID userID) throws ResourceNotFoundException {
-        log.info("Service: Fetching user with ID: {}", userID);
-        User user = userRepository.findById(userID)
-                .orElseThrow(() -> {
-                    log.warn("Service: User not found with ID: {}", userID);
-                    return new ResourceNotFoundException("User not found with ID " + userID);
-                });
-        return Optional.ofNullable(user);
-    }
+//    @Override
+//    public Optional<User> getUserById(UUID userID) throws ResourceNotFoundException {
+//        log.info("Service: Fetching user with ID: {}", userID);
+//        User user = userRepository.findById(userID)
+//                .orElseThrow(() -> {
+//                    log.warn("Service: User not found with ID: {}", userID);
+//                    return new ResourceNotFoundException("User not found with ID " + userID);
+//                });
+//        return Optional.ofNullable(user);
+//    }
 
-    @Override
-    public User createUser(User user) throws ResourceAlreadyExistsException, ResourceNotValidException {
-        log.info("Service: Creating user with email: {}", user.getEmail());
-
-        // Vérifier si un utilisateur avec le même email existe déjà
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            log.error("User with email {} already exists", user.getEmail());
-            throw new ResourceAlreadyExistsException("User with email " + user.getEmail() + " already exists");
-        }
-
-        // Encoder le mot de passe
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        // Enregistrer l'utilisateur
-        User createdUser = userRepository.save(user);
-        log.info("Service: User created with ID: {}", createdUser.getId());
-        return createdUser;
-    }
+//    @Override
+//    public User createUser(User user) throws ResourceAlreadyExistsException, ResourceNotValidException {
+//        log.info("Service: Creating user with email: {}", user.getEmail());
+//
+//        // Vérifier si un utilisateur avec le même email existe déjà
+//        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+//            log.error("User with email {} already exists", user.getEmail());
+//            throw new ResourceAlreadyExistsException("User with email " + user.getEmail() + " already exists");
+//        }
+//
+//        // Encoder le mot de passe
+//        user.setPassword(passwordEncoder.encode(user.getPassword()));
+//
+//        // Enregistrer l'utilisateur
+//        User createdUser = userRepository.save(user);
+//        log.info("Service: User created with ID: {}", createdUser.getId());
+//        return createdUser;
+//    }
 
     @Override
     public User updateUser(UserSettingsInfosDTO dto, Authentication authentication)
@@ -159,19 +159,19 @@ public class UserServiceImpl implements UserService {
     }
 
 
-    @Override
-    public void deleteUser(UUID userID) throws ResourceNotFoundException {
-        log.info("Service: Deleting user with ID: {}", userID);
-        User user = userRepository.findById(userID)
-                .orElseThrow(() -> {
-                    log.warn("Service: User not found with ID: {}", userID);
-                    return new ResourceNotFoundException("User not found with ID " + userID);
-                });
-        userRepository.delete(user);
-        log.info("Service: User deleted with ID: {}", userID);
-    }
-
-
+//    @Override
+//    public void deleteUser(UUID userID) throws ResourceNotFoundException {
+//        log.info("Service: Deleting user with ID: {}", userID);
+//        User user = userRepository.findById(userID)
+//                .orElseThrow(() -> {
+//                    log.warn("Service: User not found with ID: {}", userID);
+//                    return new ResourceNotFoundException("User not found with ID " + userID);
+//                });
+//        userRepository.delete(user);
+//        log.info("Service: User deleted with ID: {}", userID);
+//    }
+//
+//
 
 
     private void validateSortParameters(Pageable pageable) throws ResourceNotValidException {

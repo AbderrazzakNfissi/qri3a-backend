@@ -3,6 +3,8 @@ package my.project.qri3a.repositories;
 
 import my.project.qri3a.entities.Review;
 import my.project.qri3a.projections.ReviewStatisticsProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -26,4 +28,5 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     ReviewStatisticsProjection getReviewStatisticsByUserId(UUID userId);
 
     Review findByReviewerIdAndUserId(UUID reviewerId, UUID userId);
+    Page<Review> findByUserId(UUID userId, Pageable pageable);
 }

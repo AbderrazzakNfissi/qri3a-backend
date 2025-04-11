@@ -17,6 +17,8 @@ import my.project.qri3a.repositories.ReviewRepository;
 import my.project.qri3a.repositories.UserRepository;
 import my.project.qri3a.services.ReviewService;
 import my.project.qri3a.services.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -151,20 +153,20 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ReviewResponseDTO> getAllReviews(UUID userId) throws ResourceNotFoundException {
-        log.debug("Fetching all reviews for userId: {}", userId);
+    public Page<ReviewResponseDTO> getAllReviews(UUID userId, Pageable pageable) throws ResourceNotFoundException {
+        log.debug("Fetching paginated reviews for userId: {}, page: {}, size: {}",
+                userId, pageable.getPageNumber(), pageable.getPageSize());
 
         // Verify user exists
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        List<Review> reviews = reviewRepository.findByUserId(userId);
+        Page<Review> reviewsPage = reviewRepository.findByUserId(userId, pageable);
 
-        List<ReviewResponseDTO> reviewDTOs = reviews.stream()
-                .map(reviewMapper::toDTO)
-                .collect(Collectors.toList());
+        Page<ReviewResponseDTO> reviewDTOs = reviewsPage.map(reviewMapper::toDTO);
 
-        log.debug("Fetched {} reviews for userId: {}", reviewDTOs.size(), userId);
+        log.debug("Fetched {} reviews out of {} total for userId: {}",
+                reviewDTOs.getNumberOfElements(), reviewDTOs.getTotalElements(), userId);
 
         return reviewDTOs;
     }

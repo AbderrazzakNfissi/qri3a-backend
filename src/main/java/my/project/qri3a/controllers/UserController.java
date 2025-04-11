@@ -41,39 +41,6 @@ public class UserController {
     private final UserMapper userMapper;
 
     /**
-     * GET /api/v1/users?page=0&size=10&sort=name,asc
-     */
-    @GetMapping
-    public ResponseEntity<ApiResponse<Page<UserResponseDTO>>> getAllUsers(Pageable pageable) throws ResourceNotValidException {
-        log.info("Controller: Fetching all users with pagination: page={}, size={}, sort={}", pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
-        //Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        /*
-        if (authentication != null && authentication.isAuthenticated()) {
-            String currentPrincipalName = authentication.getName();
-            log.info("==> Controller: Fetching all users with current principal: {}", currentPrincipalName);
-        }
-        */
-        Page<User> usersPage = userService.getAllUsers(pageable);
-        Page<UserResponseDTO> dtoPage = usersPage.map(userMapper::toDTO);
-        ApiResponse<Page<UserResponseDTO>> response = new ApiResponse<>(dtoPage, "Users fetched successfully.", HttpStatus.OK.value());
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * GET /api/v1/users/{id}
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponseDTO>> getUserById(@PathVariable(value = "id") UUID userID) throws ResourceNotFoundException{
-        log.info("Controller: Fetching user with ID: {}", userID);
-
-            User user = userService.getUserById(userID)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with ID " + userID));
-            UserResponseDTO responseDTO = userMapper.toDTO(user);
-            ApiResponse<UserResponseDTO> response = new ApiResponse<>(responseDTO, "User fetched successfully.", HttpStatus.OK.value());
-            return ResponseEntity.ok(response);
-    }
-
-    /**
      * GET /api/v1/users/me
      */
     @GetMapping("/me")
@@ -119,30 +86,6 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * POST /api/v1/users
-     */
-    @PostMapping
-    public ResponseEntity<ApiResponse<UserResponseDTO>> createUser(@Valid @RequestBody UserRequestDTO userRequestDTO)
-            throws ResourceAlreadyExistsException, ResourceNotValidException{
-        log.info("Controller: Creating new user with email: {}", userRequestDTO.getEmail());
-
-        try {
-            User user = userMapper.toEntity(userRequestDTO);
-            User createdUser = userService.createUser(user);
-            UserResponseDTO responseDTO = userMapper.toDTO(createdUser);
-            ApiResponse<UserResponseDTO> response = new ApiResponse<>(responseDTO, "User created successfully.", HttpStatus.CREATED.value());
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (ResourceAlreadyExistsException ex) {
-            log.error("Error creating user: {}", ex.getMessage());
-            ApiResponse<UserResponseDTO> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.CONFLICT.value());
-            return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
-        } catch (ResourceNotValidException ex) {
-            log.error("Validation error creating user: {}", ex.getMessage());
-            ApiResponse<UserResponseDTO> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.FORBIDDEN.value());
-            return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
-        }
-    }
 
     /**
      * PUT /api/v1/users/{id}
@@ -167,17 +110,6 @@ public class UserController {
                 HttpStatus.OK.value()
         );
         return ResponseEntity.ok(response);
-    }
-    /**
-     * DELETE /api/v1/users/{id}
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable(value = "id") UUID userID) throws ResourceNotFoundException {
-        log.info("Controller: Deleting user with ID: {}", userID);
-
-        userService.deleteUser(userID);
-        ApiResponse<Void> response = new ApiResponse<>(null, "User deleted successfully.", HttpStatus.NO_CONTENT.value());
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
     }
 
 
@@ -221,4 +153,77 @@ public class UserController {
 
         return ResponseEntity.ok(response);
     }
+
+
+    //    /**
+//     * GET /api/v1/users?page=0&size=10&sort=name,asc
+//     */
+//    //@GetMapping
+//    public ResponseEntity<ApiResponse<Page<UserResponseDTO>>> getAllUsers(Pageable pageable) throws ResourceNotValidException {
+//        log.info("Controller: Fetching all users with pagination: page={}, size={}, sort={}", pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+//        //Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        /*
+//        if (authentication != null && authentication.isAuthenticated()) {
+//            String currentPrincipalName = authentication.getName();
+//            log.info("==> Controller: Fetching all users with current principal: {}", currentPrincipalName);
+//        }
+//        */
+//        Page<User> usersPage = userService.getAllUsers(pageable);
+//        Page<UserResponseDTO> dtoPage = usersPage.map(userMapper::toDTO);
+//        ApiResponse<Page<UserResponseDTO>> response = new ApiResponse<>(dtoPage, "Users fetched successfully.", HttpStatus.OK.value());
+//        return ResponseEntity.ok(response);
+//    }
+//
+//    /**
+//     * GET /api/v1/users/{id}
+//     */
+//    //@GetMapping("/{id}")
+//    public ResponseEntity<ApiResponse<UserResponseDTO>> getUserById(@PathVariable(value = "id") UUID userID) throws ResourceNotFoundException{
+//        log.info("Controller: Fetching user with ID: {}", userID);
+//
+//            User user = userService.getUserById(userID)
+//                    .orElseThrow(() -> new ResourceNotFoundException("User not found with ID " + userID));
+//            UserResponseDTO responseDTO = userMapper.toDTO(user);
+//            ApiResponse<UserResponseDTO> response = new ApiResponse<>(responseDTO, "User fetched successfully.", HttpStatus.OK.value());
+//            return ResponseEntity.ok(response);
+//    }
+
+
+    //    /**
+//     * POST /api/v1/users
+//     */
+//    @PostMapping
+//    public ResponseEntity<ApiResponse<UserResponseDTO>> createUser(@Valid @RequestBody UserRequestDTO userRequestDTO)
+//            throws ResourceAlreadyExistsException, ResourceNotValidException{
+//        log.info("Controller: Creating new user with email: {}", userRequestDTO.getEmail());
+//
+//        try {
+//            User user = userMapper.toEntity(userRequestDTO);
+//            User createdUser = userService.createUser(user);
+//            UserResponseDTO responseDTO = userMapper.toDTO(createdUser);
+//            ApiResponse<UserResponseDTO> response = new ApiResponse<>(responseDTO, "User created successfully.", HttpStatus.CREATED.value());
+//            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+//        } catch (ResourceAlreadyExistsException ex) {
+//            log.error("Error creating user: {}", ex.getMessage());
+//            ApiResponse<UserResponseDTO> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.CONFLICT.value());
+//            return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+//        } catch (ResourceNotValidException ex) {
+//            log.error("Validation error creating user: {}", ex.getMessage());
+//            ApiResponse<UserResponseDTO> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.FORBIDDEN.value());
+//            return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+//        }
+//    }
+
+        /**
+     * DELETE /api/v1/users/{id}
+     */
+//    //@DeleteMapping("/{id}")
+//    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable(value = "id") UUID userID) throws ResourceNotFoundException {
+//        log.info("Controller: Deleting user with ID: {}", userID);
+//
+//        userService.deleteUser(userID);
+//        ApiResponse<Void> response = new ApiResponse<>(null, "User deleted successfully.", HttpStatus.NO_CONTENT.value());
+//        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
+//    }
+
 }
