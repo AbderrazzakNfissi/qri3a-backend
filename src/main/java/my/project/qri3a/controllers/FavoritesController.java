@@ -61,25 +61,25 @@ public class FavoritesController {
     }
 
 
-    /**
-     * DELETE /api/v1/users/wishlist
-     * Supprimer tous les produits de la wishlist de l'utilisateur
-     */
-    @DeleteMapping()
-    public ResponseEntity<ApiResponse<String>> clearWishlist( Authentication authentication) {
-        String email = authentication.getName();
-        UUID userId = userService.getUserByEmail(email).getId();
-        log.info("Controller: Clearing wishlist for user with  email {}", email);
-        try {
-            userService.clearWishlist(userId);
-            ApiResponse<String> response = new ApiResponse<>("Wishlist cleared successfully.", "All products removed from wishlist.", HttpStatus.OK.value());
-            return ResponseEntity.ok(response);
-        } catch (ResourceNotFoundException ex) {
-            log.error("Error clearing wishlist: {}", ex.getMessage());
-            ApiResponse<String> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.NOT_FOUND.value());
-            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-        }
-    }
+//    /**
+//     * DELETE /api/v1/users/wishlist
+//     * Supprimer tous les produits de la wishlist de l'utilisateur
+//     */
+//    @DeleteMapping()
+//    public ResponseEntity<ApiResponse<String>> clearWishlist( Authentication authentication) {
+//        String email = authentication.getName();
+//        UUID userId = userService.getUserByEmail(email).getId();
+//        log.info("Controller: Clearing wishlist for user with  email {}", email);
+//        try {
+//            userService.clearWishlist(userId);
+//            ApiResponse<String> response = new ApiResponse<>("Wishlist cleared successfully.", "All products removed from wishlist.", HttpStatus.OK.value());
+//            return ResponseEntity.ok(response);
+//        } catch (ResourceNotFoundException ex) {
+//            log.error("Error clearing wishlist: {}", ex.getMessage());
+//            ApiResponse<String> errorResponse = new ApiResponse<>(null, ex.getMessage(), HttpStatus.NOT_FOUND.value());
+//            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+//        }
+//    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getWishlist(

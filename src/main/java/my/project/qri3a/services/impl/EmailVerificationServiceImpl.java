@@ -43,7 +43,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
      */
     @Override
     @Transactional
-    public void sendVerificationCode(User user) throws EmailVerificationException,  TooManyAttemptsException, VerificationCodeExpiredException, VerificationCodeInvalidException {
+    public void sendVerificationCode(User user) throws EmailVerificationException, TooManyAttemptsException, VerificationCodeExpiredException, VerificationCodeInvalidException {
         // Vérifier si l'utilisateur est bloqué pour trop de tentatives
         String cacheKey = "verification_attempts:" + user.getId();
         Cache attemptsCache = cacheManager.getCache("verificationAttempts");
@@ -54,14 +54,15 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             log.warn("Utilisateur bloqué pour trop de tentatives. UserId: {}", user.getId());
             throw new TooManyAttemptsException("Trop de tentatives. Veuillez réessayer plus tard.");
         }
-        // Supprimer les anciens codes
-        verificationCodeRepository.deleteByUserId(user.getId());
+
+        // Vérifier si un code existe déjà pour cet utilisateur
+        VerificationCode verificationCode = verificationCodeRepository.findByUserId(user.getId())
+                .orElse(new VerificationCode());
 
         // Générer un code à 6 chiffres
         String code = generateRandomCode();
 
-        // Créer et sauvegarder le code de vérification
-        VerificationCode verificationCode = new VerificationCode();
+        // Mettre à jour ou créer le code de vérification
         verificationCode.setCode(code);
         verificationCode.setUser(user);
         verificationCode.setExpiryDate(LocalDateTime.now().plusMinutes(expirationMinutes));
@@ -77,7 +78,6 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             throw new EmailVerificationException("Erreur lors de l'envoi de l'email de vérification: " + e.getMessage());
         }
     }
-
     /**
      * Vérifie le code et active le compte utilisateur
      */

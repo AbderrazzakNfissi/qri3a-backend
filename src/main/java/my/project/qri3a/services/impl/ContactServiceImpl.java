@@ -128,11 +128,6 @@ public class ContactServiceImpl implements ContactService {
         return contactRepository.countByStatus(status);
     }
 
-    @Override
-    public List<Contact> getRecentContacts() {
-        log.info("Service: Fetching recent contacts");
-        return contactRepository.findTop5ByOrderByCreatedAtDesc();
-    }
 
     private String getClientIp(HttpServletRequest request) {
         String xForwardedForHeader = request.getHeader("X-Forwarded-For");

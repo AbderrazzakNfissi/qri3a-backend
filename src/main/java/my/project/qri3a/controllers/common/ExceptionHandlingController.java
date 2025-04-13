@@ -215,4 +215,19 @@ public class ExceptionHandlingController {
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
 
+    /**
+     * Handler for the InvalidCredentialsException
+     */
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiError> handleInvalidCredentialsException(InvalidCredentialsException ex, WebRequest request) {
+        log.error("Invalid credentials exception: {}", ex.getMessage());
+        ApiError error = new ApiError(
+                HttpStatus.UNAUTHORIZED.value(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+
 }

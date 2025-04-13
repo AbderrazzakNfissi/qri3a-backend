@@ -106,29 +106,30 @@ public class ProductController {
     }
 
     /**
-     * PUT /api/v1/products/{id}
+     * PUT /api/v1/products/my/{id}
      */
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductResponseDTO>> updateProduct(@PathVariable UUID id,
-                                                                         @Valid @RequestBody ProductRequestDTO productRequestDTO,
-                                                                         Authentication authentication)
-            throws ResourceNotFoundException, ResourceNotValidException {
-        log.info("Controller: Updating product with ID: {}", id);
-        ProductResponseDTO updatedProduct = productService.updateProduct(id, productRequestDTO,authentication);
+    @PutMapping("/my/{id}")
+    public ResponseEntity<ApiResponse<ProductResponseDTO>> updateMyProduct(
+            @PathVariable UUID id,
+            @Valid @RequestBody ProductRequestDTO productRequestDTO,
+            Authentication authentication)
+            throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Controller: Updating my product with ID: {}", id);
+        ProductResponseDTO updatedProduct = productService.updateMyProduct(id, productRequestDTO, authentication);
         ApiResponse<ProductResponseDTO> response = new ApiResponse<>(updatedProduct, "Product updated successfully.", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * DELETE /api/v1/products/{id}
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable UUID id) throws ResourceNotFoundException {
-        log.info("Controller: Deleting product with ID: {}", id);
-        productService.deleteProduct(id);
-        ApiResponse<Void> response = new ApiResponse<>(null, "Product deleted successfully.", HttpStatus.NO_CONTENT.value());
-        return ResponseEntity.noContent().build();
-    }
+//    /**
+//     * DELETE /api/v1/products/{id}
+//     */
+//    @DeleteMapping("/{id}")
+//    public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable UUID id) throws ResourceNotFoundException {
+//        log.info("Controller: Deleting product with ID: {}", id);
+//        productService.deleteProduct(id);
+//        ApiResponse<Void> response = new ApiResponse<>(null, "Product deleted successfully.", HttpStatus.NO_CONTENT.value());
+//        return ResponseEntity.noContent().build();
+//    }
 
 
     @DeleteMapping("/my/{id}")
@@ -311,45 +312,45 @@ public class ProductController {
     }
 
 
-    /**
-     * Approve a product (change status to ACTIVE)
-     * POST /api/v1/products/{id}/approve
-     */
-    @PostMapping("/{id}/approve")
-    public ResponseEntity<ApiResponse<ProductResponseDTO>> approveProduct(@PathVariable UUID id)
-            throws ResourceNotFoundException, NotAuthorizedException {
-        log.info("Controller: Approving product with ID: {}", id);
-        ProductResponseDTO approvedProduct = productService.approveProduct(id);
-        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
-                approvedProduct,
-                "Product approved successfully.",
-                HttpStatus.OK.value()
-        );
-        return ResponseEntity.ok(response);
-    }
+//    /**
+//     * Approve a product (change status to ACTIVE)
+//     * POST /api/v1/products/{id}/approve
+//     */
+//    @PostMapping("/{id}/approve")
+//    public ResponseEntity<ApiResponse<ProductResponseDTO>> approveProduct(@PathVariable UUID id)
+//            throws ResourceNotFoundException, NotAuthorizedException {
+//        log.info("Controller: Approving product with ID: {}", id);
+//        ProductResponseDTO approvedProduct = productService.approveProduct(id);
+//        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
+//                approvedProduct,
+//                "Product approved successfully.",
+//                HttpStatus.OK.value()
+//        );
+//        return ResponseEntity.ok(response);
+//    }
 
-    /**
-     * Reject a product (change status to REJECTED)
-     * POST /api/v1/products/{id}/reject
-     */
-    @PostMapping("/{id}/reject")
-    //@PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<ProductResponseDTO>> rejectProduct(@PathVariable UUID id)
-            throws ResourceNotFoundException, NotAuthorizedException {
-        log.info("Controller: Rejecting product with ID: {}", id);
-        ProductResponseDTO rejectedProduct = productService.rejectProduct(id);
-        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
-                rejectedProduct,
-                "Product rejected successfully.",
-                HttpStatus.OK.value()
-        );
-        return ResponseEntity.ok(response);
-    }
-
-
+//    /**
+//     * Reject a product (change status to REJECTED)
+//     * POST /api/v1/products/{id}/reject
+//     */
+//    @PostMapping("/{id}/reject")
+//    //@PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<ApiResponse<ProductResponseDTO>> rejectProduct(@PathVariable UUID id)
+//            throws ResourceNotFoundException, NotAuthorizedException {
+//        log.info("Controller: Rejecting product with ID: {}", id);
+//        ProductResponseDTO rejectedProduct = productService.rejectProduct(id);
+//        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
+//                rejectedProduct,
+//                "Product rejected successfully.",
+//                HttpStatus.OK.value()
+//        );
+//        return ResponseEntity.ok(response);
+//    }
 
 
-    /**
+
+
+    /** toUpdate (add My)
      * Deactivate a product (change status to DEACTIVATED)
      * POST /api/v1/products/{id}/deactivate
      */
@@ -386,23 +387,23 @@ public class ProductController {
     }
 
 
-    /**
-     * Get products with ACTIVE status
-     * GET /api/v1/products/active
-     */
-    @GetMapping("/active")
-    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getActiveProducts(Pageable pageable) {
-        log.info("Controller: Fetching active products with pagination: page={}, size={}, sort={}",
-                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
-
-        Page<ProductListingDTO> productsPage = productService.getActiveProducts(pageable);
-        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
-                productsPage,
-                "Active products fetched successfully.",
-                HttpStatus.OK.value()
-        );
-        return ResponseEntity.ok(response);
-    }
+//    /**
+//     * Get products with ACTIVE status
+//     * GET /api/v1/products/active
+//     */
+//    @GetMapping("/active")
+//    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getActiveProducts(Pageable pageable) {
+//        log.info("Controller: Fetching active products with pagination: page={}, size={}, sort={}",
+//                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+//
+//        Page<ProductListingDTO> productsPage = productService.getActiveProducts(pageable);
+//        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+//                productsPage,
+//                "Active products fetched successfully.",
+//                HttpStatus.OK.value()
+//        );
+//        return ResponseEntity.ok(response);
+//    }
 
     /**
      * Get products with MODERATION status
@@ -423,24 +424,24 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get products with REJECTED status
-     * GET /api/v1/products/rejected
-     */
-    @GetMapping("/rejected")
-    //@PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getRejectedProducts(Pageable pageable) {
-        log.info("Controller: Fetching rejected products with pagination: page={}, size={}, sort={}",
-                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
-
-        Page<ProductListingDTO> productsPage = productService.getRejectedProducts(pageable);
-        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
-                productsPage,
-                "Rejected products fetched successfully.",
-                HttpStatus.OK.value()
-        );
-        return ResponseEntity.ok(response);
-    }
+//    /**
+//     * Get products with REJECTED status
+//     * GET /api/v1/products/rejected
+//     */
+//    @GetMapping("/rejected")
+//    //@PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getRejectedProducts(Pageable pageable) {
+//        log.info("Controller: Fetching rejected products with pagination: page={}, size={}, sort={}",
+//                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+//
+//        Page<ProductListingDTO> productsPage = productService.getRejectedProducts(pageable);
+//        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+//                productsPage,
+//                "Rejected products fetched successfully.",
+//                HttpStatus.OK.value()
+//        );
+//        return ResponseEntity.ok(response);
+//    }
 
     /**
      * Get authenticated user's products with ACTIVE status

@@ -23,36 +23,33 @@ public class EmailVerificationController {
     private final UserService userService;
 
     @PostMapping("/send-code")
-    public ResponseEntity<ApiResponse<Void>> sendVerificationCode(Authentication authentication)  {
+    public ResponseEntity<ApiResponse<Void>> sendVerificationCode(@RequestParam String email) {
+        User user = userService.getUserByEmail(email);
 
-            User user = userService.getUserMe(authentication);
+        if (user.isEmailVerified()) {
+            return ResponseEntity.ok(new ApiResponse<>(null, "L'adresse email est déjà vérifiée.", HttpStatus.OK.value()));
+        }
 
-            if (user.isEmailVerified()) {
-                return ResponseEntity.ok(new ApiResponse<>(null, "L'adresse email est déjà vérifiée.", HttpStatus.OK.value()));
-            }
+        emailVerificationService.sendVerificationCode(user);
 
-            emailVerificationService.sendVerificationCode(user);
-
-            return ResponseEntity.ok(new ApiResponse<>(null, "Un code de vérification a été envoyé à votre adresse email.", HttpStatus.OK.value()));
-
+        return ResponseEntity.ok(new ApiResponse<>(null, "Un code de vérification a été envoyé à votre adresse email.", HttpStatus.OK.value()));
     }
 
     @PostMapping("/verify-code")
-    public ResponseEntity<ApiResponse<Void>> verifyCode(@RequestBody VerificationRequest request){
+    public ResponseEntity<ApiResponse<Void>> verifyCode(@RequestBody VerificationRequest request) {
+        User user = userService.getUserByEmail(request.getEmail());
+        boolean verified = emailVerificationService.verifyCode(request.getCode(), user.getId());
 
-            boolean verified = emailVerificationService.verifyCode(request.getCode(), request.getUserId());
-
-            if (verified) {
-                return ResponseEntity.ok(new ApiResponse<>(null, "Votre adresse email a été vérifiée avec succès.", HttpStatus.OK.value()));
-            } else {
-                return ResponseEntity.badRequest()
-                        .body(new ApiResponse<>(null, "Code de vérification invalide.", HttpStatus.BAD_REQUEST.value()));
-            }
-
+        if (verified) {
+            return ResponseEntity.ok(new ApiResponse<>(null, "Votre adresse email a été vérifiée avec succès.", HttpStatus.OK.value()));
+        } else {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(null, "Code de vérification invalide.", HttpStatus.BAD_REQUEST.value()));
+        }
     }
 
     @PostMapping("/resend")
-    public ResponseEntity<ApiResponse<Void>> resendVerificationCode(Authentication authentication){
-        return sendVerificationCode(authentication);
+    public ResponseEntity<ApiResponse<Void>> resendVerificationCode(@RequestParam String email) {
+        return sendVerificationCode(email);
     }
 }

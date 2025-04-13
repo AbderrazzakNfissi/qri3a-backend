@@ -27,6 +27,7 @@ public class ContactRequestDTO {
     private String phone;
 
     @NotBlank(message = "La raison du contact est obligatoire")
+    @Size(min = 10, max = 100, message = "Le message doit contenir entre 10 et 100 caractères")
     private String reason;
 
     @NotBlank(message = "Le message est obligatoire")

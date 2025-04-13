@@ -9,6 +9,8 @@ import my.project.qri3a.dtos.requests.AuthenticationRequest;
 import my.project.qri3a.dtos.requests.EmailAndPasswordDTO;
 import my.project.qri3a.dtos.responses.ApiResponseDto;
 import my.project.qri3a.dtos.responses.AuthenticationResponse;
+import my.project.qri3a.exceptions.InvalidCredentialsException;
+import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.responses.ApiResponse;
 import my.project.qri3a.services.AuthenticationService;
 import my.project.qri3a.services.JwtService;
@@ -16,7 +18,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -69,7 +71,7 @@ public class AuthController {
     public ResponseEntity<ApiResponseDto> authenticate(
             @Valid @RequestBody AuthenticationRequest request,
             HttpServletResponse response
-    ) {
+    ) throws InvalidCredentialsException, ResourceNotFoundException {
         AuthenticationResponse authResponse = authenticationService.authenticate(request);
 
         // Définir le token d'accès comme cookie HttpOnly

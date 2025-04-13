@@ -171,8 +171,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponseDTO updateProduct(UUID productId, ProductRequestDTO productRequestDTO, Authentication authentication) throws ResourceNotFoundException, ResourceNotValidException {
-        log.info("Service: Updating product with ID: {}", productId);
+    public ProductResponseDTO updateMyProduct(UUID productId, ProductRequestDTO productRequestDTO, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException {
+        log.info("Service: Updating my product with ID: {}", productId);
 
         // Récupérer l'utilisateur à partir de l'authentification
         String email = authentication.getName();
@@ -187,7 +187,7 @@ public class ProductServiceImpl implements ProductService {
         // Vérifier que l'utilisateur actuel est le propriétaire du produit
         if (!existingProduct.getSeller().getId().equals(currentUser.getId())) {
             log.warn("Service: User {} is not authorized to update product {}", currentUser.getId(), productId);
-            throw new ResourceNotValidException("You are not authorized to update this product");
+            throw new NotAuthorizedException("You are not authorized to update this product");
         }
 
         // Mettre à jour les champs de l'entité à partir du DTO
@@ -202,8 +202,6 @@ public class ProductServiceImpl implements ProductService {
 
         return productMapper.toDTO(updatedProduct);
     }
-
-
 
     //cette fonction il va etre utiliser par l'administrateur pour supprimer un produit
     @Override

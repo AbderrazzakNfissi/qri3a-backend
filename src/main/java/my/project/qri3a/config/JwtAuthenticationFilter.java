@@ -64,12 +64,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 .map(GrantedAuthority::getAuthority)
                                 .collect(Collectors.joining(", ")));
 
-                // Vérifier si l'utilisateur est bloqué
-                if (!userDetails.isEnabled()) {
-                    throw new DisabledException("User account is blocked");
-                }
+
 
                 if (jwtService.isTokenValid(accessToken, userDetails)) {
+                    // Vérifier si l'utilisateur est bloqué
+                    if (!userDetails.isEnabled() && isProtectedEndpoint(request)) {
+                        throw new DisabledException("User account is blocked");
+                    }
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
@@ -98,6 +99,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
+
+    /**
+     * Détermine si l'endpoint est protégé (nécessite une authentification)
+     */
+    private boolean isProtectedEndpoint(HttpServletRequest request) {
+        String path = request.getServletPath();
+
+        // Liste des chemins publics (non protégés)
+        return !(
+                path.startsWith("/api/v1/auth/") ||
+                        (path.startsWith("/api/v1/products") && request.getMethod().equals("GET") && !path.contains("/my")) ||
+                        (path.startsWith("/api/v1/reviews") && request.getMethod().equals("GET")) ||
+                        (path.startsWith("/api/v1/favorites") && request.getMethod().equals("GET")) ||
+                        path.startsWith("/api/v1/public/") ||
+                        path.matches("/api/v1/users/seller-profile/\\d+") ||
+                        path.startsWith("/swagger-ui/") ||
+                        path.startsWith("/v3/api-docs/") ||
+                        path.equals("/swagger-ui.html") ||
+                        path.startsWith("/swagger-resources/") ||
+                        path.startsWith("/webjars/") ||
+                        path.equals("/docs") ||
+                        path.equals("/api-docs/swagger-config") ||
+                        path.equals("/api-docs")
+        );
+    }
+
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {

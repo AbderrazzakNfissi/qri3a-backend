@@ -53,29 +53,6 @@ public class NotificationPreferenceController {
     }
 
     /**
-     * GET /api/v1/notification-preferences/{id}
-     * Récupère une préférence de notification spécifique de l'utilisateur authentifié
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<NotificationPreferenceDTO>> getNotificationPreferenceById(
-            @PathVariable UUID id,
-            Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException {
-
-        log.info("Controller: Fetching notification preference with ID: {}", id);
-
-        NotificationPreference preference = notificationPreferenceService.getNotificationPreferenceById(id, authentication);
-        NotificationPreferenceDTO preferenceDTO = notificationPreferenceMapper.toDTO(preference);
-
-        ApiResponse<NotificationPreferenceDTO> response = new ApiResponse<>(
-                preferenceDTO,
-                "Notification preference fetched successfully.",
-                HttpStatus.OK.value()
-        );
-
-        return ResponseEntity.ok(response);
-    }
-
-    /**
      * POST /api/v1/notification-preferences
      * Crée une nouvelle préférence de notification pour l'utilisateur authentifié
      */
@@ -124,25 +101,4 @@ public class NotificationPreferenceController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * DELETE /api/v1/notification-preferences/{id}
-     * Supprime une préférence de notification
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteNotificationPreference(
-            @PathVariable UUID id,
-            Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException {
-
-        log.info("Controller: Deleting notification preference with ID: {}", id);
-
-        notificationPreferenceService.deleteNotificationPreference(id, authentication);
-
-        ApiResponse<Void> response = new ApiResponse<>(
-                null,
-                "Notification preference deleted successfully.",
-                HttpStatus.NO_CONTENT.value()
-        );
-
-        return ResponseEntity.noContent().build();
-    }
 }

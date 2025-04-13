@@ -26,21 +26,6 @@ public class ImageController {
 
     private final ImageService imageService;
 
-    /**
-     * GET /images/products/{productId}/images
-     * Retrieve all images for a specific product.
-     */
-    @GetMapping("/p/{productId}")
-    public ResponseEntity<ApiResponse<List<ImageResponseDTO>>> getImages(
-            @PathVariable UUID productId
-    ) throws ResourceNotFoundException {
-        log.info("Controller: Fetching all images for product '{}'", productId);
-
-        List<ImageResponseDTO> images = imageService.getImages(productId);
-
-        ApiResponse<List<ImageResponseDTO>> response = new ApiResponse<>(images, "Images retrieved successfully.", HttpStatus.OK.value());
-        return ResponseEntity.ok(response);
-    }
 
     /**
      * POST /images/products/{productId}/image
@@ -57,23 +42,6 @@ public class ImageController {
 
         ApiResponse<ImageResponseDTO> response = new ApiResponse<>(imageResponseDTO, "Image uploaded successfully.", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
-    }
-
-    /**
-     * DELETE /images/products/{productId}/image/{imageId}
-     * Delete a specific image from a product.
-     */
-    @DeleteMapping("/products/{productId}/image/{imageId}")
-    public ResponseEntity<ApiResponse<Void>> deleteImage(
-            @PathVariable UUID productId,
-            @PathVariable UUID imageId
-    ) throws ResourceNotFoundException {
-        log.info("Controller: Deleting image '{}' for product '{}'", imageId, productId);
-
-        imageService.deleteImage(productId, imageId);
-
-        ApiResponse<Void> response = new ApiResponse<>(null, "Image deleted successfully.", HttpStatus.NO_CONTENT.value());
-        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/p/{productId}/images")

@@ -126,52 +126,52 @@ public class ContactController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * GET /api/v1/contacts/user/{userId}
-     * Récupérer les messages de contact par utilisateur (admin seulement)
-     */
-    @GetMapping("/user/{userId}")
-   
-    public ResponseEntity<ApiResponse<Page<ContactResponseDTO>>> getContactsByUser(
-            @PathVariable UUID userId,
-            Pageable pageable) {
+//    /**
+//     * GET /api/v1/contacts/user/{userId}
+//     * Récupérer les messages de contact par utilisateur (admin seulement)
+//     */
+//    @GetMapping("/user/{userId}")
+//
+//    public ResponseEntity<ApiResponse<Page<ContactResponseDTO>>> getContactsByUser(
+//            @PathVariable UUID userId,
+//            Pageable pageable) {
+//
+//        log.info("Controller: Fetching contacts by user ID: {}", userId);
+//
+//        Page<Contact> contactsPage = contactService.getContactsByUser(userId, pageable);
+//        Page<ContactResponseDTO> dtoPage = contactsPage.map(contactMapper::toDTO);
+//
+//        ApiResponse<Page<ContactResponseDTO>> response = new ApiResponse<>(
+//                dtoPage,
+//                "Contacts for user " + userId + " fetched successfully.",
+//                HttpStatus.OK.value()
+//        );
+//
+//        return ResponseEntity.ok(response);
+//    }
 
-        log.info("Controller: Fetching contacts by user ID: {}", userId);
-
-        Page<Contact> contactsPage = contactService.getContactsByUser(userId, pageable);
-        Page<ContactResponseDTO> dtoPage = contactsPage.map(contactMapper::toDTO);
-
-        ApiResponse<Page<ContactResponseDTO>> response = new ApiResponse<>(
-                dtoPage,
-                "Contacts for user " + userId + " fetched successfully.",
-                HttpStatus.OK.value()
-        );
-
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * GET /api/v1/contacts/{id}
-     * Récupérer un message de contact par ID (admin seulement)
-     */
-    @GetMapping("/{id}")
-   
-    public ResponseEntity<ApiResponse<ContactResponseDTO>> getContactById(@PathVariable UUID id) throws ResourceNotFoundException {
-        log.info("Controller: Fetching contact with ID: {}", id);
-
-        Contact contact = contactService.getContactById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Contact not found with ID " + id));
-
-        ContactResponseDTO responseDTO = contactMapper.toDTO(contact);
-
-        ApiResponse<ContactResponseDTO> response = new ApiResponse<>(
-                responseDTO,
-                "Contact fetched successfully.",
-                HttpStatus.OK.value()
-        );
-
-        return ResponseEntity.ok(response);
-    }
+//    /**
+//     * GET /api/v1/contacts/{id}
+//     * Récupérer un message de contact par ID (admin seulement)
+//     */
+//    @GetMapping("/{id}")
+//
+//    public ResponseEntity<ApiResponse<ContactResponseDTO>> getContactById(@PathVariable UUID id) throws ResourceNotFoundException {
+//        log.info("Controller: Fetching contact with ID: {}", id);
+//
+//        Contact contact = contactService.getContactById(id)
+//                .orElseThrow(() -> new ResourceNotFoundException("Contact not found with ID " + id));
+//
+//        ContactResponseDTO responseDTO = contactMapper.toDTO(contact);
+//
+//        ApiResponse<ContactResponseDTO> response = new ApiResponse<>(
+//                responseDTO,
+//                "Contact fetched successfully.",
+//                HttpStatus.OK.value()
+//        );
+//
+//        return ResponseEntity.ok(response);
+//    }
 
     /**
      * PATCH /api/v1/contacts/{id}/status
@@ -220,29 +220,6 @@ public class ContactController {
         );
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
-    }
-
-    /**
-     * GET /api/v1/contacts/recent
-     * Récupérer les messages de contact récents (admin seulement)
-     */
-    @GetMapping("/recent")
-   
-    public ResponseEntity<ApiResponse<List<ContactResponseDTO>>> getRecentContacts() {
-        log.info("Controller: Fetching recent contacts");
-
-        List<Contact> contacts = contactService.getRecentContacts();
-        List<ContactResponseDTO> responseDTOs = contacts.stream()
-                .map(contactMapper::toDTO)
-                .collect(Collectors.toList());
-
-        ApiResponse<List<ContactResponseDTO>> response = new ApiResponse<>(
-                responseDTOs,
-                "Recent contacts fetched successfully.",
-                HttpStatus.OK.value()
-        );
-
-        return ResponseEntity.ok(response);
     }
 
 

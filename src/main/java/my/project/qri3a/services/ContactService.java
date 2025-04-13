@@ -32,6 +32,5 @@ public interface ContactService {
 
     void deleteContact(UUID contactId) throws ResourceNotFoundException;
 
-    List<Contact> getRecentContacts();
     int countContactsByStatus(ContactStatus status);
 }

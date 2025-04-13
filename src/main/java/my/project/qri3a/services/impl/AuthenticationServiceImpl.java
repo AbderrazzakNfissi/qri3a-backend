@@ -6,14 +6,16 @@ import my.project.qri3a.dtos.requests.EmailAndPasswordDTO;
 import my.project.qri3a.dtos.responses.AuthenticationResponse;
 import my.project.qri3a.entities.User;
 import my.project.qri3a.enums.Role;
+import my.project.qri3a.exceptions.InvalidCredentialsException;
 import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
+import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.repositories.UserRepository;
 import my.project.qri3a.services.AuthenticationService;
 import my.project.qri3a.services.EmailVerificationService;
 import my.project.qri3a.services.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -74,13 +76,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
+    public AuthenticationResponse authenticate(AuthenticationRequest request) throws InvalidCredentialsException, ResourceNotFoundException {
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
+        }catch (BadCredentialsException e){
+            throw new InvalidCredentialsException("Invalid email or password.");
+        }
+
         User user = userRepository.findByEmail(request.getEmail()).orElseThrow();
         String accessToken = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);

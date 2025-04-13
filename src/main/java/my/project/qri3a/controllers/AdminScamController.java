@@ -57,7 +57,10 @@ public class AdminScamController {
 
     /**
      * Récupère les détails d'un signalement d'arnaque spécifique.
+     *
+     * UNUSED ENDPOINT - Not called by the AdminScamsComponent
      */
+    /*
     @GetMapping("/{id}")
     public ResponseEntity<ScamResponseDTO> getScamDetails(
             @PathVariable("id") UUID id
@@ -66,6 +69,7 @@ public class AdminScamController {
         ScamResponseDTO response = scamService.getScamById(id);
         return ResponseEntity.ok(response);
     }
+    */
 
     /**
      * Met à jour le statut d'un signalement d'arnaque.
@@ -105,7 +109,10 @@ public class AdminScamController {
 
     /**
      * Récupère les signalements d'arnaque pour un vendeur spécifique.
+     *
+     * UNUSED ENDPOINT - Not called by the AdminScamsComponent
      */
+    /*
     @GetMapping("/seller/{sellerId}")
     public ResponseEntity<Page<ScamResponseDTO>> getScamsBySeller(
             @PathVariable("sellerId") UUID sellerId,
@@ -116,6 +123,7 @@ public class AdminScamController {
         Page<ScamResponseDTO> response = scamService.getScamsBySeller(sellerId, status, pageable);
         return ResponseEntity.ok(response);
     }
+    */
 
     /**
      * Récupère les signalements d'arnaque pour un produit spécifique.
@@ -160,11 +168,15 @@ public class AdminScamController {
 
     /**
      * Récupère le nombre de signalements d'arnaque en attente.
+     *
+     * UNUSED ENDPOINT - Not called by the AdminScamsComponent
      */
+    /*
     @GetMapping("/count/pending")
     public ResponseEntity<Long> getPendingScamsCount() {
         log.info("Admin Controller: Fetching count of pending scam reports");
         long pendingCount = scamService.countScamsByStatus(ScamStatus.PENDING);
         return ResponseEntity.ok(pendingCount);
     }
+    */
 }
