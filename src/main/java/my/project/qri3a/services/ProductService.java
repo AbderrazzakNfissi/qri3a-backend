@@ -27,7 +27,7 @@ public interface ProductService {
     Page<ProductListingDTO> getMyProducts(Authentication authentication, Pageable pageable) throws ResourceNotValidException;
     void deleteMyProduct(UUID productId, Authentication authentication) throws ResourceNotFoundException, NotAuthorizedException;
     Page<ProductListingDTO> getRecommendedProducts(UUID productId, Pageable pageable) throws ResourceNotFoundException;
-    List<ProductListingDTO> searchProductSuggestions(String query, int limit);
+
     Page<ProductListingDTO> searchProducts(String query, Pageable pageable);
     Page<ProductListingDTO> searchProducts(
             String query,
@@ -45,7 +45,7 @@ public interface ProductService {
 
     Page<ProductDoc> findAll(Pageable pageable);
 
-    List<ProductDoc> searchProductSuggestionsElastic(String query);
+    public List<ProductDoc> searchProductSuggestionsElastic(String query, String category, int limit);
 
     /**
      * Approves a product, changing its status to ACTIVE
@@ -160,5 +160,13 @@ public interface ProductService {
      * Récupère le nombre de produits pour chaque statut
      */
     Map<ProductStatus, Long> getAllProductCounts();
+
+    /**
+     * Récupère les produits filtrés par catégorie principale
+     * @param mainCategory Le nom de la catégorie principale
+     * @param pageable Les informations de pagination
+     * @return Page de produits correspondant à la catégorie principale
+     */
+    Page<ProductListingDTO> getProductsByMainCategory(String mainCategory, Pageable pageable);
 
 }

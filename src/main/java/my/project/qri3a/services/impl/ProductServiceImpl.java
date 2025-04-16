@@ -162,10 +162,19 @@ public class ProductServiceImpl implements ProductService {
         Product product = productMapper.toEntity(productRequestDTO);
         product.setSeller(seller);
 
+        // Gestion des options de livraison en fonction de la catégorie
+        if (!isCategorySupportsDelivery(product.getCategory())) {
+            // Forcer NO pour la livraison et réinitialiser les autres options pour les catégories non livrables
+            product.setDelivery("NO");
+            product.setDeliveryFee(null);
+            product.setDeliveryAllMorocco(false);
+            product.setDeliveryZones(null);
+            product.setDeliveryTime(null);
+        }
+
         // Enregistrer le produit
         Product savedProduct = productRepository.save(product);
         log.info("Service: Product created with ID: {}", savedProduct.getId());
-
 
         return productMapper.toDTO(savedProduct);
     }
@@ -180,7 +189,7 @@ public class ProductServiceImpl implements ProductService {
 
         Product existingProduct = productRepository.findById(productId)
                 .orElseThrow(() -> {
-                    log.warn("Service: Product not found with ID: {}", productId);
+                    log.warn("Service : Product not found with ID: {}", productId);
                     return new ResourceNotFoundException("Product not found with ID " + productId);
                 });
 
@@ -192,6 +201,15 @@ public class ProductServiceImpl implements ProductService {
 
         // Mettre à jour les champs de l'entité à partir du DTO
         productMapper.updateEntityFromDTO(productRequestDTO, existingProduct);
+
+        // Vérifier et mettre à jour les options de livraison en fonction de la catégorie
+        if (!isCategorySupportsDelivery(existingProduct.getCategory())) {
+            existingProduct.setDelivery("NO");
+            existingProduct.setDeliveryFee(null);
+            existingProduct.setDeliveryAllMorocco(false);
+            existingProduct.setDeliveryZones(null);
+            existingProduct.setDeliveryTime(null);
+        }
 
         // Enregistrer le produit mis à jour
         Product updatedProduct = productRepository.save(existingProduct);
@@ -289,21 +307,7 @@ public class ProductServiceImpl implements ProductService {
         return recommendedPage.map(productMapper::toProductListingDTO);
     }
 
-    @Override
-    public List<ProductListingDTO> searchProductSuggestions(String query, int limit) {
-        log.info("Service: Recherche des suggestions de produits pour le terme: {}", query);
 
-        if (query == null || query.trim().isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        PageRequest pageable = PageRequest.of(0, limit);
-        List<Product> products = productRepository.findTop10ByTitleContainingIgnoreCase(query, pageable);
-
-        return products.stream()
-                .map(productMapper::toProductListingDTO)
-                .collect(Collectors.toList());
-    }
 
 
     @Override
@@ -369,17 +373,21 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductDoc> searchProductSuggestionsElastic(String query) {
+    public List<ProductDoc> searchProductSuggestionsElastic(String query, String category, int limit) {
         log.info("Service: Recherche des suggestions de produits pour le terme: {} - Using Elastic Search", query);
 
+        // Validation de l'entrée
         if (query == null || query.trim().isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<ProductDoc> products = productDocRepository.findTop10ByTitleOrDescription(query);
-        return products;
-    }
+        // Limiter le nombre de résultats
+        int maxResults = Math.min(limit, 10);
 
+        // Rechercher les produits via Elasticsearch avec la catégorie spécifiée
+        List<ProductDoc> productDocs = productDocRepository.findTop10ByTitleOrDescription(query, category);
+        return productDocs;
+    }
 
     @Override
     public ProductResponseDTO approveProduct(UUID productId) throws ResourceNotFoundException, NotAuthorizedException {
@@ -693,5 +701,147 @@ public class ProductServiceImpl implements ProductService {
 
         return statusCounts;
     }
+
+
+    private boolean isCategorySupportsDelivery(ProductCategory category) {
+        // Liste des catégories qui ne supportent PAS la livraison
+        List<ProductCategory> nonDeliverableCategories = Arrays.asList(
+                ProductCategory.CARS,
+                ProductCategory.MOTORCYCLES,
+                ProductCategory.BICYCLES,
+                ProductCategory.VEHICLE_PARTS,
+                ProductCategory.TRUCKS_AND_MACHINERY,
+                ProductCategory.BOATS,
+                ProductCategory.OTHER_VEHICLES,
+                ProductCategory.REAL_ESTATE_SALES,
+                ProductCategory.APARTMENTS_FOR_SALE,
+                ProductCategory.HOUSES_FOR_SALE,
+                ProductCategory.VILLAS_RIADS_FOR_SALE,
+                ProductCategory.OFFICES_FOR_SALE,
+                ProductCategory.COMMERCIAL_SPACES_FOR_SALE,
+                ProductCategory.LAND_AND_FARMS_FOR_SALE,
+                ProductCategory.OTHER_REAL_ESTATE_FOR_SALE,
+                ProductCategory.REAL_ESTATE_RENTALS,
+                ProductCategory.APARTMENTS_FOR_RENT,
+                ProductCategory.HOUSES_FOR_RENT,
+                ProductCategory.VILLAS_RIADS_FOR_RENT,
+                ProductCategory.OFFICES_FOR_RENT,
+                ProductCategory.COMMERCIAL_SPACES_FOR_RENT,
+                ProductCategory.LAND_AND_FARMS_FOR_RENT,
+                ProductCategory.OTHER_REAL_ESTATE_FOR_RENT
+        );
+
+        return !nonDeliverableCategories.contains(category);
+    }
+
+    @Override
+    public Page<ProductListingDTO> getProductsByMainCategory(String mainCategory, Pageable pageable) {
+        log.info("Service: Fetching products for main category: {}", mainCategory);
+
+        try {
+            // Valider que la catégorie principale existe
+            ProductCategory mainCat = ProductCategory.valueOf(mainCategory.toUpperCase());
+
+            // Obtenir la liste des sous-catégories pour cette catégorie principale
+            List<ProductCategory> subCategories = getSubcategoriesForMainCategory(mainCat);
+
+            // Si aucune sous-catégorie n'est trouvée, retourner une page vide
+            if (subCategories.isEmpty()) {
+                return Page.empty(pageable);
+            }
+
+            // Création d'une spécification pour filtrer par statut ACTIVE et par les sous-catégories
+            Specification<Product> spec = ProductSpecifications.hasStatus(ProductStatus.ACTIVE);
+
+            // Ajouter les sous-catégories à la spécification avec des OR
+            Specification<Product> categorySpec = null;
+            for (ProductCategory category : subCategories) {
+                if (categorySpec == null) {
+                    categorySpec = ProductSpecifications.hasCategory(category);
+                } else {
+                    categorySpec = categorySpec.or(ProductSpecifications.hasCategory(category));
+                }
+            }
+
+            // Combiner les spécifications
+            if (categorySpec != null) {
+                spec = spec.and(categorySpec);
+            }
+
+            // Exécuter la requête avec la spécification
+            Page<Product> productsPage = productRepository.findAll(spec, pageable);
+            log.info("Service: Found {} products for main category {}", productsPage.getTotalElements(), mainCategory);
+
+            return productsPage.map(productMapper::toProductListingDTO);
+        } catch (IllegalArgumentException e) {
+            log.error("Service: Invalid main category: {}", mainCategory);
+            throw new ResourceNotValidException("Invalid main category: " + mainCategory);
+        }
+    }
+
+    /**
+     * Renvoie la liste des sous-catégories pour une catégorie principale donnée
+     * @param mainCategory La catégorie principale
+     * @return Liste des sous-catégories
+     */
+    private List<ProductCategory> getSubcategoriesForMainCategory(ProductCategory mainCategory) {
+        List<ProductCategory> allCategories = Arrays.asList(ProductCategory.values());
+
+        switch (mainCategory) {
+            case MARKET:
+                return Arrays.asList(
+                        ProductCategory.SMARTPHONES_AND_TELEPHONES,
+                        ProductCategory.TABLETS_AND_E_BOOKS,
+                        ProductCategory.LAPTOPS,
+                        ProductCategory.DESKTOP_COMPUTERS,
+                        ProductCategory.TELEVISIONS,
+                        ProductCategory.ELECTRO_MENAGE,
+                        ProductCategory.ACCESSORIES_FOR_SMARTPHONES_AND_TABLETS,
+                        ProductCategory.SMARTWATCHES_AND_ACCESSORIES,
+                        ProductCategory.AUDIO_AND_HIFI,
+                        ProductCategory.COMPUTER_COMPONENTS,
+                        ProductCategory.STORAGE_AND_PERIPHERALS,
+                        ProductCategory.PRINTERS_AND_SCANNERS,
+                        ProductCategory.DRONES_AND_ACCESSORIES,
+                        ProductCategory.NETWORK_EQUIPMENT,
+                        ProductCategory.SMART_HOME_DEVICES,
+                        ProductCategory.GAMING_ACCESSORIES,
+                        ProductCategory.PHOTO_AND_VIDEO_EQUIPMENT,
+                        ProductCategory.OTHER_CATEGORIES
+                );
+            case VEHICLES:
+                return Arrays.asList(
+                        ProductCategory.CARS,
+                        ProductCategory.MOTORCYCLES,
+                        ProductCategory.BICYCLES,
+                        ProductCategory.VEHICLE_PARTS,
+                        ProductCategory.TRUCKS_AND_MACHINERY,
+                        ProductCategory.BOATS,
+                        ProductCategory.OTHER_VEHICLES
+                );
+            case REAL_ESTATE:
+                return Arrays.asList(
+                        ProductCategory.REAL_ESTATE_SALES,
+                        ProductCategory.APARTMENTS_FOR_SALE,
+                        ProductCategory.HOUSES_FOR_SALE,
+                        ProductCategory.VILLAS_RIADS_FOR_SALE,
+                        ProductCategory.OFFICES_FOR_SALE,
+                        ProductCategory.COMMERCIAL_SPACES_FOR_SALE,
+                        ProductCategory.LAND_AND_FARMS_FOR_SALE,
+                        ProductCategory.OTHER_REAL_ESTATE_FOR_SALE,
+                        ProductCategory.REAL_ESTATE_RENTALS,
+                        ProductCategory.APARTMENTS_FOR_RENT,
+                        ProductCategory.HOUSES_FOR_RENT,
+                        ProductCategory.VILLAS_RIADS_FOR_RENT,
+                        ProductCategory.OFFICES_FOR_RENT,
+                        ProductCategory.COMMERCIAL_SPACES_FOR_RENT,
+                        ProductCategory.LAND_AND_FARMS_FOR_RENT,
+                        ProductCategory.OTHER_REAL_ESTATE_FOR_RENT
+                );
+            default:
+                return Collections.emptyList();
+        }
+    }
+
 
 }

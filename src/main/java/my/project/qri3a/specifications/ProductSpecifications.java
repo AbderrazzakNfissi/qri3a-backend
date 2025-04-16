@@ -3,6 +3,7 @@ package my.project.qri3a.specifications;
 import my.project.qri3a.entities.Product;
 import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductCondition;
+import my.project.qri3a.enums.ProductStatus;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
@@ -54,6 +55,16 @@ public class ProductSpecifications {
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), likePattern)
             );
         };
+    }
+
+    /**
+     * Crée une spécification pour filtrer les produits par statut
+     * @param status Le statut à filtrer
+     * @return Une spécification pour filtrer par statut
+     */
+    public static Specification<Product> hasStatus(ProductStatus status) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("status"), status);
     }
 
 }

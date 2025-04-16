@@ -19,6 +19,6 @@ public interface ProductDocRepositoryCustom {
                                            String delivery,
                                            Pageable pageable);
 
-    List<ProductDoc> findTop10ByTitleOrDescription(String title);
-    
+    List<ProductDoc> findTop10ByTitleOrDescription(String title, String category);
+
 }

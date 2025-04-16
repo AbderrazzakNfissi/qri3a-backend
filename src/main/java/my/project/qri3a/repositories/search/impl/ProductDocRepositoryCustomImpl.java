@@ -1,10 +1,14 @@
 package my.project.qri3a.repositories.search.impl;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductStatus;
 import org.springframework.data.domain.*;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -36,6 +40,56 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
     private static final String SCORE_FIELD = "_score";
     private static final int MAX_SEARCH_RESULTS = 10;
 
+    // Définir les mappings des catégories principales vers leurs sous-catégories
+    private static final Set<String> MARKET_SUBCATEGORIES = new HashSet<>(Arrays.asList(
+            ProductCategory.SMARTPHONES_AND_TELEPHONES.toString(),
+            ProductCategory.TABLETS_AND_E_BOOKS.toString(),
+            ProductCategory.LAPTOPS.toString(),
+            ProductCategory.DESKTOP_COMPUTERS.toString(),
+            ProductCategory.TELEVISIONS.toString(),
+            ProductCategory.ELECTRO_MENAGE.toString(),
+            ProductCategory.ACCESSORIES_FOR_SMARTPHONES_AND_TABLETS.toString(),
+            ProductCategory.SMARTWATCHES_AND_ACCESSORIES.toString(),
+            ProductCategory.AUDIO_AND_HIFI.toString(),
+            ProductCategory.COMPUTER_COMPONENTS.toString(),
+            ProductCategory.STORAGE_AND_PERIPHERALS.toString(),
+            ProductCategory.PRINTERS_AND_SCANNERS.toString(),
+            ProductCategory.DRONES_AND_ACCESSORIES.toString(),
+            ProductCategory.NETWORK_EQUIPMENT.toString(),
+            ProductCategory.SMART_HOME_DEVICES.toString(),
+            ProductCategory.GAMING_ACCESSORIES.toString(),
+            ProductCategory.PHOTO_AND_VIDEO_EQUIPMENT.toString()
+    ));
+
+    private static final Set<String> VEHICLES_SUBCATEGORIES = new HashSet<>(Arrays.asList(
+            ProductCategory.CARS.toString(),
+            ProductCategory.MOTORCYCLES.toString(),
+            ProductCategory.BICYCLES.toString(),
+            ProductCategory.VEHICLE_PARTS.toString(),
+            ProductCategory.TRUCKS_AND_MACHINERY.toString(),
+            ProductCategory.BOATS.toString(),
+            ProductCategory.OTHER_VEHICLES.toString()
+    ));
+
+    private static final Set<String> REAL_ESTATE_SUBCATEGORIES = new HashSet<>(Arrays.asList(
+            ProductCategory.REAL_ESTATE_SALES.toString(),
+            ProductCategory.APARTMENTS_FOR_SALE.toString(),
+            ProductCategory.HOUSES_FOR_SALE.toString(),
+            ProductCategory.VILLAS_RIADS_FOR_SALE.toString(),
+            ProductCategory.OFFICES_FOR_SALE.toString(),
+            ProductCategory.COMMERCIAL_SPACES_FOR_SALE.toString(),
+            ProductCategory.LAND_AND_FARMS_FOR_SALE.toString(),
+            ProductCategory.OTHER_REAL_ESTATE_FOR_SALE.toString(),
+            ProductCategory.REAL_ESTATE_RENTALS.toString(),
+            ProductCategory.APARTMENTS_FOR_RENT.toString(),
+            ProductCategory.HOUSES_FOR_RENT.toString(),
+            ProductCategory.VILLAS_RIADS_FOR_RENT.toString(),
+            ProductCategory.OFFICES_FOR_RENT.toString(),
+            ProductCategory.COMMERCIAL_SPACES_FOR_RENT.toString(),
+            ProductCategory.LAND_AND_FARMS_FOR_RENT.toString(),
+            ProductCategory.OTHER_REAL_ESTATE_FOR_RENT.toString()
+    ));
+
     private final ElasticsearchOperations elasticsearchOperations;
 
     @Override
@@ -64,24 +118,58 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
     }
 
     @Override
-    public List<ProductDoc> findTop10ByTitleOrDescription(String title) {
+    public List<ProductDoc> findTop10ByTitleOrDescription(String title, String category) {
+        log.debug("Finding top 10 products with search term: {} and category: {}", title, category);
+
         if (!StringUtils.hasText(title)) {
             return Collections.emptyList();
         }
 
-        // Construire les critères de recherche
+        // Construire les critères de recherche de base (similaire à searchProductsElastic)
         Criteria criteria = buildBaseCriteria(title);
+
+        // S'assurer que nous ne récupérons que les produits actifs
         criteria = criteria.and(new Criteria(STATUS_FIELD).is(ProductStatus.ACTIVE.toString()));
 
-        // Créer et exécuter la requête limitée à 10 résultats
-        CriteriaQuery query = new CriteriaQuery(criteria);
-        query.setPageable(PageRequest.of(0, MAX_SEARCH_RESULTS));
+        // Ajouter le filtre de catégorie s'il est spécifié (même logique que searchProductsElastic)
+        if (StringUtils.hasText(category)) {
+            addCategoryFilter(criteria, category);
+        }
 
+        // Créer un Pageable avec tri par pertinence (score) puis par date
+        Sort sort = Sort.by(Sort.Order.desc(SCORE_FIELD), Sort.Order.desc(CREATED_AT_FIELD));
+        Pageable pageable = PageRequest.of(0, MAX_SEARCH_RESULTS, sort);
+
+        // Créer et exécuter la requête
+        CriteriaQuery query = new CriteriaQuery(criteria, pageable);
         SearchHits<ProductDoc> searchHits = elasticsearchOperations.search(query, ProductDoc.class);
+
+        // Convertir et retourner les résultats
         return searchHits.get()
                 .map(SearchHit::getContent)
                 .collect(Collectors.toList());
     }
+
+
+//    @Override
+//    public List<ProductDoc> findTop10ByTitleOrDescription(String title) {
+//        if (!StringUtils.hasText(title)) {
+//            return Collections.emptyList();
+//        }
+//
+//        // Construire les critères de recherche
+//        Criteria criteria = buildBaseCriteria(title);
+//        criteria = criteria.and(new Criteria(STATUS_FIELD).is(ProductStatus.ACTIVE.toString()));
+//
+//        // Créer et exécuter la requête limitée à 10 résultats
+//        CriteriaQuery query = new CriteriaQuery(criteria);
+//        query.setPageable(PageRequest.of(0, MAX_SEARCH_RESULTS));
+//
+//        SearchHits<ProductDoc> searchHits = elasticsearchOperations.search(query, ProductDoc.class);
+//        return searchHits.get()
+//                .map(SearchHit::getContent)
+//                .collect(Collectors.toList());
+//    }
 
     // Méthodes privées d'assistance
 
@@ -103,7 +191,6 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
         return baseCriteria;
     }
 
-
     private void addFilterCriteria(Criteria criteria,
                                    String category,
                                    String location,
@@ -113,7 +200,7 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
                                    String city,
                                    String delivery) {
         // Ajouter les filtres si fournis
-        addStringFilter(criteria, CATEGORY_FIELD, category);
+        addCategoryFilter(criteria, category);
         addStringFilter(criteria, LOCATION_FIELD, location);
         addStringFilter(criteria, CONDITION_FIELD, condition);
         addStringFilter(criteria, CITY_FIELD, city);
@@ -125,6 +212,36 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
         }
         if (maxPrice != null) {
             criteria = criteria.and(new Criteria(PRICE_FIELD).lessThanEqual(maxPrice));
+        }
+    }
+
+    /**
+     * Ajoute un filtre de catégorie qui prend en compte les catégories principales
+     * et leurs sous-catégories associées.
+     *
+     * @param criteria Les critères de recherche existants
+     * @param category La catégorie à filtrer
+     */
+    private void addCategoryFilter(Criteria criteria, String category) {
+        if (!StringUtils.hasText(category)) {
+            return;
+        }
+
+        String trimmedCategory = category.trim();
+
+        // Vérifier si c'est une catégorie principale et construire une requête OR avec toutes les sous-catégories
+        if (trimmedCategory.equals(ProductCategory.MARKET.toString())) {
+            Criteria categoryCriteria = new Criteria(CATEGORY_FIELD).in(MARKET_SUBCATEGORIES);
+            criteria = criteria.and(categoryCriteria);
+        } else if (trimmedCategory.equals(ProductCategory.VEHICLES.toString())) {
+            Criteria categoryCriteria = new Criteria(CATEGORY_FIELD).in(VEHICLES_SUBCATEGORIES);
+            criteria = criteria.and(categoryCriteria);
+        } else if (trimmedCategory.equals(ProductCategory.REAL_ESTATE.toString())) {
+            Criteria categoryCriteria = new Criteria(CATEGORY_FIELD).in(REAL_ESTATE_SUBCATEGORIES);
+            criteria = criteria.and(categoryCriteria);
+        } else {
+            // Si ce n'est pas une catégorie principale, appliquer le filtre normal
+            criteria = criteria.and(new Criteria(CATEGORY_FIELD).is(trimmedCategory));
         }
     }
 
@@ -195,4 +312,6 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
         // Enlever les espaces de début et de fin
         return escaped.trim();
     }
+
+
 }

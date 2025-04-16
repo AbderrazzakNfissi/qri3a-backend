@@ -158,20 +158,7 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/search-suggestions")
-    public ResponseEntity<ApiResponse<List<ProductListingDTO>>> getSearchSuggestions(
-            @RequestParam String query,
-            @RequestParam(defaultValue = "10") int limit
-    ) {
-        log.info("Controller: Récupération des suggestions de recherche pour le terme: {}", query);
-        List<ProductListingDTO> suggestions = productService.searchProductSuggestions(query, limit);
-        ApiResponse<List<ProductListingDTO>> response = new ApiResponse<>(
-                suggestions,
-                "Suggestions de recherche récupérées avec succès.",
-                HttpStatus.OK.value()
-        );
-        return ResponseEntity.ok(response);
-    }
+
 
     /*
     @GetMapping("/search")
@@ -285,13 +272,14 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/suggestions")
+    @GetMapping("/search-suggestions")
     public ResponseEntity<ApiResponse<List<ProductSuggestionDTO>>> getSuggestions(
             @RequestParam String query,
+            @RequestParam(required = false) String category,
             @RequestParam(defaultValue = "10") int limit) {
 
         log.info("Controller: Récupération des suggestions de recherche pour le terme: {} using Elastic Search", query);
-        List<ProductDoc> suggestions = productService.searchProductSuggestionsElastic(query);
+        List<ProductDoc> suggestions = productService.searchProductSuggestionsElastic(query,category,limit);
 
         List<ProductSuggestionDTO> suggestionDTOs = suggestions.stream()
                 .limit(limit)
@@ -387,23 +375,7 @@ public class ProductController {
     }
 
 
-//    /**
-//     * Get products with ACTIVE status
-//     * GET /api/v1/products/active
-//     */
-//    @GetMapping("/active")
-//    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getActiveProducts(Pageable pageable) {
-//        log.info("Controller: Fetching active products with pagination: page={}, size={}, sort={}",
-//                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
-//
-//        Page<ProductListingDTO> productsPage = productService.getActiveProducts(pageable);
-//        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
-//                productsPage,
-//                "Active products fetched successfully.",
-//                HttpStatus.OK.value()
-//        );
-//        return ResponseEntity.ok(response);
-//    }
+
 
     /**
      * Get products with MODERATION status
@@ -424,24 +396,7 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-//    /**
-//     * Get products with REJECTED status
-//     * GET /api/v1/products/rejected
-//     */
-//    @GetMapping("/rejected")
-//    //@PreAuthorize("hasRole('ADMIN')")
-//    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getRejectedProducts(Pageable pageable) {
-//        log.info("Controller: Fetching rejected products with pagination: page={}, size={}, sort={}",
-//                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
-//
-//        Page<ProductListingDTO> productsPage = productService.getRejectedProducts(pageable);
-//        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
-//                productsPage,
-//                "Rejected products fetched successfully.",
-//                HttpStatus.OK.value()
-//        );
-//        return ResponseEntity.ok(response);
-//    }
+
 
     /**
      * Get authenticated user's products with ACTIVE status
@@ -542,6 +497,27 @@ public class ProductController {
         ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
                 productsPage,
                 "Your deactivated products fetched successfully.",
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+
+    /**
+     * GET /api/v1/products/main-category/{mainCategory}
+     * Récupère les produits filtrés par catégorie principale
+     */
+    @GetMapping("/main-category/{mainCategory}")
+    public ResponseEntity<ApiResponse<Page<ProductListingDTO>>> getProductsByMainCategory(
+            @PathVariable String mainCategory,
+            Pageable pageable) {
+        log.info("Controller: Fetching products for main category: {} with pagination: page={}, size={}, sort={}",
+                mainCategory, pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+
+        Page<ProductListingDTO> productsPage = productService.getProductsByMainCategory(mainCategory, pageable);
+        ApiResponse<Page<ProductListingDTO>> response = new ApiResponse<>(
+                productsPage,
+                "Products fetched successfully for main category " + mainCategory,
                 HttpStatus.OK.value()
         );
         return ResponseEntity.ok(response);

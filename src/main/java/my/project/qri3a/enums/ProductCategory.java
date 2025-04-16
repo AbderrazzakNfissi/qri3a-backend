@@ -1,6 +1,7 @@
 package my.project.qri3a.enums;
 
 public enum ProductCategory {
+    // Catégories existantes
     SMARTPHONES_AND_TELEPHONES,
     TABLETS_AND_E_BOOKS,
     LAPTOPS,
@@ -18,5 +19,40 @@ public enum ProductCategory {
     SMART_HOME_DEVICES,
     GAMING_ACCESSORIES,
     PHOTO_AND_VIDEO_EQUIPMENT,
-    ALL_CATEGORIES
+
+    // Nouvelles catégories - Catégories principales
+    MARKET,
+    VEHICLES,
+    REAL_ESTATE,
+
+    // Nouvelles sous-catégories pour VEHICLES
+    CARS,
+    MOTORCYCLES,
+    BICYCLES,
+    VEHICLE_PARTS,
+    TRUCKS_AND_MACHINERY,
+    BOATS,
+    OTHER_VEHICLES,
+
+    // Nouvelles sous-catégories pour REAL_ESTATE
+    REAL_ESTATE_SALES,
+    APARTMENTS_FOR_SALE,
+    HOUSES_FOR_SALE,
+    VILLAS_RIADS_FOR_SALE,
+    OFFICES_FOR_SALE,
+    COMMERCIAL_SPACES_FOR_SALE,
+    LAND_AND_FARMS_FOR_SALE,
+    OTHER_REAL_ESTATE_FOR_SALE,
+    REAL_ESTATE_RENTALS,
+    APARTMENTS_FOR_RENT,
+    HOUSES_FOR_RENT,
+    VILLAS_RIADS_FOR_RENT,
+    OFFICES_FOR_RENT,
+    COMMERCIAL_SPACES_FOR_RENT,
+    LAND_AND_FARMS_FOR_RENT,
+    OTHER_REAL_ESTATE_FOR_RENT,
+
+    // Catégorie par défaut pour compatibilité
+    ALL_CATEGORIES,
+    OTHER_CATEGORIES
 }

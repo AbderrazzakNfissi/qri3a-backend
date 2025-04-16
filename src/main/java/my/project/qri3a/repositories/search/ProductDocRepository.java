@@ -14,8 +14,6 @@ public interface ProductDocRepository extends ElasticsearchRepository<ProductDoc
 
     Page<ProductDoc> findByStatusOrderByCreatedAtDesc(String status, Pageable pageable);
     Page<ProductDoc> findProductDocByTitleOrDescription(String title,String description, Pageable pageable);
-    List<ProductDoc> findTop10ByTitleOrDescription(String title);
-
     /**
      * Supprime tous les documents produits dont l'ID est présent dans la liste spécifiée
      * @param ids Liste des IDs de produits à supprimer
