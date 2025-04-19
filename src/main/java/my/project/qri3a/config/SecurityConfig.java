@@ -56,6 +56,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/public/contact").permitAll()
                         .requestMatchers(HttpMethod.GET, "/sitemap.xml").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/seo/sitemap-*.xml").permitAll()
                         .requestMatchers(HttpMethod.GET, "/robots.txt").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/seller-profile/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/my").authenticated()

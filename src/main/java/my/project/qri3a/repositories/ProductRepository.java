@@ -107,4 +107,13 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
      * @return Le produit correspondant au slug
      */
     Optional<Product> findBySlug(String slug);
+
+    /**
+     * Trouve des produits par statut et catégorie, triés par date de création décroissante
+     * @param status Le statut des produits
+     * @param category La catégorie des produits
+     * @param pageable Information de pagination
+     * @return Une page de produits correspondant aux critères
+     */
+    Page<Product> findByStatusAndCategoryOrderByCreatedAtDesc(ProductStatus status, ProductCategory category, Pageable pageable);
 }
