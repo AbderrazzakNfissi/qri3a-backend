@@ -6,6 +6,7 @@ import lombok.*;
 import my.project.qri3a.enums.ProductCategory;
 import my.project.qri3a.enums.ProductCondition;
 import my.project.qri3a.enums.ProductStatus;
+import my.project.qri3a.utils.SlugGenerator;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -17,7 +18,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+        @Index(name = "idx_product_slug", columnList = "slug")
+})
 @Getter
 @Setter
 @Builder
@@ -33,6 +36,9 @@ public class Product {
 
     @Column(nullable = false)
     private String title;
+
+    @Column(nullable = true, unique = true, length = 255)
+    private String slug;
 
     @Column(nullable = true)
     private String city;
@@ -123,6 +129,14 @@ public class Product {
     public void removeScamReport(Scam scam) {
         scamReports.remove(scam);
         scam.setReportedProduct(null);
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void generateSlug() {
+        if (id != null && title != null) {
+            this.slug = SlugGenerator.generateProductSlug(title, id.toString());
+        }
     }
 
     @Override

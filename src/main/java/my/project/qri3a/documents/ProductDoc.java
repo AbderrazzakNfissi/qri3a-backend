@@ -27,6 +27,9 @@ public class ProductDoc {
 
     @Field(type = FieldType.Text)
     private String title;
+    
+    @Field(type = FieldType.Keyword)
+    private String slug;
 
     @Field(type = FieldType.Text)
     private String description;

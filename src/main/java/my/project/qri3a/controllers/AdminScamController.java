@@ -28,7 +28,7 @@ import java.util.UUID;
 @Slf4j
 public class AdminScamController {
 
-    private final ScamService scamService;
+    private final ScamService scamService ;
 
     /**
      * Récupère tous les signalements d'arnaque avec pagination.

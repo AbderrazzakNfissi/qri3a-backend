@@ -152,6 +152,46 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toDTO(product);
     }
 
+    /**
+     * Récupère un produit par son slug SEO-friendly
+     * 
+     * @param slug Le slug du produit à récupérer
+     * @param authentication Les informations d'authentification de l'utilisateur
+     * @return Les détails du produit
+     * @throws ResourceNotFoundException si le produit n'est pas trouvé
+     */
+    @Override
+    public ProductResponseDTO getProductBySlug(String slug, Authentication authentication) throws ResourceNotFoundException {
+        log.info("Service: Fetching product with slug: {}", slug);
+
+        Product product = productRepository.findBySlug(slug)
+                .orElseThrow(() -> {
+                    log.warn("Service: Product not found with slug: {}", slug);
+                    return new ResourceNotFoundException("Product not found with slug " + slug);
+                });
+
+        // Si le produit n'est pas actif, vérifier si l'authentification existe
+        if (product.getStatus() != ProductStatus.ACTIVE) {
+            // Si l'utilisateur n'est pas authentifié, on rejette l'accès
+            if (authentication == null) {
+                log.warn("Service: Unauthenticated access attempt to non-active product with slug: {}", slug);
+                throw new NotAuthorizedException("You must be logged in to view this product");
+            }
+
+            // Obtenir l'utilisateur authentifié
+            String email = authentication.getName();
+            User currentUser = userService.getUserByEmail(email);
+
+            // Vérifier si l'utilisateur est le propriétaire du produit
+            if (!product.getSeller().getId().equals(currentUser.getId())) {
+                log.warn("Service: Unauthorized access to non-active product with slug: {}", slug);
+                throw new NotAuthorizedException("You are not authorized to view this product");
+            }
+        }
+
+        return productMapper.toDTO(product);
+    }
+
     @Override
     public ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO, Authentication authentication) throws ResourceNotFoundException, ResourceNotValidException {
         log.info("Service: Creating product with title: {}", productRequestDTO.getTitle());
@@ -175,6 +215,10 @@ public class ProductServiceImpl implements ProductService {
         // Enregistrer le produit
         Product savedProduct = productRepository.save(product);
         log.info("Service: Product created with ID: {}", savedProduct.getId());
+        
+        // Ajouter l'indexation pour le SEO
+        productIndexService.indexProduct(savedProduct, savedProduct.getImages().size());
+        log.info("Service: Product indexed for SEO with ID: {}", savedProduct.getId());
 
         return productMapper.toDTO(savedProduct);
     }

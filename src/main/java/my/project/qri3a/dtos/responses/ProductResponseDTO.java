@@ -12,6 +12,7 @@ import java.util.UUID;
 public class ProductResponseDTO {
     private UUID id;
     private String title;
+    private String slug;
     private String description;
     private BigDecimal price;
     private String location;

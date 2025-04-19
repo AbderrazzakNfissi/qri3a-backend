@@ -78,7 +78,7 @@ services:
     image: qri3a-image
     container_name: qri3a-container
     ports:
-      - "8081:8081"
+      - "0.0.0.0:8081:8081"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/qri3adb
       SPRING_DATASOURCE_USERNAME: qri3a5432

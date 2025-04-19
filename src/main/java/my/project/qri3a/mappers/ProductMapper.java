@@ -163,7 +163,7 @@ public class ProductMapper {
 
     public ProductDoc toProductDoc(Product product, int nbOfImages) {
         LocalDateTime createdAt = product.getCreatedAt();
-        String createdAtStr = "";
+        String createdAtStr = null; // Initialisez à null au lieu de chaîne vide
         if (createdAt != null) {
             // Convert LocalDateTime to ZonedDateTime with UTC timezone
             ZonedDateTime utcDateTime = createdAt.atZone(ZoneId.systemDefault())
@@ -183,6 +183,7 @@ public class ProductMapper {
         return ProductDoc.builder()
                 .id(product.getId())
                 .title(product.getTitle())
+                .slug(product.getSlug())
                 .description(product.getDescription())
                 .price(product.getPrice())
                 .location(product.getLocation())
@@ -190,7 +191,7 @@ public class ProductMapper {
                 .status(product.getStatus().toString())
                 .category(product.getCategory().name())
                 .condition(product.getCondition().name())
-                .createdAt(createdAtStr)
+                .createdAt(createdAtStr) // Cette valeur peut maintenant être null
                 .firstImageUrl(imageDTOs.isEmpty() ? null : imageDTOs.get(0).getUrl())
                 .numberOfImages(nbOfImages == 0 ? imageDTOs.size() : nbOfImages)
                 // Ajout des informations de livraison
@@ -201,5 +202,4 @@ public class ProductMapper {
                 .deliveryTime(product.getDeliveryTime())
                 .build();
     }
-
 }

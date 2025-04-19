@@ -169,4 +169,12 @@ public interface ProductService {
      */
     Page<ProductListingDTO> getProductsByMainCategory(String mainCategory, Pageable pageable);
 
+    /**
+     * Récupère un produit par son slug SEO-friendly
+     * @param slug Le slug du produit à récupérer
+     * @param authentication Les informations d'authentification de l'utilisateur
+     * @return Les détails du produit
+     * @throws ResourceNotFoundException si le produit n'est pas trouvé
+     */
+    ProductResponseDTO getProductBySlug(String slug, Authentication authentication) throws ResourceNotFoundException;
 }

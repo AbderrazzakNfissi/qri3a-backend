@@ -16,6 +16,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
@@ -63,6 +64,13 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     Page<Product> findByStatusOrderByCreatedAtDesc(ProductStatus status, Pageable pageable);
 
     /**
+     * Récupère tous les produits avec un statut spécifique
+     * @param status Le statut des produits à récupérer
+     * @return Liste des produits ayant le statut spécifié
+     */
+    List<Product> findByStatus(ProductStatus status);
+
+    /**
      * Count products by seller and group by status
      * @param sellerId The ID of the seller/owner
      * @return List of Object arrays containing status and count
@@ -92,4 +100,11 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
      */
     @Query("SELECT p.status, COUNT(p) FROM Product p GROUP BY p.status")
     List<Object[]> countGroupByStatus();
+
+    /**
+     * Trouve un produit par son slug SEO-friendly
+     * @param slug Le slug à rechercher
+     * @return Le produit correspondant au slug
+     */
+    Optional<Product> findBySlug(String slug);
 }

@@ -7,6 +7,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import my.project.qri3a.enums.ProductStatus;
+import my.project.qri3a.seo.JsonLdGenerator;
+import my.project.qri3a.services.SearchTermService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +48,8 @@ import my.project.qri3a.services.ProductService;
 public class ProductController {
 
     private final ProductService productService;
+    private final JsonLdGenerator jsonLdGenerator;
+    private final SearchTermService searchTermService;
 
     /**
      * GET /api/v1/products
@@ -74,12 +78,45 @@ public class ProductController {
 
     /**
      * GET /api/v1/products/{id}
+     * Endpoint enrichi avec des métadonnées JSON-LD pour le SEO
      */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> getProductById(@PathVariable UUID id, Authentication authentication) throws ResourceNotFoundException {
         log.info("Controller: Fetching product with ID: {}", id);
         ProductResponseDTO productResponseDTO = productService.getProductById(id, authentication);
-        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(productResponseDTO, "Product fetched successfully.", HttpStatus.OK.value());
+        
+        // Génération des métadonnées JSON-LD pour le SEO
+        String jsonLdContent = jsonLdGenerator.generateProductJsonLd(productResponseDTO);
+        
+        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
+            productResponseDTO, 
+            "Product fetched successfully.", 
+            HttpStatus.OK.value(),
+            jsonLdContent  // Inclure le JSON-LD dans la réponse
+        );
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /api/v1/products/s/{slug}
+     * Endpoint pour récupérer un produit par son slug (SEO-friendly URL)
+     */
+    @GetMapping("/s/{slug}")
+    public ResponseEntity<ApiResponse<ProductResponseDTO>> getProductBySlug(@PathVariable String slug, Authentication authentication) throws ResourceNotFoundException {
+        log.info("Controller: Fetching product with slug: {}", slug);
+        ProductResponseDTO productResponseDTO = productService.getProductBySlug(slug, authentication);
+        
+        // Génération des métadonnées JSON-LD pour le SEO
+        String jsonLdContent = jsonLdGenerator.generateProductJsonLd(productResponseDTO);
+        
+        ApiResponse<ProductResponseDTO> response = new ApiResponse<>(
+            productResponseDTO, 
+            "Product fetched successfully.", 
+            HttpStatus.OK.value(),
+            jsonLdContent  // Inclure le JSON-LD dans la réponse
+        );
+        
         return ResponseEntity.ok(response);
     }
 
@@ -218,6 +255,9 @@ public class ProductController {
         log.info("Controller: Recherche de produits avec le terme: {} et filtres - category: {}, location: {}, condition: {}, minPrice: {}, maxPrice: {}, city: {}",
                 query, category, location, condition, minPrice, maxPrice, city);
 
+        // Enregistrer le terme de recherche pour l'analyse SEO
+        searchTermService.recordSearchTerm(query, category, location);
+
         String[] sortParams = sort.split(",");
         Sort sortOrder = Sort.by(Sort.Direction.fromString(sortParams[1]), sortParams[0]);
         Pageable pageable = PageRequest.of(page, size, sortOrder);
@@ -244,10 +284,13 @@ public class ProductController {
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) String city,
-            @RequestParam(required = false) String delivery) {  // Nouveau paramètre
+            @RequestParam(required = false) String delivery) {
 
         log.info("Controller: Elasticsearch search with query: {} and filters - category: {}, location: {}, condition: {}, minPrice: {}, maxPrice: {}, city: {}, delivery: {}",
                 query, category, location, condition, minPrice, maxPrice, city, delivery);
+
+        // Enregistrer le terme de recherche pour l'analyse SEO
+        searchTermService.recordSearchTerm(query, category, location);
 
         Pageable pageable = PageRequest.of(page, size);
         Page<ProductDoc> results = productService.searchProductsElastic(query, pageable, category, location, condition, minPrice, maxPrice, city, delivery);
@@ -523,8 +566,37 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-
-
-
+    /**
+     * GET /api/v1/products/popular-searches
+     * Récupère les termes de recherche populaires
+     */
+    @GetMapping("/popular-searches")
+    public ResponseEntity<ApiResponse<List<String>>> getPopularSearchTerms(
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(required = false) String category) {
+        
+        log.info("Controller: Récupération des termes de recherche populaires, catégorie: {}, limite: {}", category, limit);
+        
+        List<String> popularTerms;
+        if (category != null && !category.isEmpty()) {
+            popularTerms = searchTermService.getTopSearchTermsByCategory(category, limit)
+                    .stream()
+                    .map(term -> term.getTerm())
+                    .collect(Collectors.toList());
+        } else {
+            popularTerms = searchTermService.getTopSearchTerms(limit)
+                    .stream()
+                    .map(term -> term.getTerm())
+                    .collect(Collectors.toList());
+        }
+        
+        ApiResponse<List<String>> response = new ApiResponse<>(
+                popularTerms,
+                "Termes de recherche populaires récupérés avec succès.",
+                HttpStatus.OK.value()
+        );
+        
+        return ResponseEntity.ok(response);
+    }
 
 }

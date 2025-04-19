@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,5 +27,12 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
     @Query(value = "DELETE FROM user_wishlist WHERE user_id = :userId", nativeQuery = true)
     void deleteAllUserWishlistEntries(@Param("userId") UUID userId);
 
-
+    /**
+     * Trouve tous les vendeurs actifs qui ont au moins un produit actif
+     * Utilisé pour la génération du sitemap
+     * 
+     * @return Liste des vendeurs actifs avec des produits
+     */
+    @Query("SELECT DISTINCT u FROM User u JOIN Product p ON p.seller.id = u.id WHERE p.status = 'ACTIVE' AND u.blocked = false")
+    List<User> findActiveSellersWithProducts();
 }

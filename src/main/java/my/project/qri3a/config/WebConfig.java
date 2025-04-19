@@ -8,12 +8,27 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.Arrays;
 
 @Configuration
 @EnableWebMvc
-public class WebConfig {
+public class WebConfig implements WebMvcConfigurer {
+
+    private final SeoInterceptor seoInterceptor;
+
+    public WebConfig(SeoInterceptor seoInterceptor) {
+        this.seoInterceptor = seoInterceptor;
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        // Ajouter l'intercepteur SEO pour tous les endpoints d'API
+        registry.addInterceptor(seoInterceptor)
+                .addPathPatterns("/api/**");
+    }
 
     @Bean
     public FilterRegistrationBean<CorsFilter> corsFilterRegistrationBean() {
@@ -22,7 +37,7 @@ public class WebConfig {
         corsConfig.setAllowCredentials(true);
 
         // Specify allowed origins. You can add more origins or use patterns if needed
-        corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:4200","http://localhost:53538/"));
+        corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:4200","http://localhost:53538/","http://192.168.11.115:4200"));
 
         // Specify allowed headers
         corsConfig.setAllowedHeaders(Arrays.asList(
