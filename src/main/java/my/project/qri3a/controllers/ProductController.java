@@ -35,11 +35,14 @@ import my.project.qri3a.dtos.requests.ProductRequestDTO;
 import my.project.qri3a.dtos.responses.ProductListingDTO;
 import my.project.qri3a.dtos.responses.ProductResponseDTO;
 import my.project.qri3a.dtos.responses.ProductSuggestionDTO;
+import my.project.qri3a.dtos.responses.UserSearchHistoryDTO;
 import my.project.qri3a.exceptions.NotAuthorizedException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
 import my.project.qri3a.responses.ApiResponse;
 import my.project.qri3a.services.ProductService;
+import my.project.qri3a.entities.UserSearchHistory;
+import my.project.qri3a.mappers.UserSearchHistoryMapper;
 
 @RestController
 @AllArgsConstructor
@@ -250,13 +253,19 @@ public class ProductController {
             @RequestParam(required = false) String condition,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
-            @RequestParam(required = false) String city
+            @RequestParam(required = false) String city,
+            Authentication authentication
     ) {
         log.info("Controller: Recherche de produits avec le terme: {} et filtres - category: {}, location: {}, condition: {}, minPrice: {}, maxPrice: {}, city: {}",
                 query, category, location, condition, minPrice, maxPrice, city);
 
         // Enregistrer le terme de recherche pour l'analyse SEO
         searchTermService.recordSearchTerm(query, category, location);
+        
+        // Si l'utilisateur est authentifié, enregistrer dans son historique personnel
+        if (authentication != null) {
+            searchTermService.recordUserSearchHistory(query, category, location, authentication);
+        }
 
         String[] sortParams = sort.split(",");
         Sort sortOrder = Sort.by(Sort.Direction.fromString(sortParams[1]), sortParams[0]);
@@ -284,13 +293,19 @@ public class ProductController {
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) String city,
-            @RequestParam(required = false) String delivery) {
+            @RequestParam(required = false) String delivery,
+            Authentication authentication) {
 
         log.info("Controller: Elasticsearch search with query: {} and filters - category: {}, location: {}, condition: {}, minPrice: {}, maxPrice: {}, city: {}, delivery: {}",
                 query, category, location, condition, minPrice, maxPrice, city, delivery);
 
         // Enregistrer le terme de recherche pour l'analyse SEO
         searchTermService.recordSearchTerm(query, category, location);
+        
+        // Si l'utilisateur est authentifié, enregistrer dans son historique personnel
+        if (authentication != null) {
+            searchTermService.recordUserSearchHistory(query, category, location, authentication);
+        }
 
         Pageable pageable = PageRequest.of(page, size);
         Page<ProductDoc> results = productService.searchProductsElastic(query, pageable, category, location, condition, minPrice, maxPrice, city, delivery);
@@ -593,6 +608,37 @@ public class ProductController {
         ApiResponse<List<String>> response = new ApiResponse<>(
                 popularTerms,
                 "Termes de recherche populaires récupérés avec succès.",
+                HttpStatus.OK.value()
+        );
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /api/v1/products/my/search-history
+     * Récupère l'historique de recherche de l'utilisateur connecté
+     */
+    @GetMapping("/my/search-history")
+    public ResponseEntity<ApiResponse<Page<UserSearchHistoryDTO>>> getMySearchHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication authentication) {
+        
+        log.info("Controller: Récupération de l'historique de recherche de l'utilisateur");
+        
+        // Définir les paramètres de pagination (par défaut : trié par date décroissante)
+        Pageable pageable = PageRequest.of(page, size);
+        
+        // Récupérer l'historique de recherche
+        Page<UserSearchHistory> searchHistory = searchTermService.getUserSearchHistory(authentication, pageable);
+        
+        // Convertir les entités en DTOs
+        UserSearchHistoryMapper mapper = new UserSearchHistoryMapper();
+        Page<UserSearchHistoryDTO> historyDTOs = mapper.toDTOPage(searchHistory);
+        
+        ApiResponse<Page<UserSearchHistoryDTO>> response = new ApiResponse<>(
+                historyDTOs,
+                "Historique de recherche récupéré avec succès.",
                 HttpStatus.OK.value()
         );
         
