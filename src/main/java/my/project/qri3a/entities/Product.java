@@ -19,7 +19,8 @@ import java.util.*;
 
 @Entity
 @Table(name = "products", indexes = {
-        @Index(name = "idx_product_slug", columnList = "slug")
+        @Index(name = "idx_product_slug", columnList = "slug"),
+        @Index(name = "idx_product_views_count", columnList = "views_count")
 })
 @Getter
 @Setter
@@ -49,7 +50,7 @@ public class Product {
     @Column(nullable = false)
     private BigDecimal price;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String location;
 
     @Column(nullable = true)
@@ -67,6 +68,9 @@ public class Product {
     @Column(name = "status", nullable = false)
     private ProductStatus status = ProductStatus.MODERATION;
 
+    @Column(name = "views_count", nullable = false)
+    private Integer viewsCount = 0;
+
     @Column(nullable = true)
     private String longitude;
 
@@ -82,11 +86,6 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private List<Image> images = new ArrayList<>();
-
-    @OneToMany(mappedBy = "reportedProduct", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JsonIgnore
-    private Set<Scam> scamReports = new HashSet<>();
 
     // Méthodes pour ajouter et retirer des images
     public void addImage(Image image) {
@@ -121,15 +120,7 @@ public class Product {
     @Column(nullable = true)
     private String deliveryTime; // "1", "3", "7", "14" jours
 
-    public void addScamReport(Scam scam) {
-        scamReports.add(scam);
-        scam.setReportedProduct(this);
-    }
 
-    public void removeScamReport(Scam scam) {
-        scamReports.remove(scam);
-        scam.setReportedProduct(null);
-    }
 
     @PrePersist
     @PreUpdate

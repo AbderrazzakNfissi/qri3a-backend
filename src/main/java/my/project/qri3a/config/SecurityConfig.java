@@ -55,6 +55,8 @@ public class SecurityConfig {
                         // Autoriser les requêtes non authentifiées
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/public/contact").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/scams").permitAll() // Permettre les signalements d'arnaque non authentifiés
+                        .requestMatchers(HttpMethod.POST, "/api/v1/scams/anonymous").permitAll() // Endpoint spécifique pour les signalements anonymes
                         .requestMatchers(HttpMethod.GET, "/sitemap.xml").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/seo/sitemap-*.xml").permitAll()
                         .requestMatchers(HttpMethod.GET, "/robots.txt").permitAll()

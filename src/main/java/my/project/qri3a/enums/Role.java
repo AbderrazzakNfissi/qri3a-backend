@@ -11,13 +11,20 @@ import java.util.Arrays;
 
 public enum Role {
     SELLER,
+    PREMIUM,
     ADMIN;
 
     public Collection<? extends GrantedAuthority> getAuthorities() {
         if (this == ADMIN) {
             return Arrays.asList(
                     new SimpleGrantedAuthority("ROLE_ADMIN"),
-                    new SimpleGrantedAuthority("ROLE_SELLER") // Un admin a aussi les droits d'un seller
+                    new SimpleGrantedAuthority("ROLE_PREMIUM"),
+                    new SimpleGrantedAuthority("ROLE_SELLER") // Un admin a aussi les droits d'un seller et premium
+            );
+        } else if (this == PREMIUM) {
+            return Arrays.asList(
+                    new SimpleGrantedAuthority("ROLE_PREMIUM"),
+                    new SimpleGrantedAuthority("ROLE_SELLER") // Un premium a aussi les droits d'un seller
             );
         } else {
             return Collections.singletonList(

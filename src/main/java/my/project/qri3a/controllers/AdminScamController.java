@@ -56,22 +56,6 @@ public class AdminScamController {
     }
 
     /**
-     * Récupère les détails d'un signalement d'arnaque spécifique.
-     *
-     * UNUSED ENDPOINT - Not called by the AdminScamsComponent
-     */
-    /*
-    @GetMapping("/{id}")
-    public ResponseEntity<ScamResponseDTO> getScamDetails(
-            @PathVariable("id") UUID id
-    ) throws ResourceNotFoundException {
-        log.info("Admin Controller: Fetching details for scam report with ID: {}", id);
-        ScamResponseDTO response = scamService.getScamById(id);
-        return ResponseEntity.ok(response);
-    }
-    */
-
-    /**
      * Met à jour le statut d'un signalement d'arnaque.
      */
     @PutMapping("/{id}")
@@ -108,50 +92,33 @@ public class AdminScamController {
     }
 
     /**
-     * Récupère les signalements d'arnaque pour un vendeur spécifique.
-     *
-     * UNUSED ENDPOINT - Not called by the AdminScamsComponent
+     * Récupère les signalements d'arnaque pour un produit spécifique par son identifiant.
      */
-    /*
-    @GetMapping("/seller/{sellerId}")
-    public ResponseEntity<Page<ScamResponseDTO>> getScamsBySeller(
-            @PathVariable("sellerId") UUID sellerId,
-            @RequestParam(defaultValue = "PENDING") ScamStatus status,
+    @GetMapping("/product/{productIdentifier}")
+    public ResponseEntity<Page<ScamResponseDTO>> getScamsByProductIdentifier(
+            @PathVariable("productIdentifier") String productIdentifier,
             @PageableDefault(size = 10, sort = "createdAt") Pageable pageable
     ) throws ResourceNotFoundException {
-        log.info("Admin Controller: Fetching scam reports for seller with ID: {} and status: {}", sellerId, status);
-        Page<ScamResponseDTO> response = scamService.getScamsBySeller(sellerId, status, pageable);
-        return ResponseEntity.ok(response);
-    }
-    */
-
-    /**
-     * Récupère les signalements d'arnaque pour un produit spécifique.
-     */
-    @GetMapping("/product/{productId}")
-    public ResponseEntity<Page<ScamResponseDTO>> getScamsByProduct(
-            @PathVariable("productId") UUID productId,
-            @PageableDefault(size = 10, sort = "createdAt") Pageable pageable
-    ) throws ResourceNotFoundException {
-        log.info("Admin Controller: Fetching scam reports for product with ID: {}", productId);
-        Page<ScamResponseDTO> response = scamService.getScamsByProduct(productId, pageable);
+        log.info("Admin Controller: Fetching scam reports for product with identifier: {}", productIdentifier);
+        Page<ScamResponseDTO> response = scamService.getScamsByProductIdentifier(productIdentifier, pageable);
         return ResponseEntity.ok(response);
     }
 
     /**
      * Traite en masse les signalements d'arnaque en attente pour un produit spécifique.
      */
-    @PutMapping("/product/{productId}/bulk-update")
+    @PutMapping("/product/{productIdentifier}/bulk-update")
     public ResponseEntity<Void> bulkUpdateScamsForProduct(
-            @PathVariable("productId") UUID productId,
+            @PathVariable("productIdentifier") String productIdentifier,
             @Valid @RequestBody ScamUpdateRequestDTO dto,
             Authentication authentication,
             @PageableDefault(size = 100) Pageable pageable
     ) throws ResourceNotFoundException, ResourceNotValidException {
-        log.info("Admin Controller: Bulk updating scam reports for product with ID: {} to status: {}", productId, dto.getStatus());
+        log.info("Admin Controller: Bulk updating scam reports for product with identifier: {} to status: {}", 
+            productIdentifier, dto.getStatus());
 
-        // Récupérer tous les signalements en attente pour ce produit
-        Page<ScamResponseDTO> scams = scamService.getScamsByProduct(productId, pageable);
+        // Récupérer tous les signalements pour ce produit
+        Page<ScamResponseDTO> scams = scamService.getScamsByProductIdentifier(productIdentifier, pageable);
 
         // Mettre à jour chaque signalement
         for (ScamResponseDTO scam : scams.getContent()) {
@@ -165,18 +132,4 @@ public class AdminScamController {
 
         return ResponseEntity.noContent().build();
     }
-
-    /**
-     * Récupère le nombre de signalements d'arnaque en attente.
-     *
-     * UNUSED ENDPOINT - Not called by the AdminScamsComponent
-     */
-    /*
-    @GetMapping("/count/pending")
-    public ResponseEntity<Long> getPendingScamsCount() {
-        log.info("Admin Controller: Fetching count of pending scam reports");
-        long pendingCount = scamService.countScamsByStatus(ScamStatus.PENDING);
-        return ResponseEntity.ok(pendingCount);
-    }
-    */
 }

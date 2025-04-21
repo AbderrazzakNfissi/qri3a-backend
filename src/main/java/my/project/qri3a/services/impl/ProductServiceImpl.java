@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Sort;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -52,12 +53,77 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Page<ProductListingDTO> getAllProducts(Pageable pageable, String category, String location, String condition, UUID sellerId, BigDecimal minPrice, BigDecimal maxPrice, String city) throws ResourceNotValidException {
-        log.info("Service: Fetching all products with filters - category: {}, location: {}, condition: {}, sellerId: {}, minPrice: {}, maxPrice: {}, city{}",
-                category, location, condition, sellerId, minPrice, maxPrice,city);
+        log.info("Service: Fetching all products with filters and equitable distribution - category: {}, location: {}, condition: {}, sellerId: {}, minPrice: {}, maxPrice: {}, city: {}",
+                category, location, condition, sellerId, minPrice, maxPrice, city);
 
-        Page<Product> productsPage = productRepository.findByStatusOrderByCreatedAtDesc(ProductStatus.ACTIVE,pageable);
-        log.info("Service: Found {} products", productsPage.getTotalElements());
-
+        // Créer une spécification en fonction des filtres
+        Specification<Product> spec = Specification.where(ProductSpecifications.hasStatus(ProductStatus.ACTIVE));
+        
+        if (category != null && !category.isEmpty()) {
+            try {
+                spec = spec.and(ProductSpecifications.hasCategory(ProductCategory.valueOf(category.toUpperCase())));
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid category: {}", category);
+                throw new ResourceNotValidException("Invalid category: " + category);
+            }
+        }
+        
+        if (location != null && !location.isEmpty()) {
+            spec = spec.and(ProductSpecifications.hasLocation(location));
+        }
+        
+        if (condition != null && !condition.isEmpty()) {
+            try {
+                spec = spec.and(ProductSpecifications.hasCondition(ProductCondition.valueOf(condition.toUpperCase())));
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid condition: {}", condition);
+                throw new ResourceNotValidException("Invalid condition: " + condition);
+            }
+        }
+        
+        if (sellerId != null) {
+            spec = spec.and(ProductSpecifications.hasSellerId(sellerId));
+        }
+        
+        if (minPrice != null) {
+            spec = spec.and(ProductSpecifications.hasMinPrice(minPrice));
+        }
+        
+        if (maxPrice != null) {
+            spec = spec.and(ProductSpecifications.hasMaxPrice(maxPrice));
+        }
+        
+        if (city != null && !city.isEmpty()) {
+            spec = spec.and(ProductSpecifications.hasCity(city));
+        }
+        
+        // Vérifier que minPrice n'est pas supérieur à maxPrice
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            log.error("minPrice {} is greater than maxPrice {}", minPrice, maxPrice);
+            throw new ResourceNotValidException("minPrice cannot be greater than maxPrice");
+        }
+        
+        // Utiliser le tri par viewsCount croissant pour l'algorithme de distribution équitable
+        Pageable viewsCountPageable = PageRequest.of(
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            Sort.by("viewsCount").ascending()
+        );
+        
+        // Récupérer les produits avec les filtres et triés par viewsCount
+        Page<Product> productsPage = productRepository.findAll(spec, viewsCountPageable);
+        log.info("Service: Found {} products with equitable distribution", productsPage.getTotalElements());
+        
+        // Extraire les IDs des produits affichés pour mettre à jour leur compteur de vues
+        List<UUID> displayedProductIds = productsPage.getContent().stream()
+                .map(Product::getId)
+                .collect(Collectors.toList());
+        
+        // Mettre à jour les compteurs de vues en batch si des produits ont été trouvés
+        if (!displayedProductIds.isEmpty()) {
+            updateViewsCountsInBatch(displayedProductIds);
+        }
+        
         return productsPage.map(productMapper::toProductListingDTO);
     }
 
@@ -403,17 +469,85 @@ public class ProductServiceImpl implements ProductService {
     // Interface
     @Override
     public Page<ProductDoc> searchProductsElastic(String query, Pageable pageable, String category, String location, String condition, BigDecimal minPrice, BigDecimal maxPrice, String city, String delivery) {
-        log.info("Service: Elasticsearch search with query: {} and filters - category: {}, location: {}, condition: {}, minPrice: {}, maxPrice: {}, city: {}, delivery: {}",
-                query, category, location, condition, minPrice, maxPrice, city, delivery);
-
-        return productDocRepository.searchProductsElastic(query, category, location, condition, minPrice, maxPrice, city, delivery, pageable);
+        log.info("Service: Elasticsearch search with equitable distribution algorithm. Query: {}, Category: {}, Location: {}", 
+                query, category, location);
+        
+        // Extraire les résultats de recherche Elasticsearch
+        Page<ProductDoc> searchResults = productDocRepository.searchProductsElastic(
+                query, category, location, condition, minPrice, maxPrice, city, delivery, pageable);
+        
+        // Si nous avons des résultats, mettre à jour les compteurs de vues
+        if (searchResults.hasContent()) {
+            // Extraire les IDs des produits affichés
+            List<UUID> displayedProductIds = searchResults.getContent().stream()
+                    .map(ProductDoc::getId)
+                    .collect(Collectors.toList());
+            
+            // Mettre à jour les compteurs de vues en batch
+            updateViewsCountsInBatch(displayedProductIds);
+            
+            log.info("Updated viewsCount for {} products in search results", displayedProductIds.size());
+        }
+        
+        return searchResults;
     }
 
 
     @Override
     public Page<ProductDoc> findAll(Pageable pageable) {
-        Page<ProductDoc> productDocs = productDocRepository.findByStatusOrderByCreatedAtDesc(ProductStatus.ACTIVE.toString(),pageable);
-        return productDocs;
+        log.info("Service: Fetching all products with equitable distribution algorithm");
+        
+        // Récupérer les produits avec les viewsCount les plus bas
+        Page<Product> productsPage = productRepository.findByStatusOrderByViewsCountAsc(ProductStatus.ACTIVE, pageable);
+        
+        // Extraire les IDs des produits affichés pour mettre à jour leur compteur de vues
+        List<UUID> displayedProductIds = productsPage.getContent().stream()
+                .map(Product::getId)
+                .collect(Collectors.toList());
+        
+        // Mettre à jour les compteurs de vues en batch si des produits ont été trouvés
+        if (!displayedProductIds.isEmpty()) {
+            updateViewsCountsInBatch(displayedProductIds);
+        }
+        
+        // Convertir les produits en ProductDoc et retourner le résultat
+        return productsPage.map(product -> productMapper.toProductDoc(product, product.getImages().size()));
+    }
+    
+    /**
+     * Méthode utilitaire pour mettre à jour les compteurs de vues des produits
+     * en différenciant les utilisateurs standard et premium
+     */
+    private void updateViewsCountsInBatch(List<UUID> productIds) {
+        if (productIds.isEmpty()) return;
+        
+        // Récupérer les produits pour vérifier le rôle du vendeur
+        List<Product> products = productRepository.findAllById(productIds);
+        
+        // Séparer les IDs des produits par type de vendeur
+        List<UUID> standardProductIds = new ArrayList<>();
+        List<UUID> premiumProductIds = new ArrayList<>();
+        
+        for (Product product : products) {
+            // Vérifier si le vendeur est premium
+            if (product.getSeller().getRole().name().equals("PREMIUM")) {
+                premiumProductIds.add(product.getId());
+            } else {
+                standardProductIds.add(product.getId());
+            }
+        }
+        
+        // Mettre à jour les compteurs en batch avec la valeur appropriée
+        if (!standardProductIds.isEmpty()) {
+            productRepository.incrementViewsCount(standardProductIds, 5); // +5 pour les vendeurs standards
+        }
+        
+        if (!premiumProductIds.isEmpty()) {
+            productRepository.incrementViewsCount(premiumProductIds, 1); // +1 pour les vendeurs premiums
+        }
+        
+        log.info("Updated viewsCount for {} products ({} standard, {} premium)", 
+                productIds.size(), standardProductIds.size(), premiumProductIds.size());
     }
 
     @Override
@@ -780,7 +914,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Page<ProductListingDTO> getProductsByMainCategory(String mainCategory, Pageable pageable) {
-        log.info("Service: Fetching products for main category: {}", mainCategory);
+        log.info("Service: Fetching products for main category: {} with equitable distribution", mainCategory);
 
         try {
             // Valider que la catégorie principale existe
@@ -794,7 +928,7 @@ public class ProductServiceImpl implements ProductService {
                 return Page.empty(pageable);
             }
 
-            // Création d'une spécification pour filtrer par statut ACTIVE et par les sous-catégories
+            // Utiliser la spécification pour filtrer par statut ACTIVE et par les sous-catégories
             Specification<Product> spec = ProductSpecifications.hasStatus(ProductStatus.ACTIVE);
 
             // Ajouter les sous-catégories à la spécification avec des OR
@@ -812,9 +946,28 @@ public class ProductServiceImpl implements ProductService {
                 spec = spec.and(categorySpec);
             }
 
-            // Exécuter la requête avec la spécification
-            Page<Product> productsPage = productRepository.findAll(spec, pageable);
-            log.info("Service: Found {} products for main category {}", productsPage.getTotalElements(), mainCategory);
+            // Exécuter la requête, triée par viewsCount (priorité aux moins vus)
+            Page<Product> productsPage = productRepository.findAll(
+                    spec,
+                    PageRequest.of(
+                            pageable.getPageNumber(),
+                            pageable.getPageSize(),
+                            Sort.by("viewsCount").ascending()
+                    )
+            );
+            
+            log.info("Service: Found {} products for main category {} using equitable distribution",
+                    productsPage.getTotalElements(), mainCategory);
+            
+            // Extraire les IDs des produits affichés pour mettre à jour leur compteur de vues
+            List<UUID> displayedProductIds = productsPage.getContent().stream()
+                    .map(Product::getId)
+                    .collect(Collectors.toList());
+            
+            // Mettre à jour les compteurs de vues en batch si des produits ont été trouvés
+            if (!displayedProductIds.isEmpty()) {
+                updateViewsCountsInBatch(displayedProductIds);
+            }
 
             return productsPage.map(productMapper::toProductListingDTO);
         } catch (IllegalArgumentException e) {

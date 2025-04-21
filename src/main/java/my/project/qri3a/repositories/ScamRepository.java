@@ -15,16 +15,15 @@ import java.util.UUID;
 @Repository
 public interface ScamRepository extends JpaRepository<Scam, UUID> {
 
-    Page<Scam> findByReporterId(UUID reporterId, Pageable pageable);
-
-    Page<Scam> findByReportedProductId(UUID productId, Pageable pageable);
+    // Méthodes de recherche par productIdentifier
+    Page<Scam> findByProductIdentifier(String productIdentifier, Pageable pageable);
 
     Page<Scam> findByStatus(ScamStatus status, Pageable pageable);
 
-    @Query("SELECT s FROM Scam s WHERE s.status = :status AND s.reportedProduct.seller.id = :sellerId")
-    Page<Scam> findByStatusAndReportedProductSellerId(
+    @Query("SELECT s FROM Scam s WHERE s.status = :status AND s.productIdentifier = :productIdentifier")
+    Page<Scam> findByStatusAndProductIdentifier(
             @Param("status") ScamStatus status,
-            @Param("sellerId") UUID sellerId,
+            @Param("productIdentifier") String productIdentifier,
             Pageable pageable);
 
     @Query("SELECT COUNT(s) FROM Scam s WHERE s.status = :status")
@@ -33,17 +32,13 @@ public interface ScamRepository extends JpaRepository<Scam, UUID> {
     @Query("SELECT COUNT(s) FROM Scam s WHERE s.createdAt >= :startDate")
     long countScamsCreatedSince(@Param("startDate") LocalDateTime startDate);
 
-    @Query("SELECT COUNT(DISTINCT s.reportedProduct.id) FROM Scam s WHERE s.status = :status")
+    @Query("SELECT COUNT(DISTINCT s.productIdentifier) FROM Scam s WHERE s.status = :status")
     long countUniqueProductsWithScamsByStatus(@Param("status") ScamStatus status);
 
-    @Query("SELECT s.reportedProduct.id FROM Scam s GROUP BY s.reportedProduct.id HAVING COUNT(s) >= :threshold")
-    List<UUID> findProductsWithScamCountGreaterThan(@Param("threshold") long threshold);
+    @Query("SELECT s.productIdentifier FROM Scam s GROUP BY s.productIdentifier HAVING COUNT(s) >= :threshold")
+    List<String> findProductsWithScamCountGreaterThan(@Param("threshold") long threshold);
 
-    boolean existsByReporterIdAndReportedProductId(UUID reporterId, UUID productId);
-
-    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM Scam s " +
-            "WHERE s.reportedProduct.id = :productId AND s.status = :status")
-    boolean existsByReportedProductIdAndStatus(
-            @Param("productId") UUID productId,
+    boolean existsByProductIdentifierAndStatus(
+            @Param("productIdentifier") String productIdentifier,
             @Param("status") ScamStatus status);
 }

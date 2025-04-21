@@ -13,7 +13,6 @@ import my.project.qri3a.entities.User;
 import my.project.qri3a.enums.ProductStatus;
 import my.project.qri3a.enums.Role;
 import my.project.qri3a.enums.ScamStatus;
-import my.project.qri3a.exceptions.ResourceAlreadyExistsException;
 import my.project.qri3a.exceptions.ResourceNotFoundException;
 import my.project.qri3a.exceptions.ResourceNotValidException;
 import my.project.qri3a.mappers.ScamMapper;
@@ -45,32 +44,39 @@ public class ScamServiceImpl implements ScamService {
     private final NotificationService notificationService;
 
     @Override
-    public ScamResponseDTO reportScam(ScamReportRequestDTO dto, Authentication authentication)
-            throws ResourceNotFoundException, ResourceAlreadyExistsException {
-        log.info("Service: Creating scam report for product with ID: {}", dto.getProductId());
+    public ScamResponseDTO reportScam(ScamReportRequestDTO dto)
+            throws ResourceNotFoundException {
+        log.info("Service: Creating anonymous scam report for product with ID: {}", dto.getProductIdentifier());
 
-        // Récupérer l'utilisateur authentifié
-        User reporter = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        // Récupérer le produit concerné
-        Product product = productRepository.findById(dto.getProductId())
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + dto.getProductId()));
-
-        // Vérifier si l'utilisateur a déjà signalé ce produit
-        if (scamRepository.existsByReporterIdAndReportedProductId(reporter.getId(), product.getId())) {
-            throw new ResourceAlreadyExistsException("You have already reported this product");
-        }
-
-        // Créer et sauvegarder le signalement
-        Scam scam = scamMapper.toEntity(dto, reporter, product);
+        // Créer et sauvegarder le signalement anonyme
+        Scam scam = scamMapper.toEntity(dto);
         Scam savedScam = scamRepository.save(scam);
 
         // Envoyer une notification à l'administrateur
-        //notifyAdminsAboutNewScam(savedScam);
+        notifyAdminsAboutNewScam(savedScam);
 
-        log.info("Service: Scam report created with ID: {}", savedScam.getId());
+        log.info("Service: Anonymous scam report created with ID: {}", savedScam.getId());
         return scamMapper.toDTO(savedScam);
+    }
+
+    // Méthode privée pour notifier les administrateurs d'un nouveau signalement
+    private void notifyAdminsAboutNewScam(Scam scam) {
+        try {
+            // Récupérer tous les administrateurs
+            for (User admin : userRepository.findByRole(Role.ADMIN)) {
+                // Créer l'objet Notification pour l'administrateur
+                Notification notification = new Notification();
+                notification.setUser(admin);
+                notification.setBody("Nouveau signalement d'arnaque anonyme concernant un produit: \"" 
+                        + scam.getProductTitle() + "\".");
+                notification.setRead(false);
+
+                // Notifier l'administrateur
+                notificationService.createNotification(notification);
+            }
+        } catch (Exception e) {
+            log.error("Failed to send notifications about new scam report", e);
+        }
     }
 
     @Override
@@ -107,16 +113,17 @@ public class ScamServiceImpl implements ScamService {
         scam.setProcessedBy(admin);
         scam.setProcessedAt(LocalDateTime.now());
 
-        // Si le signalement est confirmé, mettre à jour le statut du produit
+        // Si le signalement est confirmé, mettre à jour le statut du produit si possible
         if (dto.getStatus() == ScamStatus.CONFIRMED) {
-            handleConfirmedScam(scam);
+            try {
+                handleConfirmedScam(scam);
+            } catch (Exception e) {
+                log.error("Error updating product status for confirmed scam: {}", e.getMessage());
+            }
         }
 
         // Sauvegarder les modifications
         Scam updatedScam = scamRepository.save(scam);
-
-        // Notifier le reporter et le vendeur du produit
-        //notifyUsersAboutScamStatusUpdate(updatedScam);
 
         log.info("Service: Scam report status updated with ID: {}", updatedScam.getId());
         return scamMapper.toDTO(updatedScam);
@@ -151,40 +158,11 @@ public class ScamServiceImpl implements ScamService {
     }
 
     @Override
-    public Page<ScamResponseDTO> getScamsByReporter(Authentication authentication, Pageable pageable)
+    public Page<ScamResponseDTO> getScamsByProductIdentifier(String productIdentifier, Pageable pageable)
             throws ResourceNotFoundException {
-        log.info("Service: Fetching scam reports by current user");
+        log.info("Service: Fetching scam reports for product with identifier: {}", productIdentifier);
 
-        User reporter = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        Page<Scam> scams = scamRepository.findByReporterId(reporter.getId(), pageable);
-        return scams.map(scamMapper::toDTO);
-    }
-
-    @Override
-    public Page<ScamResponseDTO> getScamsByProduct(UUID productId, Pageable pageable)
-            throws ResourceNotFoundException {
-        log.info("Service: Fetching scam reports for product with ID: {}", productId);
-
-        if (!productRepository.existsById(productId)) {
-            throw new ResourceNotFoundException("Product not found with ID " + productId);
-        }
-
-        Page<Scam> scams = scamRepository.findByReportedProductId(productId, pageable);
-        return scams.map(scamMapper::toDTO);
-    }
-
-    @Override
-    public Page<ScamResponseDTO> getScamsBySeller(UUID sellerId, ScamStatus status, Pageable pageable)
-            throws ResourceNotFoundException {
-        log.info("Service: Fetching scam reports for seller with ID: {} and status: {}", sellerId, status);
-
-        if (!userRepository.existsById(sellerId)) {
-            throw new ResourceNotFoundException("Seller not found with ID " + sellerId);
-        }
-
-        Page<Scam> scams = scamRepository.findByStatusAndReportedProductSellerId(status, sellerId, pageable);
+        Page<Scam> scams = scamRepository.findByProductIdentifier(productIdentifier, pageable);
         return scams.map(scamMapper::toDTO);
     }
 
@@ -206,66 +184,43 @@ public class ScamServiceImpl implements ScamService {
                 .scamsLastDay(scamRepository.countScamsCreatedSince(oneDayAgo))
                 .scamsLastWeek(scamRepository.countScamsCreatedSince(oneWeekAgo))
                 .scamsLastMonth(scamRepository.countScamsCreatedSince(oneMonthAgo))
-                .uniqueProductsWithScams(scamRepository.countUniqueProductsWithScamsByStatus(ScamStatus.CONFIRMED))
-                .productsWithMultipleScams(scamRepository.findProductsWithScamCountGreaterThan(2).size())
                 .build();
     }
 
     @Override
-    public boolean hasConfirmedScams(UUID productId) {
-        log.info("Service: Checking if product with ID {} has confirmed scams", productId);
-        return scamRepository.existsByReportedProductIdAndStatus(productId, ScamStatus.CONFIRMED);
+    public boolean hasConfirmedScams(String productIdentifier) {
+        log.info("Service: Checking if product with identifier {} has confirmed scams", productIdentifier);
+        return scamRepository.existsByProductIdentifierAndStatus(productIdentifier, ScamStatus.CONFIRMED);
     }
 
     // Méthodes privées utilitaires
 
     private void handleConfirmedScam(Scam scam) {
-        Product product = scam.getReportedProduct();
-
-        // Marquer le produit comme BLOCKED
-        product.setStatus(ProductStatus.REJECTED);
-//        product.setBlockReason("Signalement d'arnaque confirmé par un administrateur");
-//        product.setBlockedAt(LocalDateTime.now());
-//        product.setBlockedBy(scam.getProcessedBy());
-
-        productRepository.save(product);
-
-        log.info("Service: Product with ID {} has been blocked due to confirmed scam", product.getId());
-    }
-
-
-
-    private void notifyUsersAboutScamStatusUpdate(Scam scam) {
+        // Version adaptée pour l'approche anonyme
+        
         try {
-            // Créer l'objet Notification pour le reporter
-            Notification reporterNotification = new Notification();
-            reporterNotification.setUser(scam.getReporter());
-
-            reporterNotification.setBody("Le statut de votre signalement d'arnaque pour le produit \""
-                    + scam.getReportedProduct().getTitle() + "\" a été mis à jour en "
-                    + scam.getStatus().getLabel() + ".");
-            //reporterNotification.setLink("/my-scams/" + scam.getId());
-            reporterNotification.setRead(false);
-            // Autres propriétés si nécessaire
-
-            // Notifier le reporter
-            notificationService.createNotification(reporterNotification);
-
-            // Créer l'objet Notification pour le vendeur
-            Notification sellerNotification = new Notification();
-            sellerNotification.setUser(scam.getReportedProduct().getSeller());
-            sellerNotification.setBody("Un signalement d'arnaque concernant votre produit \""
-                    + scam.getReportedProduct().getTitle() + "\" a été "
-                    + (scam.getStatus() == ScamStatus.CONFIRMED ? "confirmé" : "traité") + ".");
-            //sellerNotification.setLink("/my-products/scams/" + scam.getId());
-            sellerNotification.setRead(false);
-            // Autres propriétés si nécessaire
-
-            // Notifier le vendeur
-            notificationService.createNotification(sellerNotification);
-
+            // L'identifiant du produit pourrait être un UUID stocké sous forme de chaîne
+            // On tente d'abord de le traiter comme un UUID
+            try {
+                UUID productId = UUID.fromString(scam.getProductIdentifier());
+                Product product = productRepository.findById(productId).orElse(null);
+                
+                if (product != null) {
+                    // Marquer le produit comme REJECTED
+                    product.setStatus(ProductStatus.REJECTED);
+                    productRepository.save(product);
+                    
+                    log.info("Service: Product with ID {} has been blocked due to confirmed scam", product.getId());
+                } else {
+                    log.warn("Could not find product with identifier {} to mark as rejected", scam.getProductIdentifier());
+                }
+            } catch (IllegalArgumentException e) {
+                // L'identifiant n'est pas un UUID valide - c'est peut-être un autre format d'identifiant externe
+                log.warn("Product identifier is not a valid UUID: {}", scam.getProductIdentifier());
+                // Si nécessaire, implémenter ici une logique pour traiter d'autres formats d'identifiants
+            }
         } catch (Exception e) {
-            log.error("Failed to send notifications about scam status update", e);
+            log.error("Error while handling confirmed scam: {}", e.getMessage());
         }
     }
 

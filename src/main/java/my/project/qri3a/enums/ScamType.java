@@ -1,21 +1,38 @@
 package my.project.qri3a.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+/**
+ * Types d'arnaques possibles
+ */
 public enum ScamType {
-    FAKE_PRODUCT("Produit inexistant ou faux"),
-    ADVANCE_PAYMENT("Demande de paiement à l'avance"),
-    SUSPICIOUS_PRICE("Prix anormalement bas"),
-    COUNTERFEIT("Produit contrefait"),
-    FALSE_DESCRIPTION("Description mensongère"),
-    PHISHING("Tentative de phishing"),
-    OTHER("Autre raison");
+    FAKE_ITEM("fake-item"),
+    ADVANCE_PAYMENT("advance-payment"),
+    NON_DELIVERY("non-delivery"),
+    COUNTERFEIT("counterfeit"),
+    IDENTITY_THEFT("identity-theft"),
+    PHISHING("phishing"),
+    OTHER("other");
 
-    private final String label;
+    private final String code;
 
-    ScamType(String label) {
-        this.label = label;
+    ScamType(String code) {
+        this.code = code;
     }
 
-    public String getLabel() {
-        return label;
+    @JsonValue
+    public String getCode() {
+        return code;
+    }
+
+    @JsonCreator
+    public static ScamType fromCode(String code) {
+        for (ScamType type : ScamType.values()) {
+            if (type.code.equals(code)) {
+                return type;
+            }
+        }
+        return OTHER;
     }
 }

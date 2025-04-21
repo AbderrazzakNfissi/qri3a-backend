@@ -26,7 +26,7 @@ public class ProductRequestDTO {
     @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than zero")
     private BigDecimal price;
 
-    @NotBlank(message = "Location is mandatory")
+
     private String location;
 
     @NotBlank(message = "phone is mandatory")

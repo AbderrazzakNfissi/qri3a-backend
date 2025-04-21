@@ -26,6 +26,17 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     Page<Product> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
+    // Nouvelle méthode pour récupérer les produits par status triés par nombre de vues croissant
+    Page<Product> findByStatusOrderByViewsCountAsc(ProductStatus status, Pageable pageable);
+    
+    // Méthode pour les catégories principales avec tri par viewsCount
+    Page<Product> findByStatusAndCategoryOrderByViewsCountAsc(ProductStatus status, ProductCategory category, Pageable pageable);
+    
+    // Méthode pour mettre à jour le viewsCount des produits en batch
+    @Modifying
+    @Query("UPDATE Product p SET p.viewsCount = p.viewsCount + :increment WHERE p.id IN :productIds")
+    void incrementViewsCount(@Param("productIds") List<UUID> productIds, @Param("increment") int increment);
+
     @Query("SELECT p FROM User u JOIN u.wishlist p WHERE u.id = :userId")
     Page<Product> findWishlistByUserId(@Param("userId") UUID userId, Pageable pageable);
 
