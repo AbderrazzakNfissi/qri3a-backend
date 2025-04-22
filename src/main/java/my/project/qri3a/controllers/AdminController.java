@@ -27,8 +27,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -335,6 +334,30 @@ public class AdminController {
                 HttpStatus.OK.value()
         );
 
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * POST /api/v1/admin/products/batch-approve
+     * Approuver en masse une liste de produits en attente de modération
+     */
+    @PostMapping("/products/batch-approve")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> batchApproveProducts(
+            @RequestBody List<UUID> productIds) {
+        log.info("Admin Controller: Batch approving {} products", productIds.size());
+        
+        int approvedCount = productService.approveBatchProducts(productIds);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalRequested", productIds.size());
+        result.put("approvedCount", approvedCount);
+        
+        ApiResponse<Map<String, Object>> response = new ApiResponse<>(
+                result,
+                String.format("%d products approved successfully out of %d requested.", approvedCount, productIds.size()),
+                HttpStatus.OK.value()
+        );
+        
         return ResponseEntity.ok(response);
     }
 }

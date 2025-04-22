@@ -593,6 +593,55 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toDTO(updatedProduct);
     }
 
+    @Override
+    @Transactional
+    public int approveBatchProducts(List<UUID> productIds) {
+        log.info("Service: Approving batch of {} products", productIds.size());
+        
+        if (productIds.isEmpty()) {
+            return 0;
+        }
+
+        int approvedCount = 0;
+        
+        // Récupérer tous les produits à partir des IDs
+        List<Product> products = productRepository.findAllById(productIds);
+        
+        // Ne traiter que les produits en attente de modération
+        List<Product> productsToApprove = products.stream()
+                .filter(product -> product.getStatus() == ProductStatus.MODERATION)
+                .collect(Collectors.toList());
+        
+        if (productsToApprove.isEmpty()) {
+            return 0;
+        }
+        
+        // Mettre à jour le statut de chaque produit
+        for (Product product : productsToApprove) {
+            try {
+                product.setStatus(ProductStatus.ACTIVE);
+                productRepository.save(product);
+                
+                // Mettre à jour l'index Elasticsearch
+                productIndexService.indexProduct(product, 0);
+                
+                // Notifier l'utilisateur
+                notifyUser(product);
+                
+                // Notifier les utilisateurs intéressés
+                productMatchingService.notifyInterestedUsers(product);
+                
+                approvedCount++;
+            } catch (Exception e) {
+                log.error("Error approving product with ID {}: {}", product.getId(), e.getMessage());
+                // Continuer avec les autres produits
+            }
+        }
+        
+        log.info("Service: Successfully approved {} products out of {}", approvedCount, productIds.size());
+        return approvedCount;
+    }
+
     private void notifyUser(Product product) {
         log.info("Service: Notifying seller about product approval, product ID: {}", product.getId());
 

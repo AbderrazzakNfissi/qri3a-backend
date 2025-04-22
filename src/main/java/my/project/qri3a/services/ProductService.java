@@ -177,4 +177,11 @@ public interface ProductService {
      * @throws ResourceNotFoundException si le produit n'est pas trouvé
      */
     ProductResponseDTO getProductBySlug(String slug, Authentication authentication) throws ResourceNotFoundException;
+
+    /**
+     * Approves a batch of products, changing their status to ACTIVE
+     * @param productIds List of product IDs to approve
+     * @return Number of products successfully approved
+     */
+    int approveBatchProducts(List<UUID> productIds);
 }
