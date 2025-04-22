@@ -83,8 +83,8 @@ public class ImageServiceImpl implements ImageService {
 
         // Vérifier le nombre d'images déjà associées au produit
         long imageCount = imageRepository.countByProductId(productId);
-        if (imageCount >= 4) {
-            throw new ResourceNotValidException("Maximum 4 images allowed per product.");
+        if (imageCount >= 20) {
+            throw new ResourceNotValidException("Maximum 20 images allowed per product.");
         }
 
         // Générer un nom unique pour le fichier
@@ -157,14 +157,14 @@ public class ImageServiceImpl implements ImageService {
             throw new ResourceNotValidException("No files provided.");
         }
 
-        if (files.size() > 4) {
-            throw new ResourceNotValidException("Cannot upload more than 4 images at once.");
+        if (files.size() > 20) {
+            throw new ResourceNotValidException("Cannot upload more than 20 images at once.");
         }
 
         // Vérifier le nombre d'images déjà associées au produit
         long existingImageCount = imageRepository.countByProductId(productId);
-        if (existingImageCount + files.size() > 4) {
-            throw new ResourceNotValidException("Uploading these images would exceed the maximum of 4 images per product.");
+        if (existingImageCount + files.size() > 20) {
+            throw new ResourceNotValidException("Uploading these images would exceed the maximum of 20 images per product.");
         }
 
         List<ImageResponseDTO> uploadedImages = new ArrayList<>();
@@ -250,9 +250,9 @@ public class ImageServiceImpl implements ImageService {
         product.getImages().addAll(imagesToKeep);
         product.setImages(product.getImages());
 
-        // Vérifier que l'ajout des nouvelles images ne dépasse pas le maximum autorisé (4)
-        if (product.getImages().size() + safeNewFiles.size() > 4) {
-            throw new ResourceNotValidException("Uploading these images would exceed the maximum of 4 images per product.");
+        // Vérifier que l'ajout des nouvelles images ne dépasse pas le maximum autorisé (20)
+        if (product.getImages().size() + safeNewFiles.size() > 20) {
+            throw new ResourceNotValidException("Uploading these images would exceed the maximum of 20 images per product.");
         }
 
         // Upload des nouvelles images et ajout au produit

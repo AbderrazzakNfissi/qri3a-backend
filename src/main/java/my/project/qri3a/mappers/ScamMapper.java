@@ -31,7 +31,6 @@ public class ScamMapper {
 
         // Informations sur le produit signalé
         scam.setProductIdentifier(dto.getProductIdentifier());
-        scam.setProductTitle(dto.getProductTitle());
 
         // Set values directly from DTO
         scam.setType(dto.getType());
@@ -91,7 +90,7 @@ public class ScamMapper {
 
         // Set product information
         dto.setProductId(scam.getProductIdentifier());
-        dto.setProductTitle(scam.getProductTitle());
+
 
         // Reporter information (always anonymous now)
         dto.setReporterName(scam.getReporterName());

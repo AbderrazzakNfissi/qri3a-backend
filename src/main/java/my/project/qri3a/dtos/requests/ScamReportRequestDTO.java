@@ -25,8 +25,7 @@ public class ScamReportRequestDTO {
     // Information sur le produit signalé
     @NotBlank(message = "L'identifiant du produit est obligatoire")
     private String productIdentifier;
-    
-    private String productTitle;
+
 
     @NotNull(message = "Le type de signalement est obligatoire")
     private ScamType type;

@@ -42,9 +42,6 @@ public class Scam {
     // Identifiant du produit signalé (stocké sous forme de chaîne)
     @NotBlank(message = "L'ID du produit est obligatoire")
     private String productIdentifier;
-    
-    // Titre du produit signalé (pour faciliter l'affichage sans avoir à charger le produit)
-    private String productTitle;
 
     @NotNull(message = "Le type de signalement est obligatoire")
     @Enumerated(EnumType.STRING)

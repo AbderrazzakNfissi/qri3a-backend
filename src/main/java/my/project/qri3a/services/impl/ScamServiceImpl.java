@@ -53,7 +53,7 @@ public class ScamServiceImpl implements ScamService {
         Scam savedScam = scamRepository.save(scam);
 
         // Envoyer une notification à l'administrateur
-        notifyAdminsAboutNewScam(savedScam);
+        //notifyAdminsAboutNewScam(savedScam);
 
         log.info("Service: Anonymous scam report created with ID: {}", savedScam.getId());
         return scamMapper.toDTO(savedScam);
@@ -67,8 +67,7 @@ public class ScamServiceImpl implements ScamService {
                 // Créer l'objet Notification pour l'administrateur
                 Notification notification = new Notification();
                 notification.setUser(admin);
-                notification.setBody("Nouveau signalement d'arnaque anonyme concernant un produit: \"" 
-                        + scam.getProductTitle() + "\".");
+
                 notification.setRead(false);
 
                 // Notifier l'administrateur
