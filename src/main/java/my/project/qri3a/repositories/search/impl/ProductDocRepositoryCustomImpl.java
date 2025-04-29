@@ -1,32 +1,46 @@
 package my.project.qri3a.repositories.search.impl;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import my.project.qri3a.enums.ProductCategory;
-import my.project.qri3a.enums.ProductStatus;
-import org.springframework.data.domain.*;
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.query.Criteria;
-import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.client.RequestOptions;
+import org.opensearch.client.RestHighLevelClient;
+import org.opensearch.index.query.BoolQueryBuilder;
+import org.opensearch.index.query.QueryBuilders;
+import org.opensearch.index.query.RangeQueryBuilder;
+import org.opensearch.search.SearchHit;
+import org.opensearch.search.builder.SearchSourceBuilder;
+import org.opensearch.search.sort.SortBuilders;
+import org.opensearch.search.sort.SortOrder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.extern.slf4j.Slf4j;
 import my.project.qri3a.documents.ProductDoc;
+import my.project.qri3a.enums.ProductCategory;
+import my.project.qri3a.enums.ProductStatus;
 import my.project.qri3a.repositories.search.ProductDocRepositoryCustom;
 
 @Slf4j
-@RequiredArgsConstructor
+@Repository
 public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCustom {
 
+    private static final String INDEX_NAME = "products_idx";
     private static final String STATUS_FIELD = "status";
     private static final String TITLE_FIELD = "title";
     private static final String DESCRIPTION_FIELD = "description";
@@ -37,7 +51,6 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
     private static final String PRICE_FIELD = "price";
     private static final String DELIVERY_FIELD = "delivery.keyword";
     private static final String CREATED_AT_FIELD = "createdAt";
-    private static final String SCORE_FIELD = "_score";
     private static final int MAX_SEARCH_RESULTS = 10;
 
     // Définir les mappings des catégories principales vers leurs sous-catégories
@@ -90,7 +103,14 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
             ProductCategory.OTHER_REAL_ESTATE_FOR_RENT.toString()
     ));
 
-    private final ElasticsearchOperations elasticsearchOperations;
+    private final RestHighLevelClient openSearchClient;
+    private final ObjectMapper objectMapper;
+
+    // Constructeur avec dépendances standard
+    public ProductDocRepositoryCustomImpl(RestHighLevelClient openSearchClient, ObjectMapper objectMapper) {
+        this.openSearchClient = openSearchClient;
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public Page<ProductDoc> searchProductsElastic(String searchText,
@@ -104,17 +124,39 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
                                                   Pageable pageable) {
         log.debug("Searching products with criteria: {}", searchText);
 
-        // Construire les critères de recherche
-        Criteria criteria = buildBaseCriteria(searchText);
+        try {
+            // Construire la requête de recherche
+            SearchRequest searchRequest = new SearchRequest(INDEX_NAME);
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 
-        // Ajouter les filtres supplémentaires
-        addFilterCriteria(criteria, category, location, condition, minPrice, maxPrice, city, delivery);
+            // Construire la requête de base
+            BoolQueryBuilder boolQuery = buildBaseQuery(searchText);
 
-        // Créer un Pageable avec le tri personnalisé
-        Pageable sortedPageable = createSortedPageable(searchText, pageable);
+            // Ajouter les filtres supplémentaires
+            addFilterQueries(boolQuery, category, location, condition, minPrice, maxPrice, city, delivery);
 
-        // Exécuter la recherche
-        return executeSearch(criteria, sortedPageable);
+            // Configurer la pagination
+            int from = pageable.getPageNumber() * pageable.getPageSize();
+            searchSourceBuilder.from(from);
+            searchSourceBuilder.size(pageable.getPageSize());
+
+            // Configurer le tri
+            configureSorting(searchSourceBuilder, searchText, pageable);
+
+            // Finaliser la requête
+            searchSourceBuilder.query(boolQuery);
+            searchRequest.source(searchSourceBuilder);
+
+            // Exécuter la recherche
+            SearchResponse searchResponse = openSearchClient.search(searchRequest, RequestOptions.DEFAULT);
+
+            // Transformer les résultats
+            return processSearchResponse(searchResponse, pageable);
+
+        } catch (IOException e) {
+            log.error("Error executing OpenSearch query", e);
+            return Page.empty();
+        }
     }
 
     @Override
@@ -125,193 +167,225 @@ public class ProductDocRepositoryCustomImpl implements ProductDocRepositoryCusto
             return Collections.emptyList();
         }
 
-        // Construire les critères de recherche de base (similaire à searchProductsElastic)
-        Criteria criteria = buildBaseCriteria(title);
+        try {
+            // Construire la requête de recherche
+            SearchRequest searchRequest = new SearchRequest(INDEX_NAME);
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 
-        // S'assurer que nous ne récupérons que les produits actifs
-        criteria = criteria.and(new Criteria(STATUS_FIELD).is(ProductStatus.ACTIVE.toString()));
+            // Construire la requête de base mais en utilisant des requêtes plus souples
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 
-        // Ajouter le filtre de catégorie s'il est spécifié (même logique que searchProductsElastic)
-        if (StringUtils.hasText(category)) {
-            addCategoryFilter(criteria, category);
+            // Filtre pour produits actifs
+            boolQuery.must(QueryBuilders.termQuery(STATUS_FIELD, ProductStatus.ACTIVE.toString()));
+
+            // Nettoyer le texte
+            String cleanedText = cleanSearchText(title);
+
+            // Utiliser un multi_match pour une meilleure correspondance textuelle
+            boolQuery.must(QueryBuilders.multiMatchQuery(cleanedText, TITLE_FIELD, DESCRIPTION_FIELD)
+                    .type("phrase_prefix")
+                    .slop(3));
+
+            // Ajouter le filtre de catégorie si spécifié
+            if (StringUtils.hasText(category)) {
+                addCategoryFilter(boolQuery, category);
+            }
+
+            // Limiter à 10 résultats
+            searchSourceBuilder.size(MAX_SEARCH_RESULTS);
+
+            // Configurer le tri par score puis par date
+            searchSourceBuilder.sort(SortBuilders.scoreSort().order(SortOrder.DESC));
+            searchSourceBuilder.sort(SortBuilders.fieldSort(CREATED_AT_FIELD).order(SortOrder.DESC));
+
+            // Finaliser la requête
+            searchSourceBuilder.query(boolQuery);
+            searchRequest.source(searchSourceBuilder);
+
+            // Exécuter la recherche
+            SearchResponse searchResponse = openSearchClient.search(searchRequest, RequestOptions.DEFAULT);
+
+            // Transformer les résultats
+            List<ProductDoc> products = new ArrayList<>();
+            for (SearchHit hit : searchResponse.getHits().getHits()) {
+                try {
+                    ProductDoc product = objectMapper.readValue(hit.getSourceAsString(), ProductDoc.class);
+                    products.add(product);
+                } catch (IOException e) {
+                    log.error("Error converting SearchHit to ProductDoc", e);
+                }
+            }
+            return products;
+
+        } catch (IOException e) {
+            log.error("Error executing OpenSearch query for top 10 products", e);
+            return Collections.emptyList();
         }
-
-        // Créer un Pageable avec tri par pertinence (score) puis par date
-        Sort sort = Sort.by(Sort.Order.desc(SCORE_FIELD), Sort.Order.desc(CREATED_AT_FIELD));
-        Pageable pageable = PageRequest.of(0, MAX_SEARCH_RESULTS, sort);
-
-        // Créer et exécuter la requête
-        CriteriaQuery query = new CriteriaQuery(criteria, pageable);
-        SearchHits<ProductDoc> searchHits = elasticsearchOperations.search(query, ProductDoc.class);
-
-        // Convertir et retourner les résultats
-        return searchHits.get()
-                .map(SearchHit::getContent)
-                .collect(Collectors.toList());
     }
-
-
-//    @Override
-//    public List<ProductDoc> findTop10ByTitleOrDescription(String title) {
-//        if (!StringUtils.hasText(title)) {
-//            return Collections.emptyList();
-//        }
-//
-//        // Construire les critères de recherche
-//        Criteria criteria = buildBaseCriteria(title);
-//        criteria = criteria.and(new Criteria(STATUS_FIELD).is(ProductStatus.ACTIVE.toString()));
-//
-//        // Créer et exécuter la requête limitée à 10 résultats
-//        CriteriaQuery query = new CriteriaQuery(criteria);
-//        query.setPageable(PageRequest.of(0, MAX_SEARCH_RESULTS));
-//
-//        SearchHits<ProductDoc> searchHits = elasticsearchOperations.search(query, ProductDoc.class);
-//        return searchHits.get()
-//                .map(SearchHit::getContent)
-//                .collect(Collectors.toList());
-//    }
 
     // Méthodes privées d'assistance
 
-    private Criteria buildBaseCriteria(String searchText) {
-        Criteria baseCriteria = new Criteria();
-        baseCriteria = baseCriteria.and(new Criteria(STATUS_FIELD).is("ACTIVE"));
+    private BoolQueryBuilder buildBaseQuery(String searchText) {
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+
+        // Filtre pour produits actifs
+        boolQuery.must(QueryBuilders.termQuery(STATUS_FIELD, ProductStatus.ACTIVE.toString()));
 
         if (StringUtils.hasText(searchText)) {
             // Nettoyer et préparer le texte de recherche
             String cleanedText = cleanSearchText(searchText);
-            String expression = "*" + cleanedText + "*";
 
-            // Construire les critères pour le titre ou la description
-            Criteria titleCriteria = new Criteria(TITLE_FIELD).expression(expression);
-            Criteria descriptionCriteria = new Criteria(DESCRIPTION_FIELD).expression(expression);
-            baseCriteria = new Criteria().or(titleCriteria).or(descriptionCriteria);
+            // Diviser la requête en termes individuels pour une recherche plus flexible
+            String[] searchTerms = cleanedText.split("\\s+");
+
+            BoolQueryBuilder textQuery = QueryBuilders.boolQuery();
+
+            for (String term : searchTerms) {
+                // Recherche avec match_phrase_prefix pour meilleure correspondance textuelle
+                textQuery.should(QueryBuilders.matchPhrasePrefixQuery(TITLE_FIELD, term));
+                textQuery.should(QueryBuilders.matchPhrasePrefixQuery(DESCRIPTION_FIELD, term));
+
+                // Recherche wildcard comme fallback
+                textQuery.should(QueryBuilders.wildcardQuery(TITLE_FIELD, "*" + term + "*"));
+                textQuery.should(QueryBuilders.wildcardQuery(DESCRIPTION_FIELD, "*" + term + "*"));
+            }
+
+            // Utiliser un multi_match pour la requête complète également
+            textQuery.should(QueryBuilders.multiMatchQuery(cleanedText, TITLE_FIELD, DESCRIPTION_FIELD)
+                    .type("phrase_prefix")
+                    .slop(3));
+
+            boolQuery.must(textQuery);
         }
 
-        return baseCriteria;
+        return boolQuery;
     }
 
-    private void addFilterCriteria(Criteria criteria,
-                                   String category,
-                                   String location,
-                                   String condition,
-                                   BigDecimal minPrice,
-                                   BigDecimal maxPrice,
-                                   String city,
-                                   String delivery) {
+    private void addFilterQueries(BoolQueryBuilder boolQuery,
+                                  String category,
+                                  String location,
+                                  String condition,
+                                  BigDecimal minPrice,
+                                  BigDecimal maxPrice,
+                                  String city,
+                                  String delivery) {
         // Ajouter les filtres si fournis
-        addCategoryFilter(criteria, category);
-        addStringFilter(criteria, LOCATION_FIELD, location);
-        addStringFilter(criteria, CONDITION_FIELD, condition);
-        addStringFilter(criteria, CITY_FIELD, city);
-        addStringFilter(criteria, DELIVERY_FIELD, delivery);
+        addCategoryFilter(boolQuery, category);
+        addStringFilter(boolQuery, LOCATION_FIELD, location);
+        addStringFilter(boolQuery, CONDITION_FIELD, condition);
+        addStringFilter(boolQuery, CITY_FIELD, city);
+        addStringFilter(boolQuery, DELIVERY_FIELD, delivery);
 
         // Ajouter les filtres de prix
-        if (minPrice != null) {
-            criteria = criteria.and(new Criteria(PRICE_FIELD).greaterThanEqual(minPrice));
-        }
-        if (maxPrice != null) {
-            criteria = criteria.and(new Criteria(PRICE_FIELD).lessThanEqual(maxPrice));
+        if (minPrice != null || maxPrice != null) {
+            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(PRICE_FIELD);
+
+            if (minPrice != null) {
+                rangeQuery.gte(minPrice.doubleValue());
+            }
+
+            if (maxPrice != null) {
+                rangeQuery.lte(maxPrice.doubleValue());
+            }
+
+            boolQuery.must(rangeQuery);
         }
     }
 
-    /**
-     * Ajoute un filtre de catégorie qui prend en compte les catégories principales
-     * et leurs sous-catégories associées.
-     *
-     * @param criteria Les critères de recherche existants
-     * @param category La catégorie à filtrer
-     */
-    private void addCategoryFilter(Criteria criteria, String category) {
+    private void addCategoryFilter(BoolQueryBuilder boolQuery, String category) {
         if (!StringUtils.hasText(category)) {
             return;
         }
 
         String trimmedCategory = category.trim();
 
-        // Vérifier si c'est une catégorie principale et construire une requête OR avec toutes les sous-catégories
         if (trimmedCategory.equals(ProductCategory.MARKET.toString())) {
-            Criteria categoryCriteria = new Criteria(CATEGORY_FIELD).in(MARKET_SUBCATEGORIES);
-            criteria = criteria.and(categoryCriteria);
+            BoolQueryBuilder categoryQuery = QueryBuilders.boolQuery();
+            for (String subCategory : MARKET_SUBCATEGORIES) {
+                categoryQuery.should(QueryBuilders.termQuery(CATEGORY_FIELD, subCategory));
+            }
+            boolQuery.must(categoryQuery);
         } else if (trimmedCategory.equals(ProductCategory.VEHICLES.toString())) {
-            Criteria categoryCriteria = new Criteria(CATEGORY_FIELD).in(VEHICLES_SUBCATEGORIES);
-            criteria = criteria.and(categoryCriteria);
+            BoolQueryBuilder categoryQuery = QueryBuilders.boolQuery();
+            for (String subCategory : VEHICLES_SUBCATEGORIES) {
+                categoryQuery.should(QueryBuilders.termQuery(CATEGORY_FIELD, subCategory));
+            }
+            boolQuery.must(categoryQuery);
         } else if (trimmedCategory.equals(ProductCategory.REAL_ESTATE.toString())) {
-            Criteria categoryCriteria = new Criteria(CATEGORY_FIELD).in(REAL_ESTATE_SUBCATEGORIES);
-            criteria = criteria.and(categoryCriteria);
+            BoolQueryBuilder categoryQuery = QueryBuilders.boolQuery();
+            for (String subCategory : REAL_ESTATE_SUBCATEGORIES) {
+                categoryQuery.should(QueryBuilders.termQuery(CATEGORY_FIELD, subCategory));
+            }
+            boolQuery.must(categoryQuery);
         } else {
-            // Si ce n'est pas une catégorie principale, appliquer le filtre normal
-            criteria = criteria.and(new Criteria(CATEGORY_FIELD).is(trimmedCategory));
+            boolQuery.must(QueryBuilders.termQuery(CATEGORY_FIELD, trimmedCategory));
         }
     }
 
-    private void addStringFilter(Criteria criteria, String field, String value) {
+    private void addStringFilter(BoolQueryBuilder boolQuery, String field, String value) {
         if (StringUtils.hasText(value)) {
-            criteria = criteria.and(new Criteria(field).is(value.trim()));
+            boolQuery.must(QueryBuilders.termQuery(field, value.trim()));
         }
     }
 
-    private Pageable createSortedPageable(String searchText, Pageable pageable) {
-        Sort sort;
+    private void configureSorting(SearchSourceBuilder searchSourceBuilder, String searchText, Pageable pageable) {
         if (StringUtils.hasText(searchText)) {
-            sort = Sort.by(Sort.Order.desc(SCORE_FIELD), Sort.Order.desc(CREATED_AT_FIELD));
+            // Si recherche par texte, trier d'abord par score puis par date
+            searchSourceBuilder.sort(SortBuilders.scoreSort().order(SortOrder.DESC));
+            searchSourceBuilder.sort(SortBuilders.fieldSort(CREATED_AT_FIELD).order(SortOrder.DESC));
         } else {
-            sort = Sort.by(Sort.Order.desc(CREATED_AT_FIELD));
+            // Sinon, trier par date uniquement
+            searchSourceBuilder.sort(SortBuilders.fieldSort(CREATED_AT_FIELD).order(SortOrder.DESC));
         }
 
-        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+        // Ajouter les tris personnalisés si définis dans le Pageable
+        if (pageable.getSort().isSorted()) {
+            pageable.getSort().forEach(order -> {
+                SortOrder sortOrder = order.isAscending() ? SortOrder.ASC : SortOrder.DESC;
+                searchSourceBuilder.sort(SortBuilders.fieldSort(order.getProperty()).order(sortOrder));
+            });
+        }
     }
 
-    private Page<ProductDoc> executeSearch(Criteria criteria, Pageable pageable) {
-        CriteriaQuery query = new CriteriaQuery(criteria, pageable);
-        SearchHits<ProductDoc> searchHits = elasticsearchOperations.search(query, ProductDoc.class);
+    private Page<ProductDoc> processSearchResponse(SearchResponse searchResponse, Pageable pageable) {
+        List<ProductDoc> productDocs = new ArrayList<>();
 
-        List<ProductDoc> productDocs = searchHits.get()
-                .map(SearchHit::getContent)
-                .collect(Collectors.toList());
+        for (SearchHit hit : searchResponse.getHits().getHits()) {
+            try {
+                ProductDoc productDoc = objectMapper.readValue(hit.getSourceAsString(), ProductDoc.class);
+                productDocs.add(productDoc);
+            } catch (IOException e) {
+                log.error("Error converting SearchHit to ProductDoc", e);
+            }
+        }
 
-        return new PageImpl<>(productDocs, pageable, searchHits.getTotalHits());
+        long totalHits = searchResponse.getHits().getTotalHits().value;
+        return new PageImpl<>(productDocs, pageable, totalHits);
     }
 
-    /**
-     * Nettoie et prépare le texte de recherche pour Elasticsearch en :
-     * 1. Échappant les caractères spéciaux
-     * 2. Normalisant les espaces multiples
-     * 3. Limitant la longueur maximale de la requête
-     * 4. Convertissant en minuscules pour une recherche insensible à la casse
-     * 5. Traitant les termes vides ou null
-     *
-     * @param text Le texte de recherche brut
-     * @return Le texte nettoyé et préparé pour Elasticsearch
-     */
     private String cleanSearchText(String text) {
         // Vérification des entrées nulles ou vides
         if (text == null || text.trim().isEmpty()) {
             return "";
         }
 
-        // Limiter la longueur maximale de la recherche (évite les attaques par injection de requêtes très longues)
+        // Limiter la longueur maximale de la recherche
         final int MAX_QUERY_LENGTH = 100;
         if (text.length() > MAX_QUERY_LENGTH) {
             text = text.substring(0, MAX_QUERY_LENGTH);
         }
 
-        // Convertir en minuscules pour une recherche insensible à la casse
+        // Convertir en minuscules
         text = text.toLowerCase();
 
-        // Échapper les caractères spéciaux d'Elasticsearch
-        // + - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ / et autres caractères pouvant causer des problèmes
-        String escaped = text.replaceAll("([+\\-=&|><!(){}\\[\\]^\"~*?:/\\\\])", "\\\\$1");
+        // Supprimer uniquement les caractères dangereux pour Elasticsearch
+        // Ne PAS échapper les chiffres ou autres caractères normaux
+        String cleaned = text.replaceAll("[\\p{Cntrl}]", "");
 
-        // Supprimer les caractères de contrôle qui peuvent causer des problèmes dans ES
-        escaped = escaped.replaceAll("[\\p{Cntrl}]", "");
-
-        // Normaliser les espaces multiples en un seul espace
-        escaped = escaped.replaceAll("\\s+", " ");
+        // Normaliser les espaces multiples
+        cleaned = cleaned.replaceAll("\\s+", " ");
 
         // Enlever les espaces de début et de fin
-        return escaped.trim();
+        return cleaned.trim();
     }
-
-
 }

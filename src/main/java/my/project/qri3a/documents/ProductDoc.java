@@ -2,10 +2,7 @@ package my.project.qri3a.documents;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-
-import my.project.qri3a.enums.ProductStatus;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.elasticsearch.annotations.CompletionField;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;

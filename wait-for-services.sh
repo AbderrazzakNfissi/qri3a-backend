@@ -9,7 +9,7 @@ done
 echo "PostgreSQL is up"
 
 
-echo "Elasticsearch is up"
+#echo "Elasticsearch is up"
 
 echo "Starting the application..."
 exec java -jar app.jar

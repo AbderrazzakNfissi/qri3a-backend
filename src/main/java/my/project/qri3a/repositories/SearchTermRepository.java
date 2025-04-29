@@ -29,6 +29,11 @@ public interface SearchTermRepository extends JpaRepository<SearchTerm, UUID> {
     Optional<SearchTerm> findByTermAndCategory(String term, String category);
     
     /**
+     * Trouve tous les termes de recherche par leur texte exact (peut retourner plusieurs résultats si les catégories diffèrent)
+     */
+    List<SearchTerm> findAllByTerm(String term);
+
+    /**
      * Trouve les termes de recherche les plus populaires
      */
     @Query("SELECT s FROM SearchTerm s ORDER BY s.count DESC")

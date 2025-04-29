@@ -43,39 +43,68 @@ public class SearchTermServiceImpl implements SearchTermService {
 
         // Normaliser le terme de recherche (minuscules, trim)
         term = term.toLowerCase().trim();
-        
+
         log.debug("Enregistrement du terme de recherche: '{}', categorie: {}, localisation: {}", term, category, location);
-        
-        Optional<SearchTerm> existingTerm;
-        
-        // Rechercher par terme et catégorie si la catégorie est fournie
-        if (category != null && !category.isEmpty()) {
-            existingTerm = searchTermRepository.findByTermAndCategory(term, category);
+
+        SearchTerm termToUpdate = null;
+
+        // Si la catégorie est fournie, rechercher par terme et catégorie
+        if (category != null && !category.trim().isEmpty()) {
+            String normalizedCategory = category.trim(); // Utiliser la catégorie normalisée
+            Optional<SearchTerm> existingTermOpt = searchTermRepository.findByTermAndCategory(term, normalizedCategory);
+            if (existingTermOpt.isPresent()) {
+                termToUpdate = existingTermOpt.get();
+            } else {
+                // Créer un nouveau terme avec catégorie
+                SearchTerm newSearchTerm = SearchTerm.builder()
+                    .term(term)
+                    .count(1)
+                    .lastSearched(new Date())
+                    .category(normalizedCategory) // Assigner la catégorie normalisée
+                    .location(location)
+                    .build();
+                searchTermRepository.save(newSearchTerm);
+                log.debug("Nouveau terme de recherche enregistré avec catégorie: {}, catégorie: {}", term, normalizedCategory);
+                return; // Sortir après création
+            }
         } else {
-            existingTerm = searchTermRepository.findByTerm(term);
+            // Si la catégorie n'est PAS fournie, rechercher tous les termes correspondants
+            List<SearchTerm> existingTerms = searchTermRepository.findAllByTerm(term);
+
+            // Chercher un terme existant SANS catégorie
+            Optional<SearchTerm> termWithoutCategoryOpt = existingTerms.stream()
+                    .filter(st -> st.getCategory() == null || st.getCategory().isEmpty())
+                    .findFirst();
+
+            if (termWithoutCategoryOpt.isPresent()) {
+                // Mettre à jour le terme existant sans catégorie
+                termToUpdate = termWithoutCategoryOpt.get();
+            } else {
+                // Si aucun terme sans catégorie n'existe, créer un nouveau terme SANS catégorie
+                SearchTerm newSearchTerm = SearchTerm.builder()
+                    .term(term)
+                    .count(1)
+                    .lastSearched(new Date())
+                    .category(null) // Catégorie explicitement null
+                    .location(location)
+                    .build();
+                searchTermRepository.save(newSearchTerm);
+                log.debug("Nouveau terme de recherche enregistré sans catégorie: {}", term);
+                return; // Sortir après création
+            }
         }
 
-        if (existingTerm.isPresent()) {
-            // Incrémenter le compteur d'un terme existant
-            SearchTerm searchTerm = existingTerm.get();
-            searchTerm.setCount(searchTerm.getCount() + 1);
-            searchTerm.setLastSearched(new Date());
-            searchTerm.setLocation(location); // Mettre à jour la localisation si nécessaire
-            
-            searchTermRepository.save(searchTerm);
-            log.debug("Terme de recherche mis à jour: {}, compteur: {}", term, searchTerm.getCount());
-        } else {
-            // Créer un nouveau terme de recherche
-            SearchTerm newSearchTerm = SearchTerm.builder()
-                .term(term)
-                .count(1)
-                .lastSearched(new Date())
-                .category(category)
-                .location(location)
-                .build();
-                
-            searchTermRepository.save(newSearchTerm);
-            log.debug("Nouveau terme de recherche enregistré: {}", term);
+        // Si un terme existant a été trouvé (avec ou sans catégorie selon le cas)
+        if (termToUpdate != null) {
+            termToUpdate.setCount(termToUpdate.getCount() + 1);
+            termToUpdate.setLastSearched(new Date());
+            // Mettre à jour la localisation seulement si elle est fournie dans la requête actuelle
+            if (location != null && !location.trim().isEmpty()) {
+                 termToUpdate.setLocation(location.trim());
+            }
+            searchTermRepository.save(termToUpdate);
+            log.debug("Terme de recherche mis à jour: {}, catégorie: {}, compteur: {}",
+                      term, termToUpdate.getCategory() != null ? termToUpdate.getCategory() : "N/A", termToUpdate.getCount());
         }
     }
 
@@ -90,36 +119,36 @@ public class SearchTermServiceImpl implements SearchTermService {
         if (category == null || category.isEmpty()) {
             return getTopSearchTerms(limit);
         }
-        
+
         Pageable pageable = PageRequest.of(0, limit);
         return searchTermRepository.findTopSearchTermsByCategory(category, pageable);
     }
-    
+
     @Override
     public void recordUserSearchHistory(String term, String category, String location, Authentication authentication) {
         if (term == null || term.trim().isEmpty() || authentication == null) {
             return; // Ne pas traiter les recherches vides ou les utilisateurs non authentifiés
         }
-        
+
         // Normaliser le terme de recherche (minuscules, trim)
         term = term.toLowerCase().trim();
-        
+
         try {
             String email = authentication.getName();
             User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-            
+
             // Vérifier si le terme existe déjà pour cet utilisateur
             Optional<UserSearchHistory> existingEntry = userSearchHistoryRepository.findByUserAndSearchTerm(user, term);
-            
+
             if (existingEntry.isPresent()) {
                 // Si le terme existe déjà, récupérer l'entrée existante
                 UserSearchHistory searchHistory = existingEntry.get();
-                
+
                 // Mettre à jour les champs si nécessaire
                 searchHistory.setCategory(category);
                 searchHistory.setLocation(location);
-                
+
                 // Utilisez EntityManager pour mettre à jour directement la date de création
                 // Cette approche est plus performante car elle évite de lire l'entité complète
                 userSearchHistoryRepository.save(searchHistory);
@@ -132,28 +161,28 @@ public class SearchTermServiceImpl implements SearchTermService {
                     .category(category)
                     .location(location)
                     .build();
-                    
+
                 userSearchHistoryRepository.save(searchHistory);
                 log.debug("Nouvel historique de recherche enregistré pour l'utilisateur: {}, terme: {}", email, term);
             }
-            
+
             // Également enregistrer dans les statistiques générales
             recordSearchTerm(term, category, location);
         } catch (Exception e) {
             log.error("Erreur lors de l'enregistrement de l'historique de recherche: {}", e.getMessage());
         }
     }
-    
+
     @Override
     public Page<UserSearchHistory> getUserSearchHistory(Authentication authentication, Pageable pageable) {
         if (authentication == null) {
             throw new IllegalArgumentException("Authentication cannot be null");
         }
-        
+
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        
+
         return userSearchHistoryRepository.findByUserOrderByCreatedAtDesc(user, pageable);
     }
 }
